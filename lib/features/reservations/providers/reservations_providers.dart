@@ -244,6 +244,149 @@ final reserveSpaceProvider = Provider<
   };
 });
 
+final cancelReservationProvider =
+    Provider<Future<void> Function({required Reservation reservation})>((ref) {
+      final db = ref.watch(_dbProvider);
+      final auth = ref.watch(firebaseAuthProvider);
+
+      return ({required Reservation reservation}) async {
+        final uid = auth.currentUser?.uid;
+        if (uid == null) {
+          throw StateError('Debes iniciar sesión.');
+        }
+
+        if (reservation.userId != uid) {
+          throw StateError('No puedes cancelar esta reservación.');
+        }
+
+        if (reservation.state != 'active') {
+          throw StateError('Solo una reserva activa puede cancelarse.');
+        }
+
+        if (reservation.exitStatus == 'requested' ||
+            reservation.exitStatus == 'approved') {
+          throw StateError(
+            'No puedes cancelar una reserva con salida en proceso.',
+          );
+        }
+
+        final reservationRef = _reservationDoc(db, reservation.id);
+        final spaceRef = _spaceDoc(
+          db,
+          reservation.parkingId,
+          reservation.spaceNumber,
+        );
+        final controlRef = _userReservationControlDoc(db, uid);
+
+        final now = DateTime.now();
+        final isFreeWindow = _isWithinFreeCancellationWindow(reservation);
+
+        if (isFreeWindow) {
+          await db.runTransaction((tx) async {
+            final latestReservationSnap = await tx.get(reservationRef);
+            final spaceSnap = await tx.get(spaceRef);
+
+            if (!latestReservationSnap.exists) {
+              throw StateError('La reservación ya no existe.');
+            }
+
+            final latestReservation = Reservation.fromDoc(
+              latestReservationSnap as DocumentSnapshot<Map<String, dynamic>>,
+            );
+
+            if (latestReservation.state != 'active') {
+              throw StateError('La reservación ya no está activa.');
+            }
+
+            final spaceData = spaceSnap.data() as Map<String, dynamic>? ?? {};
+
+            tx.update(reservationRef, {
+              'state': 'cancelled',
+              'endedAt': Timestamp.fromDate(now),
+              'cancelRequestedAt': Timestamp.fromDate(now),
+              'cancellationReason': 'Cancelación dentro del tiempo permitido',
+              'cancellationPenaltyApplied': false,
+              'providerApprovalStatus': null,
+            });
+
+            if ((spaceData['status'] ?? 'free') == 'occupied' &&
+                spaceData['currentReservationId'] == reservation.id) {
+              tx.set(spaceRef, {
+                'status': 'free',
+                'currentReservationId': null,
+                'updatedAt': FieldValue.serverTimestamp(),
+              }, SetOptions(merge: true));
+            }
+          });
+
+          return;
+        }
+
+        await db.runTransaction((tx) async {
+          final latestReservationSnap = await tx.get(reservationRef);
+          if (!latestReservationSnap.exists) {
+            throw StateError('La reservación ya no existe.');
+          }
+
+          final latestReservation = Reservation.fromDoc(
+            latestReservationSnap as DocumentSnapshot<Map<String, dynamic>>,
+          );
+
+          if (latestReservation.state != 'active') {
+            throw StateError('La reservación ya no está activa.');
+          }
+
+          final controlSnap = await tx.get(controlRef);
+          final controlData = controlSnap.data() as Map<String, dynamic>? ?? {};
+
+          final currentAttempts =
+              (controlData['cancelAttempts'] as num?)?.toInt() ?? 0;
+          final nextAttempts = currentAttempts + 1;
+          final limitReached = nextAttempts >= maxCancellationAttempts;
+          final restrictedUntil =
+              limitReached
+                  ? now.add(const Duration(days: reservationCooldownDays))
+                  : null;
+
+          tx.update(reservationRef, {
+            'state': 'cancellation_requested',
+            'cancelRequestedAt': Timestamp.fromDate(now),
+            'cancellationReason': 'Cancelación fuera del tiempo permitido',
+            'cancellationPenaltyApplied': true,
+            'providerApprovalStatus': 'pending',
+            'cancelAttempts': (latestReservation.cancelAttempts) + 1,
+            'userCancelAttempts': nextAttempts,
+            'restrictedUntil':
+                restrictedUntil != null
+                    ? Timestamp.fromDate(restrictedUntil)
+                    : null,
+          });
+
+          if (controlSnap.exists) {
+            tx.update(controlRef, {
+              'cancelAttempts': nextAttempts,
+              'restrictedUntil':
+                  restrictedUntil != null
+                      ? Timestamp.fromDate(restrictedUntil)
+                      : null,
+              'updatedAt': FieldValue.serverTimestamp(),
+            });
+          } else {
+            tx.set(controlRef, {
+              'userId': uid,
+              'cancelAttempts': nextAttempts,
+              'restrictedUntil':
+                  restrictedUntil != null
+                      ? Timestamp.fromDate(restrictedUntil)
+                      : null,
+              'createdAt': FieldValue.serverTimestamp(),
+              'updatedAt': FieldValue.serverTimestamp(),
+            });
+          }
+        });
+      };
+    });
+
 final requestExitProvider =
     Provider<Future<void> Function({required Reservation reservation})>((ref) {
       final db = ref.watch(_dbProvider);

@@ -18,6 +18,8 @@ class MyText extends StatelessWidget {
   final TextDecoration? decoration;
   final double? fontSize;
   final Color? customColor;
+  final int? maxLines;
+  final TextOverflow? overflow;
 
   const MyText({
     super.key,
@@ -27,6 +29,8 @@ class MyText extends StatelessWidget {
     this.decoration,
     this.fontSize,
     this.customColor,
+    this.maxLines,
+    this.overflow,
   });
 
   @override

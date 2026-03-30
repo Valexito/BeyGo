@@ -86,11 +86,15 @@ class _ReserveSpacePageState extends ConsumerState<ReserveSpacePage> {
           'spaceNumber': chosenSpace,
         },
       );
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('🔥 RESERVE ERROR: $e');
+      debugPrintStack(stackTrace: st);
+
       if (!mounted) return;
+
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('No se pudo reservar: $e')));
+      ).showSnackBar(SnackBar(content: Text('Error real: ${e.toString()}')));
     } finally {
       if (mounted) {
         setState(() => _isSubmitting = false);

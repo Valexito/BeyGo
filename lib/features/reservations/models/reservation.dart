@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Reservation {
-  static const int maxCancellationAttemptsLimit = 3;
+  static const int maxCancellationAttemptsLimit = 2;
   static const int freeCancellationWindowMinutesLimit = 1;
   static const int reservationCooldownDaysLimit = 20;
 

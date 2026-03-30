@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:mapbox_api/common/utils/components/ui/my_text.dart';
 import 'package:mapbox_api/common/utils/components/ui/navy_header.dart';
+import 'package:mapbox_api/features/core/pages/userv/report_problem_page.dart';
 import 'package:mapbox_api/features/core/providers/firebase_providers.dart';
 import 'package:mapbox_api/features/reservations/components/reservation_card.dart';
 import 'package:mapbox_api/features/reservations/models/reservation.dart';
@@ -45,6 +46,7 @@ class _ReservationsPageState extends ConsumerState<ReservationsPage>
     }
 
     final asyncList = ref.watch(userReservationsProvider);
+    final controlAsync = ref.watch(userReservationControlProvider);
 
     return Scaffold(
       backgroundColor: bg,
@@ -54,11 +56,11 @@ class _ReservationsPageState extends ConsumerState<ReservationsPage>
           children: [
             Stack(
               children: [
-                const NavyHeader(
-                  height: 160,
+                NavyHeader(
+                  height: 175,
                   roundedBottom: false,
                   children: [
-                    Padding(
+                    const Padding(
                       padding: EdgeInsets.only(top: 10),
                       child: MyText(
                         text: 'MIS RESERVACIONES',
@@ -66,6 +68,38 @@ class _ReservationsPageState extends ConsumerState<ReservationsPage>
                         textAlign: TextAlign.center,
                         customColor: Colors.white,
                       ),
+                    ),
+                    const SizedBox(height: 10),
+                    controlAsync.when(
+                      loading: () => const SizedBox(height: 18),
+                      error: (_, __) => const SizedBox(height: 18),
+                      data: (control) {
+                        final used =
+                            (control?['cancelAttempts'] as num?)?.toInt() ?? 0;
+                        final max = Reservation.maxCancellationAttemptsLimit;
+                        final limitReached = used >= max;
+
+                        if (limitReached) {
+                          return _HeaderLimitMessage(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const ReportProblemPage(),
+                                ),
+                              );
+                            },
+                          );
+                        }
+
+                        return MyText(
+                          text: 'Cancelaciones usadas: $used/$max',
+                          variant: MyTextVariant.bodyMuted,
+                          textAlign: TextAlign.center,
+                          customColor: Colors.white70,
+                          fontSize: 13,
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -94,7 +128,7 @@ class _ReservationsPageState extends ConsumerState<ReservationsPage>
               ],
             ),
             Transform.translate(
-              offset: const Offset(0, -26),
+              offset: const Offset(0, -24),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 18),
                 child: _SegmentTabs(controller: _tab),
@@ -102,7 +136,7 @@ class _ReservationsPageState extends ConsumerState<ReservationsPage>
             ),
             Expanded(
               child: Transform.translate(
-                offset: const Offset(0, -10),
+                offset: const Offset(0, -8),
                 child: asyncList.when(
                   loading:
                       () => const Center(child: CircularProgressIndicator()),
@@ -147,6 +181,47 @@ class _ReservationsPageState extends ConsumerState<ReservationsPage>
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _HeaderLimitMessage extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _HeaderLimitMessage({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 22),
+      child: Column(
+        children: [
+          const Text(
+            'Has superado el límite de cancelaciones.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 2),
+          GestureDetector(
+            onTap: onTap,
+            child: const Text(
+              'Reporta el problema aquí.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Color(0xFFD6E8FF),
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                decoration: TextDecoration.underline,
+                decorationColor: Color(0xFFD6E8FF),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -212,9 +287,9 @@ class _ResList extends StatelessWidget {
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 26),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
       itemCount: items.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 14),
+      separatorBuilder: (_, __) => const SizedBox(height: 16),
       itemBuilder: (_, i) => ReservationCard(reservation: items[i]),
     );
   }
@@ -234,8 +309,7 @@ class _EmptyReservationsState extends StatelessWidget {
     switch (stateLabel) {
       case 'active':
         title = 'No hay reservaciones activas';
-        subtitle =
-            'Tus reservaciones activas o pendientes de salida aparecerán aquí.';
+        subtitle = 'Tus reservaciones activas o pendientes aparecerán aquí.';
         icon = Icons.local_parking_outlined;
         break;
       case 'completed':
