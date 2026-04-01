@@ -9,6 +9,7 @@ class Reservation {
   final String userId;
   final String parkingId;
   final String parkingName;
+  final String ownerId;
   final int spaceNumber;
 
   final DateTime reservedAt;
@@ -57,6 +58,7 @@ class Reservation {
     required this.userId,
     required this.parkingId,
     required this.parkingName,
+    required this.ownerId,
     required this.spaceNumber,
     required this.reservedAt,
     this.endedAt,
@@ -114,6 +116,7 @@ class Reservation {
       userId: (data['userId'] as String?) ?? '',
       parkingId: (data['parkingId'] as String?) ?? '',
       parkingName: (data['parkingName'] as String?) ?? '',
+      ownerId: (data['ownerId'] as String?) ?? '',
       spaceNumber: (data['spaceNumber'] as num?)?.toInt() ?? 0,
       reservedAt:
           parseTimestamp(data['reservedAt'] ?? data['startedAt']) ??
@@ -145,6 +148,7 @@ class Reservation {
       'userId': userId,
       'parkingId': parkingId,
       'parkingName': parkingName,
+      'ownerId': ownerId,
       'spaceNumber': spaceNumber,
       'reservedAt': Timestamp.fromDate(reservedAt),
       'startedAt': Timestamp.fromDate(reservedAt),
@@ -183,6 +187,7 @@ class Reservation {
     String? userId,
     String? parkingId,
     String? parkingName,
+    String? ownerId,
     int? spaceNumber,
     DateTime? reservedAt,
     DateTime? endedAt,
@@ -209,6 +214,7 @@ class Reservation {
       userId: userId ?? this.userId,
       parkingId: parkingId ?? this.parkingId,
       parkingName: parkingName ?? this.parkingName,
+      ownerId: ownerId ?? this.ownerId,
       spaceNumber: spaceNumber ?? this.spaceNumber,
       reservedAt: reservedAt ?? this.reservedAt,
       endedAt: endedAt ?? this.endedAt,

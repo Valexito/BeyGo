@@ -1,3 +1,4 @@
+import 'package:async/async.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -202,6 +203,10 @@ final reserveSpaceProvider = Provider<
       parkingSnap as DocumentSnapshot<Map<String, dynamic>>,
     );
 
+    if (p.ownerID.trim().isEmpty) {
+      throw StateError('El parqueo no tiene ownerID válido.');
+    }
+
     final resRef = db.collection('reservations').doc();
     final spaceRef = _spaceDoc(db, parkingId, spaceNumber);
 
@@ -215,6 +220,7 @@ final reserveSpaceProvider = Provider<
       userId: uid,
       parkingId: parkingId,
       parkingName: parkingName,
+      ownerId: p.ownerID,
       spaceNumber: spaceNumber,
       reservedAt: now,
       state: 'active',
@@ -324,6 +330,8 @@ final cancelReservationProvider =
 
         await db.runTransaction((tx) async {
           final latestReservationSnap = await tx.get(reservationRef);
+          final controlSnap = await tx.get(controlRef);
+
           if (!latestReservationSnap.exists) {
             throw StateError('La reservación ya no existe.');
           }
@@ -336,7 +344,6 @@ final cancelReservationProvider =
             throw StateError('La reservación ya no está activa.');
           }
 
-          final controlSnap = await tx.get(controlRef);
           final controlData = controlSnap.data() as Map<String, dynamic>? ?? {};
 
           final currentAttempts =
@@ -473,6 +480,181 @@ final completeReservationWithBillingProvider =
 
           if ((spaceData['status'] ?? 'free') == 'occupied' &&
               spaceData['currentReservationId'] == r.id) {
+            tx.set(spaceRef, {
+              'status': 'free',
+              'currentReservationId': null,
+              'updatedAt': FieldValue.serverTimestamp(),
+            }, SetOptions(merge: true));
+          }
+        });
+      };
+    });
+
+final ownerManagedParkingIdsProvider = FutureProvider<List<String>>((
+  ref,
+) async {
+  final db = ref.watch(_dbProvider);
+  final auth = ref.watch(firebaseAuthProvider);
+
+  final uid = auth.currentUser?.uid;
+  if (uid == null) return [];
+
+  final snap =
+      await db.collection('parkings').where('ownerID', isEqualTo: uid).get();
+
+  return snap.docs.map((d) => d.id).toList();
+});
+
+final ownerAllReservationsProvider = StreamProvider<List<Reservation>>((ref) {
+  final db = ref.watch(_dbProvider);
+  final userAsync = ref.watch(authStateProvider);
+
+  return userAsync.when(
+    data: (user) {
+      if (user == null) return const Stream.empty();
+
+      final q = db
+          .collection('reservations')
+          .where('ownerId', isEqualTo: user.uid)
+          .orderBy('reservedAt', descending: true);
+
+      return q.snapshots().map(
+        (qs) =>
+            qs.docs
+                .map(
+                  (d) => Reservation.fromDoc(
+                    d as DocumentSnapshot<Map<String, dynamic>>,
+                  ),
+                )
+                .toList(),
+      );
+    },
+    loading: () => const Stream.empty(),
+    error: (_, __) => const Stream.empty(),
+  );
+});
+
+final ownerExitRequestsProvider = Provider<AsyncValue<List<Reservation>>>((
+  ref,
+) {
+  final allAsync = ref.watch(ownerAllReservationsProvider);
+  return allAsync.whenData(
+    (items) => items.where((r) => r.exitStatus == 'requested').toList(),
+  );
+});
+
+final ownerCancellationRequestsProvider =
+    Provider<AsyncValue<List<Reservation>>>((ref) {
+      final allAsync = ref.watch(ownerAllReservationsProvider);
+      return allAsync.whenData(
+        (items) =>
+            items.where((r) => r.state == 'cancellation_requested').toList(),
+      );
+    });
+
+final ownerConfirmExitProvider =
+    Provider<Future<void> Function({required Reservation reservation})>((ref) {
+      final db = ref.watch(_dbProvider);
+
+      return ({required Reservation reservation}) async {
+        final reservationRef = _reservationDoc(db, reservation.id);
+        final spaceRef = _spaceDoc(
+          db,
+          reservation.parkingId,
+          reservation.spaceNumber,
+        );
+
+        final end = DateTime.now();
+        final durationMinutes = _calculateDurationMinutes(
+          reservation.reservedAt,
+          end,
+        );
+        final pricePerHour = reservation.pricePerHour ?? 0;
+        final amount = _calculateAmount(
+          pricePerHour: pricePerHour,
+          durationMinutes: durationMinutes,
+        );
+
+        await db.runTransaction((tx) async {
+          final reservationSnap = await tx.get(reservationRef);
+          final spaceSnap = await tx.get(spaceRef);
+
+          if (!reservationSnap.exists) {
+            throw StateError('La reservación ya no existe.');
+          }
+
+          final latest = Reservation.fromDoc(
+            reservationSnap as DocumentSnapshot<Map<String, dynamic>>,
+          );
+
+          if (latest.exitStatus != 'requested') {
+            throw StateError('La salida ya no está pendiente.');
+          }
+
+          final spaceData = spaceSnap.data() as Map<String, dynamic>? ?? {};
+
+          tx.update(reservationRef, {
+            'state': 'completed',
+            'exitStatus': 'approved',
+            'exitApprovedAt': Timestamp.fromDate(end),
+            'endedAt': Timestamp.fromDate(end),
+            'durationMinutes': durationMinutes,
+            'pricePerHour': pricePerHour,
+            'amount': amount,
+          });
+
+          if ((spaceData['status'] ?? 'free') == 'occupied' &&
+              spaceData['currentReservationId'] == reservation.id) {
+            tx.set(spaceRef, {
+              'status': 'free',
+              'currentReservationId': null,
+              'updatedAt': FieldValue.serverTimestamp(),
+            }, SetOptions(merge: true));
+          }
+        });
+      };
+    });
+
+final ownerConfirmCancellationProvider =
+    Provider<Future<void> Function({required Reservation reservation})>((ref) {
+      final db = ref.watch(_dbProvider);
+
+      return ({required Reservation reservation}) async {
+        final reservationRef = _reservationDoc(db, reservation.id);
+        final spaceRef = _spaceDoc(
+          db,
+          reservation.parkingId,
+          reservation.spaceNumber,
+        );
+
+        final now = DateTime.now();
+
+        await db.runTransaction((tx) async {
+          final reservationSnap = await tx.get(reservationRef);
+          final spaceSnap = await tx.get(spaceRef);
+
+          if (!reservationSnap.exists) {
+            throw StateError('La reservación ya no existe.');
+          }
+
+          final latest = Reservation.fromDoc(
+            reservationSnap as DocumentSnapshot<Map<String, dynamic>>,
+          );
+
+          if (latest.state != 'cancellation_requested') {
+            throw StateError('La cancelación ya no está pendiente.');
+          }
+
+          final spaceData = spaceSnap.data() as Map<String, dynamic>? ?? {};
+
+          tx.update(reservationRef, {
+            'state': 'cancelled',
+            'providerApprovalStatus': 'approved',
+            'endedAt': Timestamp.fromDate(now),
+          });
+
+          if ((spaceData['status'] ?? 'free') == 'occupied' &&
+              spaceData['currentReservationId'] == reservation.id) {
             tx.set(spaceRef, {
               'status': 'free',
               'currentReservationId': null,

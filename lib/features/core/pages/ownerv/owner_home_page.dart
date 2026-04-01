@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:mapbox_api/common/utils/components/ui/app_styles.dart';
-import 'package:mapbox_api/features/core/pages/ownerv/owner_earnings_page.dart';
 import 'package:mapbox_api/features/core/pages/ownerv/owner_parking_list_page.dart';
 import 'package:mapbox_api/features/core/pages/ownerv/owner_reservations_page.dart';
 import 'package:mapbox_api/features/core/pages/ownerv/owner_settings_page.dart';
-
 import 'package:mapbox_api/features/core/roles/role_utils.dart';
 
 class OwnerHomePage extends StatefulWidget {
@@ -19,8 +17,8 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
 
   final _tabs = const <_TabItem>[
     _TabItem('Parqueos', Icons.local_parking_outlined),
+    _TabItem('Solicitudes', Icons.fact_check_outlined),
     _TabItem('Reservas', Icons.receipt_long_outlined),
-    _TabItem('Ganancias', Icons.payments_outlined),
     _TabItem('Ajustes', Icons.settings_outlined),
   ];
 
@@ -31,7 +29,7 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
         final pages = const [
           OwnerParkingListPage(),
           OwnerReservationsPage(),
-          OwnerEarningsPage(),
+          OwnerReservationsPage(showOnlyHistory: true),
           OwnerSettingsPage(),
         ];
 
