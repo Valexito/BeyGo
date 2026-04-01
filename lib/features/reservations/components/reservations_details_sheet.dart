@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mapbox_api/common/utils/components/ui/app_styles.dart';
 import 'package:mapbox_api/common/utils/components/ui/my_button.dart';
 import 'package:mapbox_api/common/utils/components/ui/my_text.dart';
+import 'package:mapbox_api/features/reservations/components/reservation_dialogs.dart';
 import 'package:mapbox_api/features/reservations/models/reservation.dart';
 import 'package:mapbox_api/features/reservations/providers/reservations_providers.dart';
 
@@ -255,6 +256,14 @@ class _ReservationDetailsSheetState
                       _isProcessing
                           ? null
                           : () async {
+                            final confirm =
+                                await ReservationDialogs.showExitDialog(
+                                  context,
+                                  reservation: reservation,
+                                );
+
+                            if (confirm != true || !mounted) return;
+
                             setState(() => _isProcessing = true);
                             try {
                               await requestExit(reservation: reservation);

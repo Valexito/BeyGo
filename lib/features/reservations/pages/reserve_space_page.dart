@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
-
 import 'package:mapbox_api/common/utils/components/ui/app_styles.dart';
 import 'package:mapbox_api/common/utils/components/ui/my_button.dart';
 import 'package:mapbox_api/common/utils/components/ui/my_text.dart';
-import 'package:mapbox_api/features/reservations/components/confirm_reservation_dialog.dart';
+import 'package:mapbox_api/features/reservations/components/reservation_dialogs.dart';
 import 'package:mapbox_api/features/reservations/models/parking.dart';
 import 'package:mapbox_api/features/reservations/providers/reservations_providers.dart';
 
@@ -56,7 +55,7 @@ class _ReserveSpacePageState extends ConsumerState<ReserveSpacePage> {
 
     final chosenSpace = selectedSpace!;
 
-    final ok = await ConfirmReservationDialog.show(
+    final ok = await ReservationDialogs.showConfirmReservationDialog(
       context,
       destination: LatLng(widget.parking.lat, widget.parking.lng),
       parkingName: widget.parking.name,
