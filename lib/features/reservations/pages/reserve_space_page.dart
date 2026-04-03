@@ -230,56 +230,48 @@ class _ReserveSpacePageState extends ConsumerState<ReserveSpacePage> {
                                                   ? spacesMap.length
                                                   : 20);
 
-                                      return SingleChildScrollView(
-                                        child: GridView.builder(
-                                          shrinkWrap: true,
-                                          physics:
-                                              const NeverScrollableScrollPhysics(),
-                                          itemCount: total,
-                                          gridDelegate:
-                                              SliverGridDelegateWithFixedCrossAxisCount(
-                                                crossAxisCount: cross,
-                                                mainAxisSpacing: 12,
-                                                crossAxisSpacing: 12,
-                                                childAspectRatio: 0.95,
-                                              ),
-                                          itemBuilder: (_, idx) {
-                                            final num = idx + 1;
-                                            final space = spacesMap[num];
-                                            final occupied =
-                                                (space?.status ?? 'free') !=
-                                                'free';
-                                            final selected =
-                                                selectedSpace == num;
+                                      return GridView.builder(
+                                        itemCount: total,
+                                        gridDelegate:
+                                            SliverGridDelegateWithFixedCrossAxisCount(
+                                              crossAxisCount: cross,
+                                              mainAxisSpacing: 12,
+                                              crossAxisSpacing: 12,
+                                              childAspectRatio: 0.95,
+                                            ),
+                                        itemBuilder: (_, idx) {
+                                          final num = idx + 1;
+                                          final space = spacesMap[num];
+                                          final occupied =
+                                              (space?.status ?? 'free') !=
+                                              'free';
+                                          final selected = selectedSpace == num;
 
-                                            if (selected && occupied) {
-                                              WidgetsBinding.instance
-                                                  .addPostFrameCallback((_) {
-                                                    if (mounted) {
-                                                      setState(() {
-                                                        selectedSpace = null;
-                                                      });
-                                                    }
-                                                  });
-                                            }
+                                          if (selected && occupied) {
+                                            WidgetsBinding.instance
+                                                .addPostFrameCallback((_) {
+                                                  if (mounted) {
+                                                    setState(() {
+                                                      selectedSpace = null;
+                                                    });
+                                                  }
+                                                });
+                                          }
 
-                                            return _SpaceTile(
-                                              number: num,
-                                              occupied: occupied,
-                                              selected: selected,
-                                              onTap:
-                                                  occupied || _isSubmitting
-                                                      ? null
-                                                      : () => setState(() {
-                                                        selected
-                                                            ? selectedSpace =
-                                                                null
-                                                            : selectedSpace =
-                                                                num;
-                                                      }),
-                                            );
-                                          },
-                                        ),
+                                          return _SpaceTile(
+                                            number: num,
+                                            occupied: occupied,
+                                            selected: selected,
+                                            onTap:
+                                                occupied || _isSubmitting
+                                                    ? null
+                                                    : () => setState(() {
+                                                      selected
+                                                          ? selectedSpace = null
+                                                          : selectedSpace = num;
+                                                    }),
+                                          );
+                                        },
                                       );
                                     },
                                   ),
@@ -290,7 +282,7 @@ class _ReserveSpacePageState extends ConsumerState<ReserveSpacePage> {
                         ),
                       ),
                       Container(
-                        padding: const EdgeInsets.fromLTRB(20, 14, 20, 22),
+                        padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: const BorderRadius.only(
@@ -307,50 +299,57 @@ class _ReserveSpacePageState extends ConsumerState<ReserveSpacePage> {
                         ),
                         child: SafeArea(
                           top: false,
-                          child: Column(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 14,
-                                  vertical: 12,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.formFieldBg,
-                                  borderRadius: BorderRadius.circular(18),
-                                ),
-                                child: Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.info_outline,
-                                      size: 20,
-                                      color: AppColors.headerBottom,
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Expanded(
-                                      child: MyText(
+                              /// LEFT
+                              SizedBox(
+                                width: 160,
+                                height: 44,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color:
+                                        selectedSpace != null
+                                            ? AppColors.headerBottom
+                                                .withOpacity(0.08)
+                                            : AppColors.formFieldBg,
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.local_parking_rounded,
+                                        size: 18,
+                                        color: AppColors.headerBottom,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      MyText(
                                         text:
                                             selectedSpace == null
-                                                ? 'Selecciona un espacio para continuar'
-                                                : 'Espacio seleccionado: $selectedSpace',
-                                        variant: MyTextVariant.body,
-                                        fontSize: 13,
+                                                ? 'Seleccionar'
+                                                : 'Espacio $selectedSpace',
+                                        fontSize: 12,
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
                               ),
-                              const SizedBox(height: 14),
-                              MyButton(
-                                text:
-                                    _isSubmitting
-                                        ? 'Reservando...'
-                                        : 'Confirmar reserva',
-                                onTap:
-                                    selectedSpace != null && !_isSubmitting
-                                        ? _confirmReservation
-                                        : null,
-                                margin: EdgeInsets.zero,
+
+                              const SizedBox(width: 10),
+
+                              /// RIGHT
+                              SizedBox(
+                                width: 160,
+                                height: 44,
+                                child: MyButton(
+                                  text: _isSubmitting ? '...' : 'Confirmar',
+                                  onTap:
+                                      selectedSpace != null && !_isSubmitting
+                                          ? _confirmReservation
+                                          : null,
+                                  margin: EdgeInsets.zero,
+                                ),
                               ),
                             ],
                           ),
@@ -565,11 +564,6 @@ class _InfoChipsRow extends StatelessWidget {
           icon: Icons.directions_car_outlined,
           label: '${parking.spaces} espacios',
         ),
-        const _InfoChip(icon: Icons.security_outlined, label: 'Seguro'),
-        const _InfoChip(
-          icon: Icons.access_time_rounded,
-          label: 'Reserva rápida',
-        ),
       ],
     );
   }
@@ -627,30 +621,25 @@ class _SpaceTile extends StatelessWidget {
         occupied
             ? BoxDecoration(
               color: const Color(0xFFE5E7EB),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(14),
             )
             : selected
             ? BoxDecoration(
-              gradient: LinearGradient(
-                colors: [AppColors.headerTop, AppColors.headerBottom],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(16),
+              color: AppColors.headerBottom,
+              borderRadius: BorderRadius.circular(14),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.headerBottom.withOpacity(0.22),
-                  blurRadius: 16,
-                  offset: const Offset(0, 8),
+                  color: AppColors.headerBottom.withOpacity(0.25),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
                 ),
               ],
             )
             : BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(14),
               border: Border.all(color: const Color(0xFF22C55E), width: 1.2),
             );
-
     final Color iconColor =
         occupied
             ? const Color(0xFF6B7280)

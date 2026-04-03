@@ -32,23 +32,26 @@ Future<void> main() async {
 
   runApp(const ProviderScope(child: MyApp()));
 }
-//OSCARN
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Mapa con Parqueos',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.build(),
+
+      builder: (context, child) {
+        return SafeArea(child: child!);
+      },
+
       home: const AuthGate(),
       routes: {
         '/auth': (_) => const AuthGate(),
-        '/home': (_) => const HomeSwitch(), // <- NUEVA ruta
-        '/homePage':
-            (_) =>
-                const userv.HomePage(), // opcional, si la usas en otros flujos
+        '/home': (_) => const HomeSwitch(),
+        '/homePage': (_) => const userv.HomePage(),
         '/owner': (_) => const OwnerHomePage(),
         '/becomeProvider': (_) => const BecomeOwnerPage(),
         '/mapPicker': (_) => const MapPickerPage(),
