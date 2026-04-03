@@ -1,6 +1,4 @@
-// ignore_for_file: avoid_print
 import 'dart:typed_data';
-import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -9,7 +7,7 @@ import 'package:uuid/uuid.dart';
 
 import 'package:mapbox_api/features/core/providers/firebase_providers.dart';
 
-final createOwnerAndParkingProvider = Provider<
+final submitProviderRequestProvider = Provider<
   Future<void> Function({
     required String uid,
     required String companyName,
@@ -21,7 +19,10 @@ final createOwnerAndParkingProvider = Provider<
     required String description,
     required double lat,
     required double lng,
-    required List<XFile> images,
+    required List<XFile> parkingImages,
+    required XFile dpiFront,
+    required XFile dpiBack,
+    required XFile patent,
     required int price,
   })
 >((ref) {
@@ -32,12 +33,13 @@ final createOwnerAndParkingProvider = Provider<
 
   Future<T> _retry<T>(
     Future<T> Function() op, {
-    int max = 8,
+    int max = 6,
     Duration firstDelay = const Duration(milliseconds: 300),
   }) async {
     var attempt = 0;
     var delay = firstDelay;
     late Object lastErr;
+
     while (attempt < max) {
       try {
         return await op();
@@ -45,13 +47,38 @@ final createOwnerAndParkingProvider = Provider<
         lastErr = e;
         attempt++;
         if (attempt >= max) break;
-        print('[upload retry] attempt=$attempt because=$e');
         await Future.delayed(delay);
         final nextMs = (delay.inMilliseconds * 1.8).clamp(300, 4000).toInt();
         delay = Duration(milliseconds: nextMs);
       }
     }
     throw lastErr;
+  }
+
+  Future<String> _uploadFile({
+    required XFile file,
+    required String path,
+  }) async {
+    final bytes = await file.readAsBytes();
+    if (bytes.isEmpty) {
+      throw Exception('Archivo vacío: ${file.name}');
+    }
+    if (bytes.length > 10 * 1024 * 1024) {
+      throw Exception('El archivo ${file.name} excede 10MB.');
+    }
+
+    final ext = _guessExt(file.name);
+    final contentType = _guessContentType(ext);
+
+    final refSt = storage.ref(path);
+    final metadata = SettableMetadata(contentType: contentType);
+
+    await _retry(() async {
+      await refSt.putData(Uint8List.fromList(bytes), metadata);
+      return true;
+    });
+
+    return refSt.getDownloadURL();
   }
 
   return ({
@@ -65,123 +92,159 @@ final createOwnerAndParkingProvider = Provider<
     required String description,
     required double lat,
     required double lng,
-    required List<XFile> images,
+    required List<XFile> parkingImages,
+    required XFile dpiFront,
+    required XFile dpiBack,
+    required XFile patent,
     required int price,
   }) async {
-    if (capacity <= 0) throw ArgumentError('La capacidad debe ser mayor a 0.');
-    if (price < 0)
-      throw ArgumentError('El precio por hora no puede ser negativo.');
-    if (images.isEmpty) throw ArgumentError('Debes subir al menos una imagen.');
-
     final current = auth.currentUser;
     if (current == null || current.uid != uid) {
       throw StateError('Debes iniciar sesión correctamente.');
     }
 
-    // 1) Crear parking
-    final parkingRef = db.collection('parkings').doc();
-    final parkingId = parkingRef.id;
-    print('[create] parkingId=$parkingId uid=$uid');
-
-    await parkingRef.set({
-      'ownerID': uid,
-      'name': parkingName,
-      'lat': lat,
-      'lng': lng,
-      'spaces': capacity,
-      'pricePerHour': price,
-      'price': price,
-      'descripcion': description.isEmpty ? null : description,
-      'address': address,
-      'email': email,
-      'phone': phone,
-      'createdAt': FieldValue.serverTimestamp(),
-      'updatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
-
-    await Future.delayed(const Duration(milliseconds: 350));
-    final verify = await parkingRef.get();
-    final data = verify.data() ?? {};
-    print(
-      '[verify] parking doc exists=${verify.exists} ownerID=${data['ownerID']}',
-    );
-    if (data['ownerID'] != uid) {
-      throw StateError('ownerID no coincide.');
+    if (companyName.trim().isEmpty) {
+      throw ArgumentError('Company name es obligatorio.');
+    }
+    if (parkingName.trim().isEmpty) {
+      throw ArgumentError('Parking name es obligatorio.');
+    }
+    if (email.trim().isEmpty) {
+      throw ArgumentError('Email es obligatorio.');
+    }
+    if (phone.trim().isEmpty) {
+      throw ArgumentError('Phone es obligatorio.');
+    }
+    if (address.trim().isEmpty) {
+      throw ArgumentError('Address es obligatorio.');
+    }
+    if (capacity <= 0) {
+      throw ArgumentError('La capacidad debe ser mayor a 0.');
+    }
+    if (price < 0) {
+      throw ArgumentError('El precio por hora no puede ser negativo.');
+    }
+    if (parkingImages.length < 3) {
+      throw ArgumentError('Debes subir al menos 3 fotos del parqueo.');
     }
 
-    // 3) Subir fotos
-    final List<String> photoUrls = [];
+    final userRef = db.collection('users').doc(uid);
+    final userSnap = await userRef.get();
+    final userData = userSnap.data() ?? {};
+    final providerStatus = (userData['providerStatus'] ?? 'none').toString();
+
+    if (providerStatus == 'pending') {
+      throw StateError('Ya tienes una solicitud pendiente.');
+    }
+
+    final requestRef = db.collection('provider_requests').doc();
+    final requestId = requestRef.id;
+
+    final List<String> uploadedPaths = [];
+    final List<String> parkingImageUrls = [];
+
     try {
-      for (final img in images) {
-        final bytes = await img.readAsBytes();
-        if (bytes.length > 10 * 1024 * 1024) {
-          throw Exception('La imagen ${img.name} excede 10MB.');
-        }
+      final dpiFrontExt = _guessExt(dpiFront.name);
+      final dpiBackExt = _guessExt(dpiBack.name);
+      final patentExt = _guessExt(patent.name);
+
+      final dpiFrontPath =
+          'provider_requests/$requestId/documents/dpi_front.$dpiFrontExt';
+      final dpiBackPath =
+          'provider_requests/$requestId/documents/dpi_back.$dpiBackExt';
+      final patentPath =
+          'provider_requests/$requestId/documents/patent.$patentExt';
+
+      final dpiFrontUrl = await _uploadFile(file: dpiFront, path: dpiFrontPath);
+      uploadedPaths.add(dpiFrontPath);
+
+      final dpiBackUrl = await _uploadFile(file: dpiBack, path: dpiBackPath);
+      uploadedPaths.add(dpiBackPath);
+
+      final patentUrl = await _uploadFile(file: patent, path: patentPath);
+      uploadedPaths.add(patentPath);
+
+      for (final img in parkingImages) {
         final ext = _guessExt(img.name);
-        final path = 'parkings/$parkingId/photos/${uuid.v4()}.$ext';
-        final refSt = storage.ref(path);
-        final metadata = SettableMetadata(contentType: _guessContentType(ext));
+        final filePath =
+            'provider_requests/$requestId/parking/${uuid.v4()}.$ext';
 
-        print(
-          '[storage] uploading path=$path uid=$uid bytes=${bytes.length} ct=${metadata.contentType}',
-        );
-        await _retry(() async {
-          await refSt.putData(Uint8List.fromList(bytes), metadata);
-          return true;
-        });
-        final url = await refSt.getDownloadURL();
-        print('[storage] uploaded path=$path url=$url');
-        photoUrls.add(url);
+        final url = await _uploadFile(file: img, path: filePath);
+
+        uploadedPaths.add(filePath);
+        parkingImageUrls.add(url);
       }
-    } catch (e) {
-      print('[error] upload failed -> deleting $parkingId error=$e');
-      try {
-        await parkingRef.delete();
-      } catch (_) {}
-      rethrow;
-    }
 
-    await parkingRef.set({
-      'coverUrl': photoUrls.first,
-      'photos': photoUrls,
-      'updatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
-    print('[update] coverUrl set and ${photoUrls.length} photos saved');
+      await requestRef.set({
+        'requestId': requestId,
+        'uid': uid,
+        'companyName': companyName.trim(),
+        'parkingName': parkingName.trim(),
+        'email': email.trim(),
+        'phone': phone.trim(),
+        'address': address.trim(),
+        'capacity': capacity,
+        'description': description.trim(),
+        'pricePerHour': price,
+        'lat': lat,
+        'lng': lng,
+        'parkingImages': parkingImageUrls,
+        'documents': {
+          'dpiFront': dpiFrontUrl,
+          'dpiBack': dpiBackUrl,
+          'patent': patentUrl,
+        },
+        'status': 'pending',
+        'reviewComment': null,
+        'reviewedAt': null,
+        'reviewedBy': null,
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
 
-    // 5) Sembrar espacios
-    final spacesColl = parkingRef.collection('spaces');
-    final batch = db.batch();
-    for (int i = 1; i <= capacity; i++) {
-      batch.set(spacesColl.doc('$i'), {
-        'status': 'free',
+      await userRef.set({
+        'providerStatus': 'pending',
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
+
+      await db.collection('admin_tickets').add({
+        'type': 'provider_request',
+        'uid': uid,
+        'requestId': requestId,
+        'status': 'open',
+        'title': 'Nueva solicitud de proveedor',
+        'description':
+            'Solicitud pendiente de revisión para $parkingName / $companyName',
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      await _safeDeleteUploadedFiles(
+        storage: storage,
+        uploadedPaths: uploadedPaths,
+      );
+      rethrow;
     }
-    await batch.commit();
-    print('[seed] $capacity spaces created');
-
-    // 6) Dejar perfil listo como owner (name/phone/role)
-    final authName = current.displayName?.trim();
-    final safeName =
-        (authName != null && authName.isNotEmpty) ? authName : companyName;
-    final safePhone = (phone.trim().isNotEmpty) ? phone.trim() : '+502 ...';
-
-    await db.collection('users').doc(uid).set({
-      'name': safeName,
-      'phone': safePhone,
-      'companyName': companyName,
-      'role': 'owner',
-      'updatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
-    print('[user] role=owner set for uid=$uid');
   };
 });
+
+Future<void> _safeDeleteUploadedFiles({
+  required FirebaseStorage storage,
+  required List<String> uploadedPaths,
+}) async {
+  for (final path in uploadedPaths) {
+    try {
+      await storage.ref(path).delete();
+    } catch (_) {}
+  }
+}
 
 String _guessExt(String name) {
   final n = name.toLowerCase();
   if (n.endsWith('.png')) return 'png';
   if (n.endsWith('.webp')) return 'webp';
-  if (n.endsWith('.jpeg') || n.endsWith('.jpg')) return 'jpg';
+  if (n.endsWith('.jpeg')) return 'jpeg';
+  if (n.endsWith('.jpg')) return 'jpg';
   return 'jpg';
 }
 
@@ -191,6 +254,9 @@ String _guessContentType(String ext) {
       return 'image/png';
     case 'webp':
       return 'image/webp';
+    case 'jpeg':
+      return 'image/jpeg';
+    case 'jpg':
     default:
       return 'image/jpeg';
   }

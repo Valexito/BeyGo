@@ -4,21 +4,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
-
+import 'package:mapbox_api/common/utils/components/ui/app_styles.dart';
 import 'package:mapbox_api/common/utils/components/ui/my_button.dart';
 import 'package:mapbox_api/common/utils/components/ui/my_text.dart';
 import 'package:mapbox_api/common/utils/components/ui/my_textfield.dart';
 import 'package:mapbox_api/features/core/pages/userv/map_pick_page.dart';
-
 import 'package:mapbox_api/features/core/providers/firebase_providers.dart';
 import 'package:mapbox_api/features/owners/providers/owners_providers.dart';
 
-// 👇 NUEVO: para cerrar sesión al terminar
-import 'package:mapbox_api/features/auth/providers/auth_providers.dart'
-    show authActionsProvider;
-
 class BecomeOwnerPage extends ConsumerStatefulWidget {
-  const BecomeOwnerPage({super.key});
+  final VoidCallback? onBack;
+  const BecomeOwnerPage({super.key, this.onBack});
+
   @override
   ConsumerState<BecomeOwnerPage> createState() => _BecomeOwnerPageState();
 }
@@ -35,7 +32,11 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage> {
 
   final _formKey = GlobalKey<FormState>();
   final _picker = ImagePicker();
-  final List<XFile> _images = [];
+
+  final List<XFile> _parkingImages = [];
+  XFile? _dpiFront;
+  XFile? _dpiBack;
+  XFile? _patent;
 
   bool _accept = false;
   bool _sending = false;
@@ -71,10 +72,12 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage> {
       context,
       MaterialPageRoute(builder: (_) => const MapPickPage()),
     );
-    if (result != null) setState(() => _picked = result);
+    if (result != null) {
+      setState(() => _picked = result);
+    }
   }
 
-  Future<void> _pickImages() async {
+  Future<void> _pickParkingImages() async {
     final picked = await _picker.pickMultiImage(
       imageQuality: 85,
       maxWidth: 1920,
@@ -82,19 +85,69 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage> {
     if (picked.isNotEmpty) {
       setState(() {
         const maxTotal = 10;
-        final remaining = maxTotal - _images.length;
-        _images.addAll(picked.take(remaining));
+        final remaining = maxTotal - _parkingImages.length;
+        _parkingImages.addAll(picked.take(remaining));
       });
     }
   }
 
-  void _removeImage(XFile img) => setState(() => _images.remove(img));
+  Future<void> _pickDpiFront() async {
+    final img = await _picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 85,
+      maxWidth: 1920,
+    );
+    if (img != null) {
+      setState(() => _dpiFront = img);
+    }
+  }
+
+  Future<void> _pickDpiBack() async {
+    final img = await _picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 85,
+      maxWidth: 1920,
+    );
+    if (img != null) {
+      setState(() => _dpiBack = img);
+    }
+  }
+
+  Future<void> _pickPatent() async {
+    final img = await _picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 85,
+      maxWidth: 1920,
+    );
+    if (img != null) {
+      setState(() => _patent = img);
+    }
+  }
+
+  void _removeParkingImage(XFile img) {
+    setState(() => _parkingImages.remove(img));
+  }
+
+  void _removeDpiFront() {
+    setState(() => _dpiFront = null);
+  }
+
+  void _removeDpiBack() {
+    setState(() => _dpiBack = null);
+  }
+
+  void _removePatent() {
+    setState(() => _patent = null);
+  }
 
   void _showError(String msg) {
     showDialog(
       context: context,
       builder:
           (_) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppDims.radiusLg),
+            ),
             content: MyText(text: msg, variant: MyTextVariant.body),
             actions: [
               TextButton(
@@ -106,32 +159,68 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage> {
     );
   }
 
+  String? _requiredValidator(String? value, String label) {
+    if ((value ?? '').trim().isEmpty) return '$label es obligatorio.';
+    return null;
+  }
+
+  String? _emailValidator(String? value) {
+    final email = (value ?? '').trim();
+    if (email.isEmpty) return 'Correo obligatorio.';
+    final ok = RegExp(r'^[\w\.\-]+@([\w\-]+\.)+[a-zA-Z]{2,}$').hasMatch(email);
+    if (!ok) return 'Correo inválido.';
+    return null;
+  }
+
   Future<void> _submit() async {
     final ok = _formKey.currentState?.validate() ?? false;
     if (!ok) return;
-    if (!_accept)
+
+    if (!_accept) {
       return _showError('Debes aceptar los términos para continuar.');
+    }
 
     final cap = int.tryParse(_capacity.text.trim());
-    if (cap == null || cap <= 0)
-      return _showError('Capacidad debe ser un número > 0.');
+    if (cap == null || cap <= 0) {
+      return _showError('Capacidad debe ser un número mayor a 0.');
+    }
 
     final price = int.tryParse(_pricePerHour.text.trim());
-    if (price == null || price < 0)
+    if (price == null || price < 0) {
       return _showError('Precio por hora inválido.');
+    }
 
-    if (_picked == null)
+    if (_picked == null) {
       return _showError('Selecciona la ubicación del parqueo en el mapa.');
-    if (_images.length < 3)
+    }
+
+    if (_parkingImages.length < 3) {
       return _showError('Sube al menos 3 fotos del parqueo.');
+    }
+
+    if (_dpiFront == null) {
+      return _showError('Debes subir la foto del DPI frente.');
+    }
+
+    if (_dpiBack == null) {
+      return _showError('Debes subir la foto del DPI reverso.');
+    }
+
+    if (_patent == null) {
+      return _showError('Debes subir la patente de comercio.');
+    }
 
     setState(() => _sending = true);
+
     try {
       final uid = _auth.currentUser?.uid;
-      if (uid == null) return _showError('Debes iniciar sesión.');
+      if (uid == null) {
+        return _showError('Debes iniciar sesión.');
+      }
 
-      final create = ref.read(createOwnerAndParkingProvider);
-      await create(
+      final submit = ref.read(submitProviderRequestProvider);
+
+      await submit(
         uid: uid,
         companyName: _companyName.text.trim(),
         parkingName: _parkingName.text.trim(),
@@ -142,11 +231,15 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage> {
         description: _description.text.trim(),
         lat: _picked!.latitude,
         lng: _picked!.longitude,
-        images: _images,
+        parkingImages: _parkingImages,
+        dpiFront: _dpiFront!,
+        dpiBack: _dpiBack!,
+        patent: _patent!,
         price: price,
       );
 
       if (!mounted) return;
+
       showDialog(
         context: context,
         builder:
@@ -155,30 +248,19 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage> {
                 borderRadius: BorderRadius.circular(16),
               ),
               title: const MyText(
-                text: '¡Listo!',
+                text: 'Solicitud enviada',
                 variant: MyTextVariant.title,
               ),
               content: const MyText(
-                text: 'Tu parqueo fue creado y aparecerá en el mapa.',
+                text:
+                    'Tu solicitud fue enviada correctamente. El equipo la revisará antes de aprobarte como proveedor.',
                 variant: MyTextVariant.body,
               ),
               actions: [
                 TextButton(
-                  onPressed: () async {
-                    // cierra diálogo y página
+                  onPressed: () {
                     Navigator.pop(context);
                     Navigator.pop(context);
-                    // 🔐 cerrar sesión y volver al gate
-                    try {
-                      await ref.read(authActionsProvider).signOut();
-                    } catch (_) {}
-                    if (context.mounted) {
-                      Navigator.pushNamedAndRemoveUntil(
-                        context,
-                        '/auth',
-                        (_) => false,
-                      );
-                    }
                   },
                   child: const Text('Aceptar'),
                 ),
@@ -186,290 +268,517 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage> {
             ),
       );
     } catch (e) {
-      _showError('No se pudo completar el registro. $e');
+      _showError('No se pudo enviar la solicitud. $e');
     } finally {
-      if (mounted) setState(() => _sending = false);
+      if (mounted) {
+        setState(() => _sending = false);
+      }
     }
+  }
+
+  Widget _buildSinglePreview({
+    required XFile? file,
+    required VoidCallback onPick,
+    required VoidCallback onRemove,
+    required String emptyLabel,
+    required IconData icon,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (file == null)
+          GestureDetector(
+            onTap: onPick,
+            child: Container(
+              height: 110,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFD7E0EA)),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(icon, color: AppColors.headerBottom, size: 28),
+                  const SizedBox(height: 8),
+                  MyText(
+                    text: emptyLabel,
+                    variant: MyTextVariant.bodyMuted,
+                    textAlign: TextAlign.center,
+                    fontSize: 13,
+                  ),
+                ],
+              ),
+            ),
+          )
+        else
+          Stack(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: SizedBox(
+                  height: 140,
+                  width: double.infinity,
+                  child: FutureBuilder<Uint8List>(
+                    future: file.readAsBytes(),
+                    builder: (context, snap) {
+                      if (snap.connectionState != ConnectionState.done ||
+                          !snap.hasData) {
+                        return Container(
+                          color: const Color(0xFFEAEFF5),
+                          alignment: Alignment.center,
+                          child: const CircularProgressIndicator(),
+                        );
+                      }
+                      return Image.memory(snap.data!, fit: BoxFit.cover);
+                    },
+                  ),
+                ),
+              ),
+              Positioned(
+                right: 6,
+                top: 6,
+                child: InkWell(
+                  onTap: onRemove,
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      color: Colors.black54,
+                      shape: BoxShape.circle,
+                    ),
+                    padding: const EdgeInsets.all(6),
+                    child: const Icon(
+                      Icons.close,
+                      size: 18,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+      ],
+    );
+  }
+
+  Widget _buildParkingImagesGrid() {
+    return Wrap(
+      spacing: 10,
+      runSpacing: 10,
+      children: [
+        for (final img in _parkingImages)
+          Stack(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: SizedBox(
+                  width: 92,
+                  height: 92,
+                  child: FutureBuilder<Uint8List>(
+                    future: img.readAsBytes(),
+                    builder: (context, snap) {
+                      if (snap.connectionState != ConnectionState.done ||
+                          !snap.hasData) {
+                        return Container(color: const Color(0xFFEAEFF5));
+                      }
+                      return Image.memory(snap.data!, fit: BoxFit.cover);
+                    },
+                  ),
+                ),
+              ),
+              Positioned(
+                right: 4,
+                top: 4,
+                child: InkWell(
+                  onTap: () => _removeParkingImage(img),
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      color: Colors.black54,
+                      shape: BoxShape.circle,
+                    ),
+                    padding: const EdgeInsets.all(4),
+                    child: const Icon(
+                      Icons.close,
+                      size: 16,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        GestureDetector(
+          onTap: _pickParkingImages,
+          child: Container(
+            width: 92,
+            height: 92,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFFD7E0EA)),
+            ),
+            child: const Icon(
+              Icons.add_a_photo_outlined,
+              color: AppColors.headerBottom,
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    const navyDark = Color(0xFF0D1B2A);
+    final screen = MediaQuery.of(context).size;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFD8F3EE),
       body: SafeArea(
-        child: Stack(
-          children: [
-            SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 30),
-              child: Form(
-                key: _formKey,
+        top: false,
+        child: SizedBox(
+          height: screen.height,
+          child: Stack(
+            children: [
+              Container(
+                height: screen.height * 0.42,
+                width: double.infinity,
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [AppColors.headerTop, AppColors.headerBottom],
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 40,
+                left: -20,
+                child: Container(
+                  width: 90,
+                  height: 90,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.12),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+              Positioned(
+                top: -10,
+                right: -10,
+                child: Container(
+                  width: 120,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.10),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 15,
+                left: 18,
+                child: SafeArea(
+                  child: TextButton.icon(
+                    onPressed:
+                        _sending
+                            ? null
+                            : () {
+                              if (widget.onBack != null) {
+                                widget.onBack!();
+                              } else {
+                                Navigator.pop(context);
+                              }
+                            },
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 4,
+                      ),
+                    ),
+                    icon: const Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      size: 16,
+                    ),
+                    label: const Text('Regresar'),
+                  ),
+                ),
+              ),
+              Positioned(
+                top: screen.height * 0.12,
+                left: 28,
+                right: 28,
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const SizedBox(height: 40),
-                    const MyText(
-                      text: 'BECOME AN OWNER',
-                      variant: MyTextVariant.title,
-                      textAlign: TextAlign.center,
+                    Container(
+                      width: 84,
+                      height: 84,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.16),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.22),
+                          width: 1.4,
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.store_mall_directory_rounded,
+                        size: 38,
+                        color: Colors.white,
+                      ),
                     ),
-                    const SizedBox(height: 6),
-                    const MyText(
-                      text: 'Completa tus datos para registrar tu parqueo.',
-                      variant: MyTextVariant.bodyMuted,
-                      textAlign: TextAlign.center,
-                      fontSize: 13,
+                  ],
+                ),
+              ),
+              Positioned(
+                top: screen.height * 0.26,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(34),
+                      topRight: Radius.circular(34),
                     ),
-                    const SizedBox(height: 24),
+                  ),
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(28, 28, 28, 34),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const Align(
+                            alignment: Alignment.centerLeft,
+                            child: MyText(
+                              text: 'Solicitud de proveedor',
+                              variant: MyTextVariant.title,
+                              customColor: AppColors.headerBottom,
+                              fontSize: 22,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          const MyText(
+                            text:
+                                'Completa tu información, sube tus documentos y envía tu solicitud para revisión.',
+                            variant: MyTextVariant.subtitle,
+                            fontSize: 13,
+                          ),
+                          const SizedBox(height: 24),
 
-                    const MyText(
-                      text: 'Company Name',
-                      variant: MyTextVariant.normal,
-                      fontSize: 13,
-                    ),
-                    const SizedBox(height: 6),
-                    MyTextField(
-                      controller: _companyName,
-                      hintText: 'Enter Company Name',
-                      prefixIcon: Icons.business_outlined,
-                    ),
-                    const SizedBox(height: 14),
+                          MyTextField(
+                            controller: _companyName,
+                            hintText: 'Nombre de empresa o encargado',
+                            textInputAction: TextInputAction.next,
+                            prefixIcon: Icons.business_outlined,
+                            margin: EdgeInsets.zero,
+                            validator:
+                                (v) => _requiredValidator(v, 'Company name'),
+                          ),
+                          const SizedBox(height: 14),
 
-                    const MyText(
-                      text: 'Parking Name',
-                      variant: MyTextVariant.normal,
-                      fontSize: 13,
-                    ),
-                    const SizedBox(height: 6),
-                    MyTextField(
-                      controller: _parkingName,
-                      hintText: 'Enter Parking Name',
-                      prefixIcon: Icons.local_parking_outlined,
-                    ),
-                    const SizedBox(height: 14),
+                          MyTextField(
+                            controller: _parkingName,
+                            hintText: 'Nombre del parqueo',
+                            textInputAction: TextInputAction.next,
+                            prefixIcon: Icons.local_parking_outlined,
+                            margin: EdgeInsets.zero,
+                            validator:
+                                (v) => _requiredValidator(v, 'Parking name'),
+                          ),
+                          const SizedBox(height: 14),
 
-                    const MyText(
-                      text: 'Email',
-                      variant: MyTextVariant.normal,
-                      fontSize: 13,
-                    ),
-                    const SizedBox(height: 6),
-                    MyTextField(
-                      controller: _email,
-                      hintText: 'Company Email',
-                      keyboardType: TextInputType.emailAddress,
-                      prefixIcon: Icons.mail_outline,
-                    ),
-                    const SizedBox(height: 14),
+                          MyTextField(
+                            controller: _email,
+                            hintText: 'Correo electrónico',
+                            keyboardType: TextInputType.emailAddress,
+                            textInputAction: TextInputAction.next,
+                            prefixIcon: Icons.mail_outline,
+                            margin: EdgeInsets.zero,
+                            validator: _emailValidator,
+                          ),
+                          const SizedBox(height: 14),
 
-                    const MyText(
-                      text: 'Mobile Number',
-                      variant: MyTextVariant.normal,
-                      fontSize: 13,
-                    ),
-                    const SizedBox(height: 6),
-                    MyTextField(
-                      controller: _phone,
-                      hintText: 'Enter your 10 digit mobile number',
-                      keyboardType: TextInputType.phone,
-                      prefixIcon: Icons.phone_outlined,
-                    ),
-                    const SizedBox(height: 14),
+                          MyTextField(
+                            controller: _phone,
+                            hintText: 'Número de teléfono',
+                            keyboardType: TextInputType.phone,
+                            textInputAction: TextInputAction.next,
+                            prefixIcon: Icons.phone_outlined,
+                            margin: EdgeInsets.zero,
+                            validator: (v) => _requiredValidator(v, 'Teléfono'),
+                          ),
+                          const SizedBox(height: 14),
 
-                    const MyText(
-                      text: 'Address',
-                      variant: MyTextVariant.normal,
-                      fontSize: 13,
-                    ),
-                    const SizedBox(height: 6),
-                    MyTextField(
-                      controller: _address,
-                      hintText: 'Street, number, city',
-                      prefixIcon: Icons.place_outlined,
-                    ),
-                    const SizedBox(height: 14),
+                          MyTextField(
+                            controller: _address,
+                            hintText: 'Dirección',
+                            textInputAction: TextInputAction.next,
+                            prefixIcon: Icons.place_outlined,
+                            margin: EdgeInsets.zero,
+                            validator:
+                                (v) => _requiredValidator(v, 'Dirección'),
+                          ),
+                          const SizedBox(height: 14),
 
-                    const MyText(
-                      text: 'Capacity (spaces)',
-                      variant: MyTextVariant.normal,
-                      fontSize: 13,
-                    ),
-                    const SizedBox(height: 6),
-                    MyTextField(
-                      controller: _capacity,
-                      hintText: 'Number of spaces available',
-                      keyboardType: TextInputType.number,
-                      prefixIcon: Icons.format_list_numbered_outlined,
-                      validator: (v) {
-                        final n = int.tryParse(v ?? '');
-                        if (n == null || n <= 0) return 'Inválido';
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 14),
+                          MyTextField(
+                            controller: _capacity,
+                            hintText: 'Capacidad de espacios',
+                            keyboardType: TextInputType.number,
+                            textInputAction: TextInputAction.next,
+                            prefixIcon: Icons.format_list_numbered_outlined,
+                            margin: EdgeInsets.zero,
+                            validator: (v) {
+                              final n = int.tryParse((v ?? '').trim());
+                              if (n == null || n <= 0)
+                                return 'Capacidad inválida.';
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 14),
 
-                    const MyText(
-                      text: 'Price per hour (Q)',
-                      variant: MyTextVariant.normal,
-                      fontSize: 13,
-                    ),
-                    const SizedBox(height: 6),
-                    MyTextField(
-                      controller: _pricePerHour,
-                      hintText: 'e.g. 10',
-                      keyboardType: TextInputType.number,
-                      prefixIcon: Icons.attach_money_outlined,
-                      validator: (v) {
-                        final n = int.tryParse(v ?? '');
-                        if (n == null || n < 0) return 'Inválido';
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 14),
+                          MyTextField(
+                            controller: _pricePerHour,
+                            hintText: 'Precio por hora (Q)',
+                            keyboardType: TextInputType.number,
+                            textInputAction: TextInputAction.next,
+                            prefixIcon: Icons.attach_money_outlined,
+                            margin: EdgeInsets.zero,
+                            validator: (v) {
+                              final n = int.tryParse((v ?? '').trim());
+                              if (n == null || n < 0) return 'Precio inválido.';
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 14),
 
-                    const MyText(
-                      text: 'Description',
-                      variant: MyTextVariant.normal,
-                      fontSize: 13,
-                    ),
-                    const SizedBox(height: 6),
-                    MyTextField(
-                      controller: _description,
-                      hintText: 'Short description (optional)',
-                      prefixIcon: Icons.notes_outlined,
-                    ),
+                          MyTextField(
+                            controller: _description,
+                            hintText: 'Descripción breve',
+                            textInputAction: TextInputAction.done,
+                            prefixIcon: Icons.notes_outlined,
+                            margin: EdgeInsets.zero,
+                          ),
 
-                    const SizedBox(height: 16),
-                    const MyText(
-                      text: 'Ubicación del parqueo',
-                      variant: MyTextVariant.normal,
-                      fontSize: 13,
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: _pickOnMap,
+                          const SizedBox(height: 22),
+                          const MyText(
+                            text: 'Ubicación del parqueo',
+                            variant: MyTextVariant.normal,
+                            fontSize: 13,
+                          ),
+                          const SizedBox(height: 8),
+
+                          OutlinedButton.icon(
+                            onPressed: _sending ? null : _pickOnMap,
                             icon: const Icon(Icons.map_outlined),
                             label: const Text('Elegir en el mapa'),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    MyText(
-                      text:
-                          _picked == null
-                              ? 'Sin ubicación seleccionada'
-                              : 'Lat: ${_picked!.latitude.toStringAsFixed(6)}, Lng: ${_picked!.longitude.toStringAsFixed(6)}',
-                      variant: MyTextVariant.bodyMuted,
-                      fontSize: 13,
-                    ),
+                          const SizedBox(height: 8),
 
-                    const SizedBox(height: 16),
-                    const MyText(
-                      text: 'Fotos del parqueo (mín. 3)',
-                      variant: MyTextVariant.normal,
-                      fontSize: 13,
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        for (final img in _images)
-                          Stack(
+                          MyText(
+                            text:
+                                _picked == null
+                                    ? 'Sin ubicación seleccionada'
+                                    : 'Lat: ${_picked!.latitude.toStringAsFixed(6)}, Lng: ${_picked!.longitude.toStringAsFixed(6)}',
+                            variant: MyTextVariant.bodyMuted,
+                            fontSize: 13,
+                          ),
+
+                          const SizedBox(height: 22),
+                          const MyText(
+                            text: 'Fotos del parqueo (mínimo 3)',
+                            variant: MyTextVariant.normal,
+                            fontSize: 13,
+                          ),
+                          const SizedBox(height: 10),
+                          _buildParkingImagesGrid(),
+
+                          const SizedBox(height: 22),
+                          const MyText(
+                            text: 'DPI frente',
+                            variant: MyTextVariant.normal,
+                            fontSize: 13,
+                          ),
+                          const SizedBox(height: 8),
+                          _buildSinglePreview(
+                            file: _dpiFront,
+                            onPick: _pickDpiFront,
+                            onRemove: _removeDpiFront,
+                            emptyLabel: 'Subir DPI frente',
+                            icon: Icons.badge_outlined,
+                          ),
+
+                          const SizedBox(height: 18),
+                          const MyText(
+                            text: 'DPI reverso',
+                            variant: MyTextVariant.normal,
+                            fontSize: 13,
+                          ),
+                          const SizedBox(height: 8),
+                          _buildSinglePreview(
+                            file: _dpiBack,
+                            onPick: _pickDpiBack,
+                            onRemove: _removeDpiBack,
+                            emptyLabel: 'Subir DPI reverso',
+                            icon: Icons.credit_card_outlined,
+                          ),
+
+                          const SizedBox(height: 18),
+                          const MyText(
+                            text: 'Patente de comercio',
+                            variant: MyTextVariant.normal,
+                            fontSize: 13,
+                          ),
+                          const SizedBox(height: 8),
+                          _buildSinglePreview(
+                            file: _patent,
+                            onPick: _pickPatent,
+                            onRemove: _removePatent,
+                            emptyLabel: 'Subir patente',
+                            icon: Icons.description_outlined,
+                          ),
+
+                          const SizedBox(height: 20),
+                          Row(
                             children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(10),
-                                child: SizedBox(
-                                  width: 90,
-                                  height: 90,
-                                  child: FutureBuilder<Uint8List>(
-                                    future: img.readAsBytes(),
-                                    builder: (context, snap) {
-                                      if (snap.connectionState !=
-                                              ConnectionState.done ||
-                                          !snap.hasData) {
-                                        return Container(
-                                          color: const Color(0xFFE0E0E0),
-                                        );
-                                      }
-                                      return Image.memory(
-                                        snap.data!,
-                                        fit: BoxFit.cover,
-                                      );
-                                    },
-                                  ),
-                                ),
+                              Checkbox(
+                                value: _accept,
+                                onChanged:
+                                    _sending
+                                        ? null
+                                        : (v) => setState(
+                                          () => _accept = v ?? false,
+                                        ),
+                                activeColor: AppColors.headerBottom,
                               ),
-                              Positioned(
-                                right: -8,
-                                top: -8,
-                                child: IconButton(
-                                  icon: const Icon(
-                                    Icons.cancel,
-                                    size: 20,
-                                    color: Colors.black54,
-                                  ),
-                                  onPressed: () => _removeImage(img),
+                              const Expanded(
+                                child: MyText(
+                                  text:
+                                      'Acepto enviar mis datos para revisión del equipo.',
+                                  variant: MyTextVariant.normal,
+                                  fontSize: 13,
                                 ),
                               ),
                             ],
                           ),
-                        GestureDetector(
-                          onTap: _pickImages,
-                          child: Container(
-                            width: 90,
-                            height: 90,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: Colors.grey.shade400),
-                            ),
-                            child: const Icon(Icons.add_a_photo_outlined),
-                          ),
-                        ),
-                      ],
-                    ),
 
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Checkbox(
-                          value: _accept,
-                          onChanged:
-                              (v) => setState(() => _accept = v ?? false),
-                          activeColor: const Color(0xFF1B3A57),
-                        ),
-                        const Expanded(
-                          child: MyText(
-                            text: 'Acepto términos y condiciones.',
-                            variant: MyTextVariant.normal,
-                            fontSize: 13,
+                          const SizedBox(height: 18),
+                          MyButton(
+                            text: _sending ? 'Enviando...' : 'Enviar solicitud',
+                            loading: _sending,
+                            onTap: _sending ? null : _submit,
+                            margin: EdgeInsets.zero,
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 10),
-
-                    _sending
-                        ? const Center(child: CircularProgressIndicator())
-                        : MyButton(text: 'Registrar parqueo', onTap: _submit),
-                  ],
+                  ),
                 ),
               ),
-            ),
-            Positioned(
-              top: 10,
-              right: 10,
-              child: IconButton(
-                onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.close, color: navyDark, size: 26),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
