@@ -6,29 +6,48 @@ import 'package:mapbox_api/common/utils/components/ui/navy_header.dart';
 import 'package:mapbox_api/features/core/providers/favorites_provider.dart';
 import 'package:mapbox_api/features/reservations/pages/reserve_space_page.dart';
 
-// 👇 Para leer el rol actual y bloquear si es provider/admin
 import 'package:mapbox_api/features/users/providers/user_providers.dart';
 import 'package:mapbox_api/features/users/models/user_role.dart';
-// 👇 HomeSwitch para redirigir al shell correcto si no es user
 import 'package:mapbox_api/features/core/pages/home_switch.dart';
 
-enum FavFilter { all, rating45, cheapest, spaces }
+enum FavFilter { all, rating45, spaces }
 
-final favFilterProvider = StateProvider<FavFilter>((_) => FavFilter.all);
-
-class FavoritesPage extends ConsumerWidget {
+class FavoritesPage extends ConsumerStatefulWidget {
   const FavoritesPage({super.key});
+
+  @override
+  ConsumerState<FavoritesPage> createState() => _FavoritesPageState();
 
   static const bg = Color(0xFFF2F4F7);
   static const navy = Color(0xFF1B3A57);
+}
+
+class _FavoritesPageState extends ConsumerState<FavoritesPage>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tab = TabController(length: 3, vsync: this);
+
+  @override
+  void dispose() {
+    _tab.dispose();
+    super.dispose();
+  }
+
+  FavFilter _getFilter() {
+    switch (_tab.index) {
+      case 1:
+        return FavFilter.rating45;
+      case 2:
+        return FavFilter.spaces;
+      default:
+        return FavFilter.all;
+    }
+  }
 
   List<FavoriteItem> _applyFilter(List<FavoriteItem> items, FavFilter f) {
     switch (f) {
       case FavFilter.rating45:
         return items.where((e) => e.rating >= 4.5).toList()
           ..sort((a, b) => b.rating.compareTo(a.rating));
-      case FavFilter.cheapest:
-        return [...items]..sort((a, b) => a.price.compareTo(b.price));
       case FavFilter.spaces:
         return items.where((e) => e.spaces > 0).toList();
       case FavFilter.all:
@@ -38,9 +57,9 @@ class FavoritesPage extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // ===== Guard de rol: esta pantalla es SOLO para role=user =====
+  Widget build(BuildContext context) {
     final roleAsync = ref.watch(myRoleStreamProvider);
+
     return roleAsync.when(
       loading:
           () =>
@@ -58,16 +77,14 @@ class FavoritesPage extends ConsumerWidget {
           );
         }
 
-        // ===== Pantalla normal de favoritos (usuarios) =====
         final asyncFavs = ref.watch(favoritesStreamProvider);
-        final filter = ref.watch(favFilterProvider);
+        final filter = _getFilter();
 
         return Scaffold(
-          backgroundColor: bg,
+          backgroundColor: FavoritesPage.bg,
           body: SafeArea(
             child: Column(
               children: [
-                // Header navy + botón volver
                 Stack(
                   children: [
                     const NavyHeader(
@@ -83,119 +100,63 @@ class FavoritesPage extends ConsumerWidget {
                       ],
                     ),
                     Positioned(
-                      left: 6,
-                      top: 35,
+                      left: 12,
+                      top: 10,
                       child: SafeArea(
-                        child: IconButton(
-                          icon: const Icon(
-                            Icons.chevron_left_rounded,
-                            color: Colors.white,
-                            size: 35,
-                          ),
+                        child: TextButton.icon(
                           onPressed: () => Navigator.pop(context),
-                          tooltip: 'Regresar',
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.white,
+                          ),
+                          icon: const Icon(
+                            Icons.arrow_back_ios_new_rounded,
+                            size: 16,
+                          ),
+                          label: const Text('Regresar'),
                         ),
                       ),
                     ),
                   ],
                 ),
 
-                // Filtros
                 Transform.translate(
-                  offset: const Offset(0, -20),
+                  offset: const Offset(0, -24),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Material(
-                      elevation: 6,
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(22),
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children: [
-                              _Chip(
-                                label: 'Todos',
-                                selected: filter == FavFilter.all,
-                                onTap:
-                                    () =>
-                                        ref
-                                            .read(favFilterProvider.notifier)
-                                            .state = FavFilter.all,
-                              ),
-                              const SizedBox(width: 8),
-                              _Chip(
-                                label: 'Rating 4.5+',
-                                selected: filter == FavFilter.rating45,
-                                onTap:
-                                    () =>
-                                        ref
-                                            .read(favFilterProvider.notifier)
-                                            .state = FavFilter.rating45,
-                              ),
-                              const SizedBox(width: 8),
-                              _Chip(
-                                label: 'Más barato',
-                                selected: filter == FavFilter.cheapest,
-                                onTap:
-                                    () =>
-                                        ref
-                                            .read(favFilterProvider.notifier)
-                                            .state = FavFilter.cheapest,
-                              ),
-                              const SizedBox(width: 8),
-                              _Chip(
-                                label: 'Con espacios',
-                                selected: filter == FavFilter.spaces,
-                                onTap:
-                                    () =>
-                                        ref
-                                            .read(favFilterProvider.notifier)
-                                            .state = FavFilter.spaces,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 18),
+                    child: _FavoritesTabs(controller: _tab),
                   ),
                 ),
 
-                // Lista
                 Expanded(
-                  child: Transform.translate(
-                    offset: const Offset(0, -16),
-                    child: asyncFavs.when(
-                      loading:
-                          () =>
-                              const Center(child: CircularProgressIndicator()),
-                      error:
-                          (_, __) => const Center(
-                            child: MyText(
-                              text: 'Error loading favorites',
-                              variant: MyTextVariant.body,
-                            ),
+                  child: asyncFavs.when(
+                    loading:
+                        () => const Center(child: CircularProgressIndicator()),
+                    error:
+                        (_, __) => const Center(
+                          child: MyText(
+                            text: 'Error al cargar favoritos',
+                            variant: MyTextVariant.body,
                           ),
-                      data: (all) {
-                        final items = _applyFilter(all, filter);
-                        if (items.isEmpty) {
-                          return const Center(
-                            child: MyText(
-                              text: 'No tienes favoritos aún',
-                              variant: MyTextVariant.bodyMuted,
-                            ),
-                          );
-                        }
-                        return ListView.separated(
-                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
-                          itemCount: items.length,
-                          separatorBuilder:
-                              (_, __) => const SizedBox(height: 12),
-                          itemBuilder: (_, i) => _FavoriteCard(item: items[i]),
+                        ),
+                    data: (all) {
+                      final items = _applyFilter(all, filter);
+
+                      if (items.isEmpty) {
+                        return const Center(
+                          child: MyText(
+                            text: 'No tienes favoritos aún',
+                            variant: MyTextVariant.bodyMuted,
+                          ),
                         );
-                      },
-                    ),
+                      }
+
+                      return ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+                        itemCount: items.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 12),
+                        itemBuilder: (_, i) => _FavoriteCard(item: items[i]),
+                      );
+                    },
                   ),
                 ),
               ],
@@ -207,71 +168,42 @@ class FavoritesPage extends ConsumerWidget {
   }
 }
 
-class _OnlyForUsers extends StatelessWidget {
-  const _OnlyForUsers({required this.onGoHome});
-  final VoidCallback onGoHome;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FA),
-      body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(22),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.lock_person, size: 58, color: Colors.grey),
-                const SizedBox(height: 12),
-                const MyText(
-                  text:
-                      'Esta sección es solo para usuarios. '
-                      'Tu cuenta es de propietario.',
-                  variant: MyTextVariant.body,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: onGoHome,
-                  child: const Text('Ir a mi inicio'),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _Chip extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-  const _Chip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
+class _FavoritesTabs extends StatelessWidget {
+  const _FavoritesTabs({required this.controller});
+  final TabController controller;
 
   @override
   Widget build(BuildContext context) {
     const navy = FavoritesPage.navy;
-    final bg = selected ? navy : const Color(0xFFEFF2F6);
-    final fg = selected ? Colors.white : navy;
-    return InkWell(
-      borderRadius: BorderRadius.circular(20),
-      onTap: onTap,
+
+    return Material(
+      elevation: 8,
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(24),
+      shadowColor: navy.withOpacity(0.10),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(color: fg, fontWeight: FontWeight.w600),
+        height: 56,
+        padding: const EdgeInsets.all(6),
+        child: TabBar(
+          controller: controller,
+          labelPadding: EdgeInsets.zero,
+          indicator: BoxDecoration(
+            color: const Color(0xFFEAF0F7),
+            borderRadius: BorderRadius.circular(18),
+          ),
+          indicatorSize: TabBarIndicatorSize.tab,
+          dividerColor: Colors.transparent,
+          labelColor: navy,
+          unselectedLabelColor: Colors.black54,
+          labelStyle: const TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: 14,
+          ),
+          tabs: const [
+            Tab(text: 'Todos'),
+            Tab(text: 'Mejor calificados'),
+            Tab(text: 'Con espacios'),
+          ],
         ),
       ),
     );
@@ -285,8 +217,11 @@ class _FavoriteCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     const navy = FavoritesPage.navy;
+    const accentBlue = Color(0xFF2563EB);
+
     final heroImg =
         item.heroImage ?? 'https://via.placeholder.com/800x450?text=Parking';
+    final hasRating = item.rating > 0;
 
     return InkWell(
       borderRadius: BorderRadius.circular(18),
@@ -301,9 +236,9 @@ class _FavoriteCard extends ConsumerWidget {
         elevation: 4,
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
+        shadowColor: navy.withOpacity(0.10),
         child: Column(
           children: [
-            // Imagen + heart
             Stack(
               children: [
                 ClipRRect(
@@ -334,6 +269,7 @@ class _FavoriteCard extends ConsumerWidget {
                         data: (v) => v,
                         orElse: () => true,
                       );
+
                       return Material(
                         color: Colors.white,
                         shape: const CircleBorder(),
@@ -374,59 +310,74 @@ class _FavoriteCard extends ConsumerWidget {
                 ),
               ],
             ),
-
-            // Info
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: MyText(
-                          text: item.name,
-                          variant: MyTextVariant.bodyBold,
-                          fontSize: 15,
-                        ),
-                      ),
-                      const Icon(Icons.star, size: 18, color: Colors.amber),
-                      const SizedBox(width: 4),
-                      MyText(
-                        text: item.rating.toStringAsFixed(1),
-                        variant: MyTextVariant.body,
-                        fontSize: 13,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      const Icon(Icons.attach_money, size: 16, color: navy),
-                      const SizedBox(width: 6),
-                      MyText(
-                        text: 'Q${item.price}',
-                        variant: MyTextVariant.body,
-                        fontSize: 13,
-                      ),
-                      const SizedBox(width: 12),
-                      const Icon(Icons.local_parking, size: 16, color: navy),
-                      const SizedBox(width: 6),
-                      MyText(
-                        text: 'Spaces: ${item.spaces}',
-                        variant: MyTextVariant.bodyMuted,
-                        fontSize: 12,
-                      ),
-                    ],
+                  MyText(
+                    text: item.name,
+                    variant: MyTextVariant.bodyBold,
+                    fontSize: 15,
                   ),
                   if ((item.descripcion ?? '').isNotEmpty) ...[
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 4),
                     MyText(
                       text: item.descripcion!,
                       variant: MyTextVariant.bodyMuted,
                       fontSize: 12,
                     ),
                   ],
+                  const SizedBox(height: 10),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          children: [
+                            _InfoPill(
+                              icon:
+                                  hasRating
+                                      ? Icons.star_rounded
+                                      : Icons.fiber_new_rounded,
+                              text:
+                                  hasRating
+                                      ? item.rating.toStringAsFixed(1)
+                                      : 'Nuevo',
+                              iconColor:
+                                  hasRating
+                                      ? Colors.amber.shade700
+                                      : accentBlue,
+                            ),
+                            const SizedBox(height: 8),
+                            _InfoPill(
+                              icon: Icons.local_parking_rounded,
+                              text: '${item.spaces} disponibles',
+                              iconColor: accentBlue,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          children: [
+                            _InfoPill(
+                              icon: Icons.attach_money_rounded,
+                              text: 'Q${item.price} por hora',
+                              iconColor: accentBlue,
+                            ),
+                            const SizedBox(height: 8),
+                            const _InfoPill(
+                              icon: Icons.access_time_rounded,
+                              text: '8:00 AM - 18:00 PM',
+                              iconColor: Color(0xFF2563EB),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -437,26 +388,84 @@ class _FavoriteCard extends ConsumerWidget {
   }
 }
 
+class _InfoPill extends StatelessWidget {
+  final IconData icon;
+  final String text;
+  final Color iconColor;
+
+  const _InfoPill({
+    required this.icon,
+    required this.text,
+    this.iconColor = const Color(0xFF2563EB),
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const textColor = Color(0xFF334155);
+
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: iconColor),
+        const SizedBox(width: 7),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: textColor,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _ImageShimmer extends StatelessWidget {
   const _ImageShimmer();
+
   @override
-  Widget build(BuildContext context) => Container(
-    color: const Color(0xFFE9EDF3),
-    alignment: Alignment.center,
-    child: const SizedBox(
-      width: 22,
-      height: 22,
-      child: CircularProgressIndicator(strokeWidth: 2),
-    ),
-  );
+  Widget build(BuildContext context) {
+    return Container(
+      color: const Color(0xFFE9EDF3),
+      alignment: Alignment.center,
+      child: const SizedBox(
+        width: 22,
+        height: 22,
+        child: CircularProgressIndicator(strokeWidth: 2),
+      ),
+    );
+  }
 }
 
 class _ImageFallback extends StatelessWidget {
   const _ImageFallback();
+
   @override
-  Widget build(BuildContext context) => Container(
-    color: const Color(0xFFE7ECF3),
-    alignment: Alignment.center,
-    child: const Icon(Icons.image_not_supported, color: Colors.grey),
-  );
+  Widget build(BuildContext context) {
+    return Container(
+      color: const Color(0xFFE7ECF3),
+      alignment: Alignment.center,
+      child: const Icon(Icons.image_not_supported, color: Colors.grey),
+    );
+  }
+}
+
+class _OnlyForUsers extends StatelessWidget {
+  const _OnlyForUsers({required this.onGoHome});
+  final VoidCallback onGoHome;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: ElevatedButton(
+          onPressed: onGoHome,
+          child: const Text('Ir a mi inicio'),
+        ),
+      ),
+    );
+  }
 }
