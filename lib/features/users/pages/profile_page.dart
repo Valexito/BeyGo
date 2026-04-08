@@ -1,11 +1,10 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import 'package:mapbox_api/common/utils/components/ui/app_styles.dart';
 import 'package:mapbox_api/common/utils/components/ui/my_text.dart';
 import 'package:mapbox_api/common/utils/components/ui/navy_header.dart';
-
+import 'package:mapbox_api/features/users/widgets/profile_security_dialogs.dart';
 import 'package:mapbox_api/features/users/pages/configure_profile_page.dart';
 import 'package:mapbox_api/features/users/pages/notifications_page.dart';
 import 'package:mapbox_api/features/reservations/pages/reservations_page.dart';
@@ -24,183 +23,314 @@ class ProfilePage extends ConsumerWidget {
             : 'TU NOMBRE';
 
     return Scaffold(
-      backgroundColor: AppColors.pageBg,
+      backgroundColor: const Color(0xFFD8F3EE),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.zero,
-          child: Column(
-            children: [
-              // ===== Header navy + botón volver "<" + "Editar perfil" =====
-              Stack(
-                children: [
-                  NavyHeader(
-                    height: 240,
-                    roundedBottom: false,
-                    trailing: SizedBox(
-                      height: 30,
-                      child: OutlinedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const ConfigureProfilePage(),
-                            ),
-                          );
-                        },
-                        child: const Text('Editar perfil'),
+        top: false,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: Stack(
+                  children: [
+                    Container(
+                      height: 310,
+                      width: double.infinity,
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [AppColors.headerTop, AppColors.headerBottom],
+                        ),
                       ),
                     ),
-                    children: [
-                      Container(
+                    Positioned(
+                      top: 38,
+                      left: -20,
+                      child: Container(
                         width: 92,
                         height: 92,
                         decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.12),
                           shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 3),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Colors.black26,
-                              blurRadius: 10,
-                              offset: Offset(0, 6),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      top: -10,
+                      right: -8,
+                      child: Container(
+                        width: 118,
+                        height: 118,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.10),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                    Column(
+                      children: [
+                        Stack(
+                          children: [
+                            NavyHeader(
+                              height: 250,
+                              roundedBottom: false,
+                              trailing: SizedBox(
+                                height: 34,
+                                child: OutlinedButton(
+                                  style: OutlinedButton.styleFrom(
+                                    side: BorderSide(
+                                      color: Colors.white.withOpacity(0.55),
+                                    ),
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder:
+                                            (_) => const ConfigureProfilePage(),
+                                      ),
+                                    );
+                                  },
+                                  child: const Text('Editar perfil'),
+                                ),
+                              ),
+                              children: [
+                                Container(
+                                  width: 92,
+                                  height: 92,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 3,
+                                    ),
+                                    boxShadow: const [
+                                      BoxShadow(
+                                        color: Colors.black26,
+                                        blurRadius: 10,
+                                        offset: Offset(0, 6),
+                                      ),
+                                    ],
+                                  ),
+                                  child: ClipOval(
+                                    child:
+                                        photoUrl != null
+                                            ? Image.network(
+                                              photoUrl,
+                                              fit: BoxFit.cover,
+                                            )
+                                            : Container(
+                                              color: Colors.white,
+                                              child: const Icon(
+                                                Icons.person,
+                                                size: 54,
+                                                color: AppColors.headerBottom,
+                                              ),
+                                            ),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                MyText(
+                                  text: name,
+                                  variant: MyTextVariant.title,
+                                  customColor: Colors.white,
+                                  textAlign: TextAlign.center,
+                                  fontSize: 28,
+                                ),
+                                const SizedBox(height: 6),
+                              ],
+                            ),
+                            Positioned(
+                              left: 8,
+                              top: 10,
+                              child: SafeArea(
+                                child: TextButton.icon(
+                                  onPressed: () => Navigator.pop(context),
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 4,
+                                    ),
+                                  ),
+                                  icon: const Icon(
+                                    Icons.arrow_back_ios_new_rounded,
+                                    size: 16,
+                                  ),
+                                  label: const Text('Regresar'),
+                                ),
+                              ),
                             ),
                           ],
                         ),
-                        child: ClipOval(
-                          child:
-                              photoUrl != null
-                                  ? Image.network(photoUrl, fit: BoxFit.cover)
-                                  : Container(
-                                    color: Colors.white,
-                                    child: const Icon(
-                                      Icons.person,
-                                      size: 54,
-                                      color: AppColors.headerBottom,
+                        Transform.translate(
+                          offset: const Offset(0, -22),
+                          child: Container(
+                            width: double.infinity,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(34),
+                                topRight: Radius.circular(34),
+                              ),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                20,
+                                28,
+                                20,
+                                34,
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  const Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: MyText(
+                                      text: 'Configuración de perfil',
+                                      variant: MyTextVariant.title,
+                                      customColor: AppColors.headerBottom,
+                                      fontSize: 22,
                                     ),
                                   ),
+                                  const SizedBox(height: 8),
+                                  const MyText(
+                                    text:
+                                        'Administra tu cuenta, accesos y opciones principales desde aquí.',
+                                    variant: MyTextVariant.subtitle,
+                                    fontSize: 13,
+                                  ),
+                                  const SizedBox(height: 24),
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(24),
+                                      boxShadow: const [
+                                        BoxShadow(
+                                          color: Color(0x12000000),
+                                          blurRadius: 16,
+                                          offset: Offset(0, 6),
+                                        ),
+                                      ],
+                                      border: Border.all(
+                                        color: const Color(0xFFE8EEF5),
+                                      ),
+                                    ),
+                                    child: const Padding(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 6,
+                                      ),
+                                      child: Column(
+                                        children: [
+                                          _ActionItem(
+                                            icon: Icons.lock_outline_rounded,
+                                            title: 'Contraseña',
+                                            go: _Go.password,
+                                          ),
+                                          _Divider(),
+                                          _ActionItem(
+                                            icon: Icons.mail_outline_rounded,
+                                            title: 'Correo electrónico',
+                                            go: _Go.email,
+                                          ),
+                                          _Divider(),
+                                          _ActionItem(
+                                            icon: Icons.fingerprint_rounded,
+                                            title: 'Huella digital',
+                                            go: _Go.none,
+                                          ),
+                                          _Divider(),
+                                          _ActionItem(
+                                            icon: Icons.support_agent_outlined,
+                                            title: 'Soporte',
+                                            go: _Go.notifications,
+                                          ),
+                                          _Divider(),
+                                          _ActionItem(
+                                            icon: Icons.logout_outlined,
+                                            title: 'Cerrar sesión',
+                                            go: _Go.signout,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 18),
+                                  const Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 4,
+                                    ),
+                                    child: MyText(
+                                      text: 'Accesos rápidos',
+                                      variant: MyTextVariant.normal,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(24),
+                                      boxShadow: const [
+                                        BoxShadow(
+                                          color: Color(0x12000000),
+                                          blurRadius: 16,
+                                          offset: Offset(0, 6),
+                                        ),
+                                      ],
+                                      border: Border.all(
+                                        color: const Color(0xFFE8EEF5),
+                                      ),
+                                    ),
+                                    child: const Padding(
+                                      padding: EdgeInsets.all(10),
+                                      child: Column(
+                                        children: [
+                                          _Shortcut(
+                                            icon: Icons.bookmark_added_outlined,
+                                            title: 'Mis reservaciones',
+                                            go: _Go.reservations,
+                                          ),
+                                          SizedBox(height: 10),
+                                          _Shortcut(
+                                            icon: Icons.badge_outlined,
+                                            title: 'Registrar un parqueo',
+                                            go: _Go.owner,
+                                          ),
+                                          SizedBox(height: 10),
+                                          _Shortcut(
+                                            icon:
+                                                Icons
+                                                    .notifications_active_outlined,
+                                            title: 'Notificaciones',
+                                            go: _Go.notifications,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 24),
+                                ],
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 10),
-                      MyText(
-                        text: name,
-                        variant: MyTextVariant.title,
-                        customColor: Colors.white,
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 4),
-                    ],
-                  ),
-                  // Botón volver "<" alineado como en otras páginas
-                  Positioned(
-                    left: 6,
-                    top: 35,
-                    child: SafeArea(
-                      child: IconButton(
-                        icon: const Icon(
-                          Icons.chevron_left_rounded,
-                          color: Colors.white,
-                          size: 35,
-                        ),
-                        onPressed: () => Navigator.pop(context),
-                        tooltip: 'Regresar',
-                      ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
-
-              // ===== Cuerpo =====
-              Transform.translate(
-                offset: const Offset(0, -27),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Column(
-                    children: [
-                      // Bloque de acciones
-                      Material(
-                        color: Colors.white,
-                        elevation: 8,
-                        shadowColor: Colors.black12,
-                        borderRadius: BorderRadius.circular(22),
-                        child: const Padding(
-                          padding: EdgeInsets.symmetric(
-                            vertical: 6,
-                            horizontal: 6,
-                          ),
-                          child: Column(
-                            children: [
-                              _ActionItem(
-                                icon: Icons.lock_outline,
-                                title: 'Contraseña',
-                                go: _Go.configure,
-                              ),
-                              _Divider(),
-                              _ActionItem(
-                                icon: Icons.email_outlined,
-                                title: 'Correo electrónico',
-                                go: _Go.configure,
-                              ),
-                              _Divider(),
-                              _ActionItem(
-                                icon: Icons.fingerprint_outlined,
-                                title: 'Huella digital',
-                                go: _Go.none,
-                              ),
-                              _Divider(),
-                              _ActionItem(
-                                icon: Icons.support_agent_outlined,
-                                title: 'Soporte',
-                                go: _Go.notifications,
-                              ),
-                              _Divider(),
-                              _ActionItem(
-                                icon: Icons.logout_outlined,
-                                title: 'Cerrar sesión',
-                                go: _Go.signout,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Atajos
-                      Material(
-                        color: Colors.white,
-                        elevation: 6,
-                        shadowColor: Colors.black12,
-                        borderRadius: BorderRadius.circular(22),
-                        child: const Padding(
-                          padding: EdgeInsets.all(12),
-                          child: Column(
-                            children: [
-                              _Shortcut(
-                                icon: Icons.bookmark_added_outlined,
-                                title: 'Mis reservaciones',
-                                go: _Go.reservations,
-                              ),
-                              SizedBox(height: 8),
-                              _Shortcut(
-                                icon: Icons.badge_outlined,
-                                title: 'Registrar un parqueo',
-                                go: _Go.owner,
-                              ),
-                              SizedBox(height: 8),
-                              _Shortcut(
-                                icon: Icons.notifications_active_outlined,
-                                title: 'Notificaciones',
-                                go: _Go.notifications,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 28),
-                    ],
-                  ),
+                  ],
                 ),
               ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
@@ -209,12 +339,26 @@ class ProfilePage extends ConsumerWidget {
 
 class _Divider extends StatelessWidget {
   const _Divider();
+
   @override
-  Widget build(BuildContext context) =>
-      const Divider(height: 1, thickness: 1, color: AppColors.borderSoft);
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.symmetric(horizontal: 10),
+      child: Divider(height: 1, thickness: 1, color: Color(0xFFE8EEF5)),
+    );
+  }
 }
 
-enum _Go { configure, notifications, reservations, owner, signout, none }
+enum _Go {
+  password,
+  email,
+  configure,
+  notifications,
+  reservations,
+  owner,
+  signout,
+  none,
+}
 
 class _ActionItem extends StatelessWidget {
   const _ActionItem({
@@ -229,6 +373,18 @@ class _ActionItem extends StatelessWidget {
 
   void _handleTap(BuildContext context) {
     switch (go) {
+      case _Go.password:
+        ProfileSecurityDialogs.handleAction(
+          context,
+          action: ProfileCredentialAction.password,
+        );
+        break;
+      case _Go.email:
+        ProfileSecurityDialogs.handleAction(
+          context,
+          action: ProfileCredentialAction.email,
+        );
+        break;
       case _Go.configure:
         Navigator.push(
           context,
@@ -255,17 +411,17 @@ class _ActionItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(18),
       onTap: () => _handleTap(context),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
         child: Row(
           children: [
             Container(
-              width: 38,
-              height: 38,
+              width: 40,
+              height: 40,
               decoration: const BoxDecoration(
-                color: AppColors.iconCircle,
+                color: Color(0xFFEAF3FF),
                 shape: BoxShape.circle,
               ),
               alignment: Alignment.center,
@@ -295,6 +451,7 @@ class _ActionItem extends StatelessWidget {
 
 class _Shortcut extends StatelessWidget {
   const _Shortcut({required this.icon, required this.title, required this.go});
+
   final IconData icon;
   final String title;
   final _Go go;
@@ -327,30 +484,31 @@ class _Shortcut extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppColors.iconCircle,
-      borderRadius: BorderRadius.circular(14),
+      color: const Color(0xFFF4F8FC),
+      borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: () => _handleTap(context),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
           child: Row(
             children: [
               Container(
-                width: 34,
-                height: 34,
+                width: 40,
+                height: 40,
                 decoration: const BoxDecoration(
-                  color: AppColors.iconCircle,
+                  color: Color(0xFFEAF3FF),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(icon, size: 18, color: AppColors.headerBottom),
+                alignment: Alignment.center,
+                child: Icon(icon, size: 20, color: AppColors.headerBottom),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   title,
                   style: const TextStyle(
-                    fontSize: 14.5,
+                    fontSize: 14.8,
                     color: AppColors.textPrimary,
                     fontWeight: FontWeight.w600,
                   ),
