@@ -4,9 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mapbox_api/common/utils/components/ui/app_styles.dart';
 import 'package:mapbox_api/common/utils/components/ui/my_text.dart';
 import 'package:mapbox_api/common/utils/components/ui/navy_header.dart';
+import 'package:mapbox_api/features/core/pages/userv/report_problem_page.dart';
 import 'package:mapbox_api/features/users/widgets/profile_security_dialogs.dart';
 import 'package:mapbox_api/features/users/pages/configure_profile_page.dart';
-import 'package:mapbox_api/features/users/pages/notifications_page.dart';
 import 'package:mapbox_api/features/reservations/pages/reservations_page.dart';
 import 'package:mapbox_api/features/owners/pages/become_owner_page.dart';
 
@@ -242,21 +242,17 @@ class ProfilePage extends ConsumerWidget {
                                             title: 'Correo electrónico',
                                             go: _Go.email,
                                           ),
-                                          _Divider(),
-                                          _ActionItem(
-                                            icon: Icons.fingerprint_rounded,
-                                            title: 'Huella digital',
-                                            go: _Go.none,
-                                          ),
+
                                           _Divider(),
                                           _ActionItem(
                                             icon: Icons.support_agent_outlined,
                                             title: 'Soporte',
-                                            go: _Go.notifications,
+                                            go: _Go.reportProblem,
                                           ),
                                           _Divider(),
                                           _ActionItem(
                                             icon: Icons.logout_outlined,
+
                                             title: 'Cerrar sesión',
                                             go: _Go.signout,
                                           ),
@@ -312,7 +308,7 @@ class ProfilePage extends ConsumerWidget {
                                                 Icons
                                                     .notifications_active_outlined,
                                             title: 'Notificaciones',
-                                            go: _Go.notifications,
+                                            go: _Go.reportProblem,
                                           ),
                                         ],
                                       ),
@@ -353,7 +349,7 @@ enum _Go {
   password,
   email,
   configure,
-  notifications,
+  reportProblem,
   reservations,
   owner,
   signout,
@@ -391,10 +387,10 @@ class _ActionItem extends StatelessWidget {
           MaterialPageRoute(builder: (_) => const ConfigureProfilePage()),
         );
         break;
-      case _Go.notifications:
+      case _Go.reportProblem:
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const NotificationsPage()),
+          MaterialPageRoute(builder: (_) => const ReportProblemPage()),
         );
         break;
       case _Go.signout:
@@ -470,10 +466,10 @@ class _Shortcut extends StatelessWidget {
           MaterialPageRoute(builder: (_) => const BecomeOwnerPage()),
         );
         break;
-      case _Go.notifications:
+      case _Go.reportProblem:
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const NotificationsPage()),
+          MaterialPageRoute(builder: (_) => const ReportProblemPage()),
         );
         break;
       default:

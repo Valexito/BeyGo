@@ -118,6 +118,7 @@ final iOwnAtLeastOneParkingProvider = FutureProvider<bool>((ref) async {
     return false;
   }
 });
+
 final updateBasicProfileProvider = Provider<
   Future<void> Function({
     required String name,
@@ -125,6 +126,7 @@ final updateBasicProfileProvider = Provider<
     required String email,
     String? dob,
     String? gender,
+    String? photoUrl,
   })
 >((ref) {
   return ({
@@ -133,6 +135,7 @@ final updateBasicProfileProvider = Provider<
     required String email,
     String? dob,
     String? gender,
+    String? photoUrl,
   }) async {
     final u = FirebaseAuth.instance.currentUser;
     if (u == null) throw StateError('No authenticated user.');
@@ -147,6 +150,8 @@ final updateBasicProfileProvider = Provider<
       'phone': phone.trim(),
       'dob': (dob ?? '').trim(),
       'gender': (gender ?? '').trim(),
+      if (photoUrl != null && photoUrl.trim().isNotEmpty)
+        'photoURL': photoUrl.trim(),
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
 
@@ -156,6 +161,7 @@ final updateBasicProfileProvider = Provider<
     ref.invalidate(myRoleStreamProvider);
   };
 });
+
 // ---------- Rol efectivo ----------
 final myRoleStreamProvider = StreamProvider<UserRole>((ref) {
   final profileAsync = ref.watch(myProfileStreamProvider);

@@ -1,6 +1,11 @@
+import 'dart:io';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
 import 'package:mapbox_api/common/utils/components/ui/app_styles.dart';
 import 'package:mapbox_api/common/utils/components/ui/my_button.dart';
@@ -28,14 +33,14 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage> {
 
   String _gender = 'male';
   bool _saving = false;
+  bool _loadingProfile = true;
+
+  File? _imageFile;
 
   @override
   void initState() {
     super.initState();
-
-    final u = _auth.currentUser;
-    _nameCtrl.text = u?.displayName ?? '';
-    _emailCtrl.text = u?.email ?? '';
+    _loadUserData();
   }
 
   @override
@@ -45,6 +50,43 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage> {
     _mobileCtrl.dispose();
     _dobCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      final u = _auth.currentUser;
+      if (u == null) {
+        if (mounted) {
+          setState(() => _loadingProfile = false);
+        }
+        return;
+      }
+
+      _emailCtrl.text = u.email ?? '';
+
+      final doc =
+          await FirebaseFirestore.instance.collection('users').doc(u.uid).get();
+
+      final data = doc.data() ?? <String, dynamic>{};
+
+      _nameCtrl.text =
+          (data['name'] as String?)?.trim().isNotEmpty == true
+              ? (data['name'] as String).trim()
+              : (u.displayName ?? '');
+
+      _mobileCtrl.text = (data['phone'] as String?) ?? '';
+      _dobCtrl.text = (data['dob'] as String?) ?? '';
+      _gender =
+          ((data['gender'] as String?) ?? 'male').trim().isNotEmpty
+              ? ((data['gender'] as String?) ?? 'male')
+              : 'male';
+    } catch (_) {
+      // ignore
+    } finally {
+      if (mounted) {
+        setState(() => _loadingProfile = false);
+      }
+    }
   }
 
   Future<void> _pickDob() async {
@@ -64,6 +106,30 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage> {
     }
   }
 
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+
+    final picked = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80,
+    );
+
+    if (picked != null && mounted) {
+      setState(() => _imageFile = File(picked.path));
+    }
+  }
+
+  Future<String?> _uploadImage(String uid) async {
+    if (_imageFile == null) return null;
+
+    final refStorage = FirebaseStorage.instance.ref().child(
+      'users/$uid/profile.jpg',
+    );
+
+    await refStorage.putFile(_imageFile!);
+    return refStorage.getDownloadURL();
+  }
+
   Future<void> _save() async {
     final ok = _formKey.currentState?.validate() ?? false;
     if (!ok) return;
@@ -72,16 +138,19 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage> {
 
     try {
       final user = _auth.currentUser;
+      if (user == null) {
+        throw Exception('No hay sesión activa.');
+      }
 
-      if (user != null) {
-        if (_nameCtrl.text.trim().isNotEmpty) {
-          await user.updateDisplayName(_nameCtrl.text.trim());
-        }
+      String? uploadedPhotoUrl;
 
-        if (_emailCtrl.text.trim().isNotEmpty &&
-            _emailCtrl.text.trim() != user.email) {
-          await user.verifyBeforeUpdateEmail(_emailCtrl.text.trim());
-        }
+      if (_imageFile != null) {
+        uploadedPhotoUrl = await _uploadImage(user.uid);
+        await user.updatePhotoURL(uploadedPhotoUrl);
+      }
+
+      if (_nameCtrl.text.trim().isNotEmpty) {
+        await user.updateDisplayName(_nameCtrl.text.trim());
       }
 
       await ref.read(updateBasicProfileProvider)(
@@ -90,13 +159,15 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage> {
         email: _emailCtrl.text.trim(),
         dob: _dobCtrl.text.trim(),
         gender: _gender,
+        photoUrl: uploadedPhotoUrl,
       );
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Perfil guardado')));
+      ).showSnackBar(const SnackBar(content: Text('Perfil actualizado')));
+
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
@@ -112,8 +183,17 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage> {
   @override
   Widget build(BuildContext context) {
     final user = _auth.currentUser;
-    final photoUrl = user?.photoURL;
     final screen = MediaQuery.of(context).size;
+
+    final currentPhotoUrl =
+        _imageFile == null ? (user?.photoURL ?? '').trim() : '';
+
+    final ImageProvider<Object>? avatarProvider =
+        _imageFile != null
+            ? FileImage(_imageFile!)
+            : (currentPhotoUrl.isNotEmpty
+                ? NetworkImage(currentPhotoUrl)
+                : null);
 
     return Scaffold(
       backgroundColor: const Color(0xFFD8F3EE),
@@ -126,7 +206,7 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage> {
               Container(
                 height: screen.height * 0.42,
                 width: double.infinity,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
@@ -175,7 +255,7 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage> {
                       Icons.arrow_back_ios_new_rounded,
                       size: 16,
                     ),
-                    label: const Text('Back'),
+                    label: const Text('Regresar'),
                   ),
                 ),
               ),
@@ -204,8 +284,11 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage> {
                           ),
                           child: ClipOval(
                             child:
-                                photoUrl != null
-                                    ? Image.network(photoUrl, fit: BoxFit.cover)
+                                avatarProvider != null
+                                    ? Image(
+                                      image: avatarProvider,
+                                      fit: BoxFit.cover,
+                                    )
                                     : Container(
                                       color: Colors.white,
                                       child: const Icon(
@@ -229,7 +312,7 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage> {
                                 color: AppColors.headerBottom,
                                 size: 20,
                               ),
-                              onPressed: () {},
+                              onPressed: _saving ? null : _pickImage,
                             ),
                           ),
                         ),
@@ -251,111 +334,114 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage> {
                       topRight: Radius.circular(34),
                     ),
                   ),
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(28, 28, 28, 34),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          const Align(
-                            alignment: Alignment.centerLeft,
-                            child: MyText(
-                              text: 'Edit Profile',
-                              variant: MyTextVariant.title,
-                              customColor: AppColors.headerBottom,
-                              fontSize: 22,
+                  child:
+                      _loadingProfile
+                          ? const Center(child: CircularProgressIndicator())
+                          : SingleChildScrollView(
+                            padding: const EdgeInsets.fromLTRB(28, 28, 28, 34),
+                            child: Form(
+                              key: _formKey,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  const Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: MyText(
+                                      text: 'Editar perfil',
+                                      variant: MyTextVariant.title,
+                                      customColor: AppColors.headerBottom,
+                                      fontSize: 22,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  const MyText(
+                                    text:
+                                        'Actualiza tu información personal y mantén tu perfil al día.',
+                                    variant: MyTextVariant.subtitle,
+                                    fontSize: 13,
+                                  ),
+                                  const SizedBox(height: 22),
+                                  MyTextField(
+                                    controller: _nameCtrl,
+                                    hintText: 'Nombre completo',
+                                    prefixIcon: Icons.person_outline,
+                                    margin: EdgeInsets.zero,
+                                    validator: (v) {
+                                      if (v == null || v.trim().isEmpty) {
+                                        return 'Escribe tu nombre';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                  const SizedBox(height: 14),
+                                  MyTextField(
+                                    controller: _emailCtrl,
+                                    hintText: 'Correo electrónico',
+                                    keyboardType: TextInputType.emailAddress,
+                                    prefixIcon: Icons.mail_outline,
+                                    readOnly: true,
+                                    margin: EdgeInsets.zero,
+                                  ),
+                                  const SizedBox(height: 14),
+                                  MyTextField(
+                                    controller: _mobileCtrl,
+                                    hintText: 'Número de teléfono',
+                                    keyboardType: TextInputType.phone,
+                                    prefixIcon: Icons.phone_outlined,
+                                    margin: EdgeInsets.zero,
+                                  ),
+                                  const SizedBox(height: 14),
+                                  MyTextField(
+                                    controller: _dobCtrl,
+                                    hintText: 'DD / MM / YYYY',
+                                    readOnly: true,
+                                    onTap: _pickDob,
+                                    prefixIcon: Icons.calendar_today_outlined,
+                                    margin: EdgeInsets.zero,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  const MyText(
+                                    text: 'Sexo',
+                                    variant: MyTextVariant.normal,
+                                    fontSize: 13,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: _GenderChip(
+                                          label: 'Masculino',
+                                          selected: _gender == 'male',
+                                          onTap:
+                                              () => setState(
+                                                () => _gender = 'male',
+                                              ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: _GenderChip(
+                                          label: 'Femenino',
+                                          selected: _gender == 'female',
+                                          onTap:
+                                              () => setState(
+                                                () => _gender = 'female',
+                                              ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 22),
+                                  MyButton(
+                                    onTap: _saving ? null : _save,
+                                    text: _saving ? 'Guardando...' : 'Guardar',
+                                    loading: _saving,
+                                    margin: EdgeInsets.zero,
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          const MyText(
-                            text:
-                                'Actualiza tu información personal y mantén tu perfil al día.',
-                            variant: MyTextVariant.subtitle,
-                            fontSize: 13,
-                          ),
-                          const SizedBox(height: 22),
-                          MyTextField(
-                            controller: _nameCtrl,
-                            hintText: 'Enter User Name',
-                            prefixIcon: Icons.person_outline,
-                            margin: EdgeInsets.zero,
-                            validator: (v) {
-                              if (v == null || v.trim().isEmpty) {
-                                return 'Escribe tu nombre';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 14),
-                          MyTextField(
-                            controller: _emailCtrl,
-                            hintText: 'Enter Email',
-                            keyboardType: TextInputType.emailAddress,
-                            prefixIcon: Icons.mail_outline,
-                            margin: EdgeInsets.zero,
-                            validator: (v) {
-                              final s = v?.trim() ?? '';
-                              final ok = RegExp(
-                                r'^[\w\.\-]+@([\w\-]+\.)+[a-zA-Z]{2,}$',
-                              ).hasMatch(s);
-                              return ok ? null : 'Correo inválido';
-                            },
-                          ),
-                          const SizedBox(height: 14),
-                          MyTextField(
-                            controller: _mobileCtrl,
-                            hintText: 'Enter your mobile number',
-                            keyboardType: TextInputType.phone,
-                            prefixIcon: Icons.phone_outlined,
-                            margin: EdgeInsets.zero,
-                          ),
-                          const SizedBox(height: 14),
-                          MyTextField(
-                            controller: _dobCtrl,
-                            hintText: 'DD / MM / YYYY',
-                            readOnly: true,
-                            onTap: _pickDob,
-                            prefixIcon: Icons.calendar_today_outlined,
-                            margin: EdgeInsets.zero,
-                          ),
-                          const SizedBox(height: 16),
-                          const MyText(
-                            text: 'Sex',
-                            variant: MyTextVariant.normal,
-                            fontSize: 13,
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _GenderChip(
-                                  label: 'Male',
-                                  selected: _gender == 'male',
-                                  onTap: () => setState(() => _gender = 'male'),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: _GenderChip(
-                                  label: 'Female',
-                                  selected: _gender == 'female',
-                                  onTap:
-                                      () => setState(() => _gender = 'female'),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 22),
-                          MyButton(
-                            onTap: _saving ? null : _save,
-                            text: _saving ? 'Saving...' : 'Save',
-                            margin: EdgeInsets.zero,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
                 ),
               ),
             ],
