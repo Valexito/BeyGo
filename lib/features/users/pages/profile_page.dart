@@ -23,7 +23,7 @@ class ProfilePage extends ConsumerWidget {
             : 'TU NOMBRE';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFD8F3EE),
+      backgroundColor: Colors.white,
       body: SafeArea(
         top: false,
         child: LayoutBuilder(
@@ -242,7 +242,6 @@ class ProfilePage extends ConsumerWidget {
                                             title: 'Correo electrónico',
                                             go: _Go.email,
                                           ),
-
                                           _Divider(),
                                           _ActionItem(
                                             icon: Icons.support_agent_outlined,
@@ -252,7 +251,6 @@ class ProfilePage extends ConsumerWidget {
                                           _Divider(),
                                           _ActionItem(
                                             icon: Icons.logout_outlined,
-
                                             title: 'Cerrar sesión',
                                             go: _Go.signout,
                                           ),
@@ -367,7 +365,7 @@ class _ActionItem extends StatelessWidget {
   final String title;
   final _Go go;
 
-  void _handleTap(BuildContext context) {
+  Future<void> _handleTap(BuildContext context) async {
     switch (go) {
       case _Go.password:
         ProfileSecurityDialogs.handleAction(
@@ -394,10 +392,13 @@ class _ActionItem extends StatelessWidget {
         );
         break;
       case _Go.signout:
-        FirebaseAuth.instance.signOut();
-        ScaffoldMessenger.of(
+        await FirebaseAuth.instance.signOut();
+
+        if (!context.mounted) return;
+
+        Navigator.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Cerrar sesión')));
+        ).pushNamedAndRemoveUntil('/auth', (route) => false);
         break;
       default:
         break;
@@ -406,9 +407,18 @@ class _ActionItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isLogout = go == _Go.signout;
+
+    final iconColor = isLogout ? Colors.red : AppColors.headerBottom;
+    final textColor = isLogout ? Colors.red : AppColors.textPrimary;
+    final bgColor =
+        isLogout ? Colors.red.withOpacity(0.08) : const Color(0xFFEAF3FF);
+
     return InkWell(
       borderRadius: BorderRadius.circular(18),
-      onTap: () => _handleTap(context),
+      onTap: () async {
+        await _handleTap(context);
+      },
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
         child: Row(
@@ -416,27 +426,24 @@ class _ActionItem extends StatelessWidget {
             Container(
               width: 40,
               height: 40,
-              decoration: const BoxDecoration(
-                color: Color(0xFFEAF3FF),
-                shape: BoxShape.circle,
-              ),
+              decoration: BoxDecoration(color: bgColor, shape: BoxShape.circle),
               alignment: Alignment.center,
-              child: Icon(icon, size: 20, color: AppColors.headerBottom),
+              child: Icon(icon, size: 20, color: iconColor),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 15,
-                  color: AppColors.textPrimary,
+                  color: textColor,
                   fontWeight: FontWeight.w600,
                 ),
               ),
             ),
-            const Icon(
+            Icon(
               Icons.chevron_right_rounded,
-              color: AppColors.textSecondary,
+              color: isLogout ? Colors.red : AppColors.textSecondary,
             ),
           ],
         ),

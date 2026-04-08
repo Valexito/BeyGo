@@ -196,7 +196,7 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage> {
                 : null);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFD8F3EE),
+      backgroundColor: Colors.white,
       body: SafeArea(
         top: false,
         child: SizedBox(
@@ -239,7 +239,7 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage> {
                 ),
               ),
               Positioned(
-                top: 56,
+                top: 15,
                 left: 18,
                 child: SafeArea(
                   child: TextButton.icon(
@@ -260,7 +260,7 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage> {
                 ),
               ),
               Positioned(
-                top: screen.height * 0.15,
+                top: screen.height * 0.10,
                 left: 28,
                 right: 28,
                 child: Column(
@@ -322,7 +322,7 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage> {
                 ),
               ),
               Positioned(
-                top: screen.height * 0.28,
+                top: screen.height * 0.24,
                 left: 0,
                 right: 0,
                 bottom: 0,
