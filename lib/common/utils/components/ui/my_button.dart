@@ -12,6 +12,7 @@ class MyButton extends StatelessWidget {
   final MyButtonVariant variant;
   final IconData? icon;
   final double? fontSize;
+  final Color? color;
 
   const MyButton({
     super.key,
@@ -23,6 +24,7 @@ class MyButton extends StatelessWidget {
     this.variant = MyButtonVariant.filled,
     this.icon,
     this.fontSize,
+    this.color,
   });
 
   bool get _enabled => onTap != null && !loading;
@@ -81,14 +83,17 @@ class MyButton extends StatelessWidget {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(AppDims.radiusLg),
                 gradient:
-                    _isFilled
+                    _isFilled && color == null
                         ? const LinearGradient(
                           colors: [AppColors.headerTop, AppColors.headerBottom],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         )
                         : null,
-                color: _isFilled ? null : const Color(0xFFF4F7FB),
+                color:
+                    _isFilled
+                        ? (color ?? null)
+                        : (color ?? const Color(0xFFF4F7FB)),
                 border: Border.all(
                   color:
                       _isFilled

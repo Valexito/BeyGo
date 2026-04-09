@@ -17,7 +17,11 @@ class FrequentQuestionsPage extends StatelessWidget {
       ),
       (
         q: '¿Puedo cancelar una reserva?',
-        a: 'Sí. Mientras no haya iniciado, puedes cancelarla desde Mis reservaciones.',
+        a: 'Sí. Puedes cancelarla desde Mis reservaciones siempre que no haya iniciado. Algunos parqueos ofrecen cancelación gratuita por un tiempo definido por el proveedor de parqueo (mínimo 5 minutos). Si cancelas fuera de ese tiempo, puede aplicarse una penalización o strike en tu cuenta.',
+      ),
+      (
+        q: '¿Qué hago si se bloquea mi cuenta?',
+        a: 'Si ya no puedes reservar porque sobrepasaste el límite de strikes o penalizaciones, debes ir a la opción de Reportar un problema, llenar el formulario y enviarlo. Nuestro equipo revisará tu caso y te dará seguimiento.',
       ),
       (
         q: '¿Qué métodos de inicio de sesión hay?',
@@ -25,7 +29,7 @@ class FrequentQuestionsPage extends StatelessWidget {
       ),
       (
         q: '¿Cómo me hago proveedor?',
-        a: 'En tu perfil, entra a “Registrar un parqueo” y completa la información.',
+        a: 'Desde tu perfil puedes enviar una solicitud para convertirte en proveedor registrando tu parqueo. Nuestro equipo revisará tu información y te dará seguimiento. El proceso puede tardar aproximadamente 72 horas y se comunicarán contigo para continuar.',
       ),
     ];
 

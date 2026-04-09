@@ -5,6 +5,8 @@ import 'package:mapbox_api/common/utils/components/ui/app_styles.dart';
 import 'package:mapbox_api/common/utils/components/ui/my_text.dart';
 import 'package:mapbox_api/common/utils/components/ui/navy_header.dart';
 import 'package:mapbox_api/features/core/pages/userv/report_problem_page.dart';
+import 'package:mapbox_api/features/users/providers/delete_account_provider.dart';
+import 'package:mapbox_api/features/users/widgets/delete_account_dialog.dart';
 import 'package:mapbox_api/features/users/widgets/profile_security_dialogs.dart';
 import 'package:mapbox_api/features/users/pages/configure_profile_page.dart';
 import 'package:mapbox_api/features/reservations/pages/reservations_page.dart';
@@ -306,7 +308,13 @@ class ProfilePage extends ConsumerWidget {
                                                 Icons
                                                     .notifications_active_outlined,
                                             title: 'Notificaciones',
-                                            go: _Go.reportProblem,
+                                            go: _Go.notifications,
+                                          ),
+                                          SizedBox(height: 10),
+                                          _Shortcut(
+                                            icon: Icons.delete_forever_outlined,
+                                            title: 'Eliminar perfil',
+                                            go: _Go.deleteProfile,
                                           ),
                                         ],
                                       ),
@@ -351,6 +359,8 @@ enum _Go {
   reservations,
   owner,
   signout,
+  deleteProfile,
+  notifications,
   none,
 }
 
@@ -407,12 +417,12 @@ class _ActionItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isLogout = go == _Go.signout;
+    final isDanger = go == _Go.signout || go == _Go.deleteProfile;
 
-    final iconColor = isLogout ? Colors.red : AppColors.headerBottom;
-    final textColor = isLogout ? Colors.red : AppColors.textPrimary;
+    final iconColor = isDanger ? Colors.red : AppColors.headerBottom;
+    final textColor = isDanger ? Colors.red : AppColors.textPrimary;
     final bgColor =
-        isLogout ? Colors.red.withOpacity(0.08) : const Color(0xFFEAF3FF);
+        isDanger ? Colors.red.withOpacity(0.08) : const Color(0xFFEAF3FF);
 
     return InkWell(
       borderRadius: BorderRadius.circular(18),
@@ -443,7 +453,7 @@ class _ActionItem extends StatelessWidget {
             ),
             Icon(
               Icons.chevron_right_rounded,
-              color: isLogout ? Colors.red : AppColors.textSecondary,
+              color: isDanger ? Colors.red : AppColors.textSecondary,
             ),
           ],
         ),
@@ -467,18 +477,38 @@ class _Shortcut extends StatelessWidget {
           MaterialPageRoute(builder: (_) => const ReservationsPage()),
         );
         break;
+
       case _Go.owner:
         Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const BecomeOwnerPage()),
         );
         break;
+
+      case _Go.notifications:
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ReportProblemPage()),
+        );
+        break;
+
       case _Go.reportProblem:
         Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const ReportProblemPage()),
         );
         break;
+
+      case _Go.deleteProfile:
+        final uid = FirebaseAuth.instance.currentUser?.uid;
+        if (uid == null) return;
+
+        showDialog(
+          context: context,
+          builder: (_) => const DeleteAccountDialog(),
+        );
+        break;
+
       default:
         break;
     }
@@ -486,8 +516,13 @@ class _Shortcut extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDanger = go == _Go.deleteProfile;
+    final textColor = isDanger ? Colors.red : AppColors.textPrimary;
+    final iconColor = isDanger ? Colors.red : AppColors.headerBottom;
+    final bgColor =
+        isDanger ? Colors.red.withOpacity(0.08) : const Color(0xFFEAF3FF);
     return Material(
-      color: const Color(0xFFF4F8FC),
+      color: isDanger ? Colors.red.withOpacity(0.05) : const Color(0xFFF4F8FC),
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: () => _handleTap(context),
@@ -499,27 +534,27 @@ class _Shortcut extends StatelessWidget {
               Container(
                 width: 40,
                 height: 40,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFEAF3FF),
+                decoration: BoxDecoration(
+                  color: bgColor,
                   shape: BoxShape.circle,
                 ),
                 alignment: Alignment.center,
-                child: Icon(icon, size: 20, color: AppColors.headerBottom),
+                child: Icon(icon, size: 20, color: iconColor),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14.8,
-                    color: AppColors.textPrimary,
+                    color: textColor,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
-              const Icon(
+              Icon(
                 Icons.chevron_right_rounded,
-                color: AppColors.textSecondary,
+                color: isDanger ? Colors.red : AppColors.textSecondary,
               ),
             ],
           ),

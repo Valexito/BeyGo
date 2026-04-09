@@ -17,7 +17,7 @@ class LegalInformationPage extends StatelessWidget {
       (
         title: 'Privacidad',
         body:
-            'Protegemos tu información y solo la usamos para proveer las funciones del servicio. Puedes solicitar la eliminación de tu cuenta y datos desde Soporte.',
+            'Protegemos tu información y solo la usamos para proveer las funciones del servicio. Puedes solicitar la eliminación de tu cuenta y datos desde tu perfil.',
       ),
       (
         title: 'Responsabilidad',
@@ -26,7 +26,7 @@ class LegalInformationPage extends StatelessWidget {
       ),
       (
         title: 'Contacto',
-        body: '¿Dudas legales? Escríbenos a soporte@tuapp.com',
+        body: '¿Dudas legales? Escríbenos a parking.dev.app@gmail.com',
       ),
     ];
 
