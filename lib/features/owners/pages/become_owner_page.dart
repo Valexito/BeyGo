@@ -29,6 +29,8 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage> {
   final _capacity = TextEditingController();
   final _description = TextEditingController();
   final _pricePerHour = TextEditingController();
+  final _nit = TextEditingController();
+  final _cancellationWindow = TextEditingController();
 
   final _formKey = GlobalKey<FormState>();
   final _picker = ImagePicker();
@@ -41,6 +43,8 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage> {
   bool _accept = false;
   bool _sending = false;
   LatLng? _picked;
+  TimeOfDay _openingHour = const TimeOfDay(hour: 8, minute: 0);
+  TimeOfDay _closingHour = const TimeOfDay(hour: 18, minute: 0);
 
   FirebaseAuth get _auth => ref.read(firebaseAuthProvider);
 
@@ -64,6 +68,8 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage> {
     _capacity.dispose();
     _description.dispose();
     _pricePerHour.dispose();
+    _nit.dispose();
+    _cancellationWindow.dispose();
     super.dispose();
   }
 
@@ -210,6 +216,10 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage> {
       return _showError('Debes subir la patente de comercio.');
     }
 
+    final cancelWindow = int.tryParse(_cancellationWindow.text.trim());
+    if (cancelWindow == null || cancelWindow < 3) {
+      return _showError('La ventana mínima es de 3 minutos.');
+    }
     setState(() => _sending = true);
 
     try {
@@ -226,6 +236,7 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage> {
         parkingName: _parkingName.text.trim(),
         email: _email.text.trim(),
         phone: _phone.text.trim(),
+        nit: _nit.text.trim(), // ✅ ADD THIS
         address: _address.text.trim(),
         capacity: cap,
         description: _description.text.trim(),
@@ -236,6 +247,11 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage> {
         dpiBack: _dpiBack!,
         patent: _patent!,
         price: price,
+
+        // ✅ THESE 3 WERE MISSING
+        freeCancellationMinutes: cancelWindow,
+        openTime: _openingHour.format(context),
+        closeTime: _closingHour.format(context),
       );
 
       if (!mounted) return;
@@ -660,6 +676,94 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage> {
                             textInputAction: TextInputAction.done,
                             prefixIcon: Icons.notes_outlined,
                             margin: EdgeInsets.zero,
+                          ),
+
+                          const SizedBox(height: 14),
+
+                          const MyText(
+                            text: 'NIT',
+                            variant: MyTextVariant.normalBold,
+                            fontSize: 13,
+                          ),
+                          const SizedBox(height: 6),
+                          MyTextField(
+                            controller: _nit,
+                            hintText: 'Ej. 1234567-8',
+                            prefixIcon: Icons.badge_outlined,
+                            margin: EdgeInsets.zero,
+                            validator: (v) => _requiredValidator(v, 'NIT'),
+                          ),
+
+                          const SizedBox(height: 14),
+
+                          const MyText(
+                            text: 'Ventana de cancelación gratis (minutos)',
+                            variant: MyTextVariant.normalBold,
+                            fontSize: 13,
+                          ),
+                          const SizedBox(height: 6),
+                          MyTextField(
+                            controller: _cancellationWindow,
+                            hintText: 'Mínimo 3 minutos',
+                            keyboardType: TextInputType.number,
+                            prefixIcon: Icons.timer_outlined,
+                            margin: EdgeInsets.zero,
+                            validator: (v) {
+                              final n = int.tryParse((v ?? '').trim());
+                              if (n == null || n < 3) {
+                                return 'Debe ser mínimo 3 minutos';
+                              }
+                              return null;
+                            },
+                          ),
+
+                          const SizedBox(height: 18),
+
+                          const MyText(
+                            text: 'Horario de atención',
+                            variant: MyTextVariant.normalBold,
+                            fontSize: 13,
+                          ),
+                          const SizedBox(height: 8),
+
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: () async {
+                                    final picked = await showTimePicker(
+                                      context: context,
+                                      initialTime: _openingHour,
+                                    );
+                                    if (picked != null) {
+                                      setState(() => _openingHour = picked);
+                                    }
+                                  },
+                                  icon: const Icon(Icons.access_time),
+                                  label: Text(
+                                    'Desde: ${_openingHour.format(context)}',
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: () async {
+                                    final picked = await showTimePicker(
+                                      context: context,
+                                      initialTime: _closingHour,
+                                    );
+                                    if (picked != null) {
+                                      setState(() => _closingHour = picked);
+                                    }
+                                  },
+                                  icon: const Icon(Icons.access_time_filled),
+                                  label: Text(
+                                    'Hasta: ${_closingHour.format(context)}',
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
 
                           const SizedBox(height: 22),

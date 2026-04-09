@@ -14,6 +14,7 @@ final submitProviderRequestProvider = Provider<
     required String parkingName,
     required String email,
     required String phone,
+    required String nit,
     required String address,
     required int capacity,
     required String description,
@@ -24,6 +25,9 @@ final submitProviderRequestProvider = Provider<
     required XFile dpiBack,
     required XFile patent,
     required int price,
+    required int freeCancellationMinutes,
+    required String openTime,
+    required String closeTime,
   })
 >((ref) {
   final db = ref.watch(firestoreProvider);
@@ -87,6 +91,7 @@ final submitProviderRequestProvider = Provider<
     required String parkingName,
     required String email,
     required String phone,
+    required String nit,
     required String address,
     required int capacity,
     required String description,
@@ -97,6 +102,9 @@ final submitProviderRequestProvider = Provider<
     required XFile dpiBack,
     required XFile patent,
     required int price,
+    required int freeCancellationMinutes,
+    required String openTime,
+    required String closeTime,
   }) async {
     final current = auth.currentUser;
     if (current == null || current.uid != uid) {
@@ -115,6 +123,9 @@ final submitProviderRequestProvider = Provider<
     if (phone.trim().isEmpty) {
       throw ArgumentError('Phone es obligatorio.');
     }
+    if (nit.trim().isEmpty) {
+      throw ArgumentError('NIT es obligatorio.');
+    }
     if (address.trim().isEmpty) {
       throw ArgumentError('Address es obligatorio.');
     }
@@ -123,6 +134,14 @@ final submitProviderRequestProvider = Provider<
     }
     if (price < 0) {
       throw ArgumentError('El precio por hora no puede ser negativo.');
+    }
+    if (freeCancellationMinutes < 3) {
+      throw ArgumentError(
+        'El tiempo de cancelación gratis no puede ser menor a 3 minutos.',
+      );
+    }
+    if (openTime.trim().isEmpty || closeTime.trim().isEmpty) {
+      throw ArgumentError('El horario de atención es obligatorio.');
     }
     if (parkingImages.length < 3) {
       throw ArgumentError('Debes subir al menos 3 fotos del parqueo.');
@@ -182,10 +201,13 @@ final submitProviderRequestProvider = Provider<
         'parkingName': parkingName.trim(),
         'email': email.trim(),
         'phone': phone.trim(),
+        'nit': nit.trim(),
         'address': address.trim(),
         'capacity': capacity,
         'description': description.trim(),
         'pricePerHour': price,
+        'freeCancellationMinutes': freeCancellationMinutes,
+        'businessHours': {'open': openTime.trim(), 'close': closeTime.trim()},
         'lat': lat,
         'lng': lng,
         'parkingImages': parkingImageUrls,
@@ -206,18 +228,6 @@ final submitProviderRequestProvider = Provider<
         'providerStatus': 'pending',
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
-
-      await db.collection('admin_tickets').add({
-        'type': 'provider_request',
-        'uid': uid,
-        'requestId': requestId,
-        'status': 'open',
-        'title': 'Nueva solicitud de proveedor',
-        'description':
-            'Solicitud pendiente de revisión para $parkingName / $companyName',
-        'createdAt': FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
     } catch (e) {
       await _safeDeleteUploadedFiles(
         storage: storage,
