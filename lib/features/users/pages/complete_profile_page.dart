@@ -265,44 +265,62 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage> {
   Widget _buildPlateField() {
     final prefix = _platePrefixForVehicleType(selectedVehicleType);
 
-    return Row(
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          height: 58,
-          width: 64,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(AppDims.radiusLg),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.headerBottom.withOpacity(0.18),
-                blurRadius: 18,
-                spreadRadius: 0.5,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          child: Text(
-            prefix,
-            style: const TextStyle(
-              color: AppColors.headerBottom,
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
+        const MyText(
+          text: 'Placa del vehículo',
+          variant: MyTextVariant.bodyMuted,
+          fontSize: 13,
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: MyTextField(
-            controller: plateController,
-            hintText: 'Ej. 123ABC',
-            prefixIcon: Icons.pin_outlined,
-            margin: EdgeInsets.zero,
-            textInputAction: TextInputAction.done,
-            onChanged: (_) => setState(() {}),
-          ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Container(
+              height: 58,
+              width: 80,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(AppDims.radiusLg),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.headerBottom.withOpacity(0.18),
+                    blurRadius: 18,
+                    spreadRadius: 0.5,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: prefix,
+                  isExpanded: true,
+                  icon: const Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    color: AppColors.headerBottom,
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'P', child: Text('P')),
+                    DropdownMenuItem(value: 'M', child: Text('M')),
+                    DropdownMenuItem(value: 'C', child: Text('C')),
+                  ],
+                  onChanged: (_) {},
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: MyTextField(
+                controller: plateController,
+                hintText: 'Ej. 123ABC',
+                prefixIcon: Icons.pin_outlined,
+                margin: EdgeInsets.zero,
+                textInputAction: TextInputAction.done,
+                onChanged: (_) => setState(() {}),
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -454,6 +472,12 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage> {
                             fontSize: 13,
                           ),
                           const SizedBox(height: 22),
+                          const MyText(
+                            text: 'Nombre completo',
+                            variant: MyTextVariant.bodyMuted,
+                            fontSize: 13,
+                          ),
+                          const SizedBox(height: 6),
                           MyTextField(
                             controller: nameController,
                             hintText: 'Nombre completo',
@@ -461,6 +485,12 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage> {
                             margin: EdgeInsets.zero,
                           ),
                           const SizedBox(height: 14),
+                          const MyText(
+                            text: 'Número de teléfono',
+                            variant: MyTextVariant.bodyMuted,
+                            fontSize: 13,
+                          ),
+                          const SizedBox(height: 6),
                           MyTextField(
                             controller: phoneController,
                             hintText: 'Número de teléfono',
@@ -469,6 +499,12 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage> {
                             margin: EdgeInsets.zero,
                           ),
                           const SizedBox(height: 14),
+                          const MyText(
+                            text: 'Tipo de vehículo',
+                            variant: MyTextVariant.bodyMuted,
+                            fontSize: 13,
+                          ),
+                          const SizedBox(height: 6),
                           _buildVehicleDropdown(),
                           const SizedBox(height: 14),
                           _buildPlateField(),
@@ -476,10 +512,13 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage> {
                           if (_normalizePlateBody(
                             plateController.text,
                           ).isNotEmpty)
-                            MyText(
-                              text: 'Placa final: $previewPlate',
-                              variant: MyTextVariant.bodyMuted,
-                              fontSize: 12,
+                            Center(
+                              child: MyText(
+                                text: previewPlate,
+                                variant: MyTextVariant.title,
+                                fontSize: 16,
+                                customColor: AppColors.headerBottom,
+                              ),
                             ),
                           const SizedBox(height: 28),
                           isSaving
