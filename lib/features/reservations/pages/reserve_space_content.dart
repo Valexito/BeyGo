@@ -86,11 +86,18 @@ class _ReserveSpaceContentState extends ConsumerState<ReserveSpaceContent> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const MyText(
-                                    text: 'Reservar espacio',
-                                    variant: MyTextVariant.title,
-                                    customColor: AppColors.headerBottom,
-                                    fontSize: 22,
+                                  Row(
+                                    children: [
+                                      const Expanded(
+                                        child: MyText(
+                                          text: 'Reservar espacio',
+                                          variant: MyTextVariant.title,
+                                          customColor: AppColors.headerBottom,
+                                          fontSize: 22,
+                                        ),
+                                      ),
+                                      _buildOpenStatus(),
+                                    ],
                                   ),
                                   const SizedBox(height: 6),
                                   const MyText(
@@ -103,10 +110,32 @@ class _ReserveSpaceContentState extends ConsumerState<ReserveSpaceContent> {
                                     spacing: 10,
                                     runSpacing: 10,
                                     children: [
-                                      _InfoChip(
-                                        icon: Icons.directions_car_rounded,
-                                        label:
-                                            '${widget.parking.spaces} espacios',
+                                      spacesAsync.when(
+                                        data: (spacesMap) {
+                                          final available =
+                                              spacesMap.values
+                                                  .where(
+                                                    (s) => s.status == 'free',
+                                                  )
+                                                  .length;
+                                          return _InfoChip(
+                                            icon: Icons.directions_car_rounded,
+                                            label: '$available disponibles',
+                                          );
+                                        },
+                                        loading:
+                                            () => const _InfoChip(
+                                              icon:
+                                                  Icons.directions_car_rounded,
+                                              label: 'Cargando...',
+                                            ),
+                                        error:
+                                            (_, __) => _InfoChip(
+                                              icon:
+                                                  Icons.directions_car_rounded,
+                                              label:
+                                                  '${widget.parking.spaces} espacios',
+                                            ),
                                       ),
                                       _InfoChip(
                                         icon: Icons.attach_money_rounded,
@@ -282,6 +311,67 @@ class _ReserveSpaceContentState extends ConsumerState<ReserveSpaceContent> {
             },
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildOpenStatus() {
+    try {
+      final open = widget.parking.businessHours?['open'];
+      final close = widget.parking.businessHours?['close'];
+
+      if (open == null || close == null) {
+        return _statusChip('N/A', Colors.grey);
+      }
+
+      TimeOfDay parse(String t) {
+        final clean = t.toLowerCase().replaceAll(' ', '');
+        final isPM = clean.contains('pm');
+
+        final time = clean.replaceAll(RegExp(r'[a-z]'), '');
+        final parts = time.split(':');
+
+        int hour = int.parse(parts[0]);
+        final minute = int.parse(parts[1]);
+
+        if (isPM && hour != 12) hour += 12;
+        if (!isPM && hour == 12) hour = 0;
+
+        return TimeOfDay(hour: hour, minute: minute);
+      }
+
+      final openTime = parse(open);
+      final closeTime = parse(close);
+
+      final now = TimeOfDay.now();
+
+      final nowMinutes = now.hour * 60 + now.minute;
+      final openMinutes = openTime.hour * 60 + openTime.minute;
+      final closeMinutes = closeTime.hour * 60 + closeTime.minute;
+
+      final isOpen = nowMinutes >= openMinutes && nowMinutes <= closeMinutes;
+
+      return _statusChip(
+        isOpen ? 'ABIERTO' : 'CERRADO',
+        isOpen ? Colors.green : Colors.red,
+      );
+    } catch (_) {
+      return _statusChip('N/A', Colors.grey);
+    }
+  }
+
+  Widget _statusChip(String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: MyText(
+        text: text,
+        variant: MyTextVariant.bodyBold,
+        fontSize: 12,
+        customColor: color,
       ),
     );
   }
