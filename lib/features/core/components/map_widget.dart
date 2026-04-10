@@ -189,12 +189,10 @@ class _MapWidgetState extends State<MapWidget> {
           children: [
             TileLayer(
               urlTemplate:
-                  'https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/256/{z}/{x}/{y}@2x?access_token=${Env.mapboxToken}',
-              additionalOptions: {
-                'accessToken': Env.mapboxToken,
-                'id': 'mapbox/streets-v12',
-              },
+                  'https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/{z}/{x}/{y}?access_token=${Env.mapboxToken}',
               userAgentPackageName: 'com.example.mapbox_api',
+              tileSize: 256,
+              maxZoom: 19,
             ),
             MarkerLayer(
               markers: [
