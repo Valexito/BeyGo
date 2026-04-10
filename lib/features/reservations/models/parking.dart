@@ -16,6 +16,7 @@ class Parking {
   final String? coverUrl;
   final List<String> photos;
   final int pricePerHour;
+  final Map<String, String>? businessHours;
 
   const Parking({
     required this.id,
@@ -33,6 +34,7 @@ class Parking {
     this.coverUrl,
     this.photos = const [],
     this.pricePerHour = 0,
+    this.businessHours,
   });
 
   static double _toDouble(dynamic value) {
@@ -64,6 +66,15 @@ class Parking {
     final parsedPrice = _toInt(data['price']);
     final parsedPricePerHour = _toInt(data['pricePerHour']);
 
+    final bh = data['businessHours'];
+    Map<String, String>? parsedHours;
+    if (bh is Map) {
+      parsedHours = {
+        'open': bh['open']?.toString() ?? '',
+        'close': bh['close']?.toString() ?? '',
+      };
+    }
+
     return Parking(
       id: id,
       lat: _toDouble(data['lat']),
@@ -83,6 +94,7 @@ class Parking {
       coverUrl: data['coverUrl'] as String?,
       photos: _toStringList(data['photos']),
       pricePerHour: parsedPricePerHour > 0 ? parsedPricePerHour : parsedPrice,
+      businessHours: parsedHours,
     );
   }
 
@@ -101,6 +113,7 @@ class Parking {
     'coverUrl': coverUrl,
     'photos': photos,
     'pricePerHour': pricePerHour,
+    'businessHours': businessHours,
   };
 
   Parking copyWith({
@@ -119,6 +132,7 @@ class Parking {
     String? coverUrl,
     List<String>? photos,
     int? pricePerHour,
+    Map<String, String>? businessHours,
   }) {
     return Parking(
       id: id ?? this.id,
@@ -136,6 +150,7 @@ class Parking {
       coverUrl: coverUrl ?? this.coverUrl,
       photos: photos ?? this.photos,
       pricePerHour: pricePerHour ?? this.pricePerHour,
+      businessHours: businessHours ?? this.businessHours,
     );
   }
 }

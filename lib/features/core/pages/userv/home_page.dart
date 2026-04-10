@@ -110,12 +110,19 @@ class _FloatingIcon extends StatelessWidget {
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(10),
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: Colors.white,
           shape: BoxShape.circle,
-          boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 6)],
+          border: Border.all(color: Colors.blueAccent, width: 1.8),
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 6,
+              offset: Offset(0, 2),
+            ),
+          ],
         ),
-        child: Icon(icon, color: Colors.black),
+        child: Icon(icon, color: Colors.blueAccent),
       ),
     );
   }

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+import 'package:mapbox_api/features/core/providers/spaces_provider.dart';
 
 import 'package:mapbox_api/common/utils/components/ui/my_text.dart';
 import 'package:mapbox_api/common/utils/components/ui/navy_header.dart';
@@ -222,6 +225,7 @@ class _FavoriteCard extends ConsumerWidget {
     final heroImg =
         item.heroImage ?? 'https://via.placeholder.com/800x450?text=Parking';
     final hasRating = item.rating > 0;
+    final spacesAsync = ref.watch(availableSpacesProvider(item.parkingId));
 
     return InkWell(
       borderRadius: BorderRadius.circular(18),
@@ -335,25 +339,63 @@ class _FavoriteCard extends ConsumerWidget {
                       Expanded(
                         child: Column(
                           children: [
-                            _InfoPill(
-                              icon:
-                                  hasRating
-                                      ? Icons.star_rounded
-                                      : Icons.fiber_new_rounded,
-                              text:
-                                  hasRating
-                                      ? item.rating.toStringAsFixed(1)
-                                      : 'Nuevo',
-                              iconColor:
-                                  hasRating
-                                      ? Colors.amber.shade700
-                                      : accentBlue,
-                            ),
-                            const SizedBox(height: 8),
-                            _InfoPill(
-                              icon: Icons.local_parking_rounded,
-                              text: '${item.spaces} disponibles',
-                              iconColor: accentBlue,
+                            Column(
+                              children: [
+                                StreamBuilder<DocumentSnapshot>(
+                                  stream:
+                                      FirebaseFirestore.instance
+                                          .collection('parkings')
+                                          .doc(item.parkingId)
+                                          .snapshots(),
+                                  builder: (context, snapshot) {
+                                    final data =
+                                        snapshot.data?.data()
+                                            as Map<String, dynamic>?;
+                                    final rating =
+                                        (data?['rating'] is num)
+                                            ? (data!['rating'] as num)
+                                                .toDouble()
+                                            : item.rating;
+
+                                    final hasRating = (rating ?? 0) > 0;
+
+                                    return _InfoPill(
+                                      icon:
+                                          hasRating
+                                              ? Icons.star_rounded
+                                              : Icons.fiber_new_rounded,
+                                      text:
+                                          hasRating
+                                              ? rating!.toStringAsFixed(1)
+                                              : 'Nuevo',
+                                      iconColor:
+                                          hasRating
+                                              ? Colors.amber.shade700
+                                              : accentBlue,
+                                    );
+                                  },
+                                ),
+                                const SizedBox(height: 8),
+                                spacesAsync.when(
+                                  data:
+                                      (spaces) => _InfoPill(
+                                        icon: Icons.local_parking_rounded,
+                                        text: '$spaces disponibles',
+                                        iconColor: accentBlue,
+                                      ),
+                                  loading:
+                                      () => const _InfoPill(
+                                        icon: Icons.local_parking_rounded,
+                                        text: '...',
+                                      ),
+                                  error:
+                                      (_, __) => _InfoPill(
+                                        icon: Icons.local_parking_rounded,
+                                        text: '${item.spaces} disponibles',
+                                        iconColor: accentBlue,
+                                      ),
+                                ),
+                              ],
                             ),
                           ],
                         ),

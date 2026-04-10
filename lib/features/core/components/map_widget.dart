@@ -225,9 +225,13 @@ class _MapWidgetState extends State<MapWidget> {
       child: InkWell(
         customBorder: const CircleBorder(),
         onTap: onTap,
-        child: Padding(
+        child: Container(
           padding: const EdgeInsets.all(12),
-          child: Icon(icon, color: Colors.black),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.blueAccent, width: 1.8),
+          ),
+          child: Icon(icon, color: Colors.blueAccent),
         ),
       ),
     );

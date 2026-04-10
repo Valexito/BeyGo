@@ -1,7 +1,7 @@
 // lib/features/home/widgets/home_parking_detail_bottom_sheet.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
+import 'package:mapbox_api/features/core/providers/spaces_provider.dart';
 import 'package:mapbox_api/common/utils/components/ui/my_button.dart';
 import 'package:mapbox_api/common/utils/components/ui/my_text.dart';
 import 'package:mapbox_api/features/core/providers/favorites_provider.dart';
@@ -82,6 +82,7 @@ class _HomeParkingDetailBottomSheetState
 
     // Escucha en tiempo real si este parking es favorito
     final favAsync = ref.watch(isFavoriteStreamProvider(widget.parking.id));
+    final spacesAsync = ref.watch(availableSpacesProvider(widget.parking.id));
     final isFav = favAsync.maybeWhen(
       data: (v) => v,
       orElse: () => widget.isFavorite, // fallback hasta que cargue el stream
@@ -216,32 +217,77 @@ class _HomeParkingDetailBottomSheetState
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      // precio “legacy” por noche (como lo tenías).
-                      // si quieres por hora: usa widget.parking.pricePerHour si existe
+                      Icon(
+                        Icons.attach_money,
+                        size: 18,
+                        color: Colors.blueAccent,
+                      ),
+                      const SizedBox(width: 4),
                       MyText(
-                        text: '${_money(widget.parking.price)} por noche',
+                        text: '${_money(widget.parking.price)} / hora',
                         variant: MyTextVariant.bodyBold,
                         fontSize: 16,
                       ),
                       const Spacer(),
-                      const Icon(
-                        Icons.star,
-                        size: 18,
-                        color: Color(0xFFFBBF24),
-                      ),
+                      Icon(Icons.star, size: 18, color: Color(0xFFFBBF24)),
                       const SizedBox(width: 4),
                       MyText(
-                        text: (widget.parking.rating ?? 4.8).toStringAsFixed(2),
-                        variant: MyTextVariant.body,
+                        text: (widget.parking.rating ?? 4.5).toStringAsFixed(1),
+                        variant: MyTextVariant.bodyBold,
                         fontSize: 14,
                       ),
                     ],
                   ),
                   const SizedBox(height: 10),
-                  MyText(
-                    text: 'Espacios disponibles: ${widget.parking.spaces}',
-                    variant: MyTextVariant.body,
-                    fontSize: 14,
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.local_parking,
+                        size: 18,
+                        color: Colors.blueAccent,
+                      ),
+                      const SizedBox(width: 6),
+                      spacesAsync.when(
+                        data:
+                            (spaces) => MyText(
+                              text: '$spaces espacios disponibles',
+                              variant: MyTextVariant.body,
+                              fontSize: 14,
+                            ),
+                        loading:
+                            () => const MyText(
+                              text: 'Cargando...',
+                              variant: MyTextVariant.body,
+                              fontSize: 14,
+                            ),
+                        error:
+                            (_, __) => MyText(
+                              text:
+                                  '${widget.parking.spaces} espacios disponibles',
+                              variant: MyTextVariant.body,
+                              fontSize: 14,
+                            ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.access_time,
+                        size: 18,
+                        color: Colors.blueAccent,
+                      ),
+                      const SizedBox(width: 6),
+                      MyText(
+                        text:
+                            '${widget.parking.businessHours?['open'] ?? '--'} - ${widget.parking.businessHours?['close'] ?? '--'}',
+                        variant: MyTextVariant.body,
+                        fontSize: 14,
+                      ),
+                      const Spacer(),
+                      _buildOpenStatus(),
+                    ],
                   ),
                   const SizedBox(height: 18),
                   const Divider(height: 1),
@@ -265,6 +311,67 @@ class _HomeParkingDetailBottomSheetState
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildOpenStatus() {
+    try {
+      final open = widget.parking.businessHours?['open'];
+      final close = widget.parking.businessHours?['close'];
+
+      if (open == null || close == null) {
+        return _statusChip('N/A', Colors.grey);
+      }
+
+      TimeOfDay parse(String t) {
+        final clean = t.toLowerCase().replaceAll(' ', '');
+        final isPM = clean.contains('pm');
+
+        final time = clean.replaceAll(RegExp(r'[a-z]'), '');
+        final parts = time.split(':');
+
+        int hour = int.parse(parts[0]);
+        final minute = int.parse(parts[1]);
+
+        if (isPM && hour != 12) hour += 12;
+        if (!isPM && hour == 12) hour = 0;
+
+        return TimeOfDay(hour: hour, minute: minute);
+      }
+
+      final openTime = parse(open);
+      final closeTime = parse(close);
+
+      final now = TimeOfDay.now();
+
+      final nowMinutes = now.hour * 60 + now.minute;
+      final openMinutes = openTime.hour * 60 + openTime.minute;
+      final closeMinutes = closeTime.hour * 60 + closeTime.minute;
+
+      final isOpen = nowMinutes >= openMinutes && nowMinutes <= closeMinutes;
+
+      return _statusChip(
+        isOpen ? 'ABIERTO' : 'CERRADO',
+        isOpen ? Colors.green : Colors.red,
+      );
+    } catch (_) {
+      return _statusChip('N/A', Colors.grey);
+    }
+  }
+
+  Widget _statusChip(String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: MyText(
+        text: text,
+        variant: MyTextVariant.bodyBold,
+        fontSize: 12,
+        customColor: color,
       ),
     );
   }
