@@ -297,7 +297,34 @@ class _ReserveSpaceContentState extends ConsumerState<ReserveSpaceContent> {
                               onTap:
                                   widget.selectedSpace != null &&
                                           !widget.isSubmitting
-                                      ? widget.onConfirm
+                                      ? () {
+                                        if (!_isParkingOpen()) {
+                                          showDialog(
+                                            context: context,
+                                            builder:
+                                                (_) => AlertDialog(
+                                                  title: const Text(
+                                                    'Fuera de horario',
+                                                  ),
+                                                  content: const Text(
+                                                    'El parqueo se encuentra fuera de horario de servicio. Intenta en horas regulares.',
+                                                  ),
+                                                  actions: [
+                                                    TextButton(
+                                                      onPressed:
+                                                          () => Navigator.pop(
+                                                            context,
+                                                          ),
+                                                      child: const Text('OK'),
+                                                    ),
+                                                  ],
+                                                ),
+                                          );
+                                          return;
+                                        }
+
+                                        widget.onConfirm();
+                                      }
                                       : null,
                               margin: EdgeInsets.zero,
                             ),
@@ -357,6 +384,44 @@ class _ReserveSpaceContentState extends ConsumerState<ReserveSpaceContent> {
       );
     } catch (_) {
       return _statusChip('N/A', Colors.grey);
+    }
+  }
+
+  bool _isParkingOpen() {
+    try {
+      final open = widget.parking.businessHours?['open'];
+      final close = widget.parking.businessHours?['close'];
+
+      if (open == null || close == null) return true;
+
+      TimeOfDay parse(String t) {
+        final clean = t.toLowerCase().replaceAll(' ', '');
+        final isPM = clean.contains('pm');
+
+        final time = clean.replaceAll(RegExp(r'[a-z]'), '');
+        final parts = time.split(':');
+
+        int hour = int.parse(parts[0]);
+        final minute = int.parse(parts[1]);
+
+        if (isPM && hour != 12) hour += 12;
+        if (!isPM && hour == 12) hour = 0;
+
+        return TimeOfDay(hour: hour, minute: minute);
+      }
+
+      final openTime = parse(open);
+      final closeTime = parse(close);
+
+      final now = TimeOfDay.now();
+
+      final nowMinutes = now.hour * 60 + now.minute;
+      final openMinutes = openTime.hour * 60 + openTime.minute;
+      final closeMinutes = closeTime.hour * 60 + closeTime.minute;
+
+      return nowMinutes >= openMinutes && nowMinutes <= closeMinutes;
+    } catch (_) {
+      return true;
     }
   }
 
