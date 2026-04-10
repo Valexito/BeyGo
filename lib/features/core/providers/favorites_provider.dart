@@ -12,6 +12,10 @@ final firebaseAuthProviderCore = Provider<FirebaseAuth>(
   (_) => FirebaseAuth.instance,
 );
 
+final authStateProvider = StreamProvider<User?>((ref) {
+  return FirebaseAuth.instance.authStateChanges();
+});
+
 // Modelo para UI
 class FavoriteItem {
   final String id;
@@ -100,22 +104,30 @@ final favoriteServiceProvider = Provider<FavoriteService>(
 
 // Stream<List<FavoriteItem>> del usuario actual
 final favoritesStreamProvider = StreamProvider<List<FavoriteItem>>((ref) {
-  final db = ref.watch(firestoreProvider);
-  final auth = ref.watch(firebaseAuthProviderCore);
-  final uid = auth.currentUser?.uid;
-  if (uid == null) return const Stream.empty();
+  final authAsync = ref.watch(authStateProvider);
 
-  return db
-      .collection('favorites')
-      .where('userId', isEqualTo: uid)
-      .snapshots()
-      .map(
-        (qs) =>
-            qs.docs.map((d) => FavoriteItem.fromMap(d.id, d.data())).toList(),
-      );
+  return authAsync.when(
+    data: (user) {
+      if (user == null) return const Stream.empty();
+
+      return FirebaseFirestore.instance
+          .collection('favorites')
+          .where('userId', isEqualTo: user.uid)
+          .snapshots()
+          .map(
+            (qs) =>
+                qs.docs
+                    .map((d) => FavoriteItem.fromMap(d.id, d.data()))
+                    .toList(),
+          );
+    },
+    loading: () => const Stream.empty(),
+    error: (_, __) => const Stream.empty(),
+  );
 });
 
 // Acciones (remove por docId)
+
 final removeFavoriteByDocIdProvider = Provider<Future<void> Function(String)>((
   ref,
 ) {
@@ -123,13 +135,37 @@ final removeFavoriteByDocIdProvider = Provider<Future<void> Function(String)>((
   return (docId) => svc.removeByDocId(docId);
 });
 
+final removeFavoriteByParkingIdProvider =
+    Provider<Future<void> Function(String)>((ref) {
+      final svc = ref.watch(favoriteServiceProvider);
+      return (parkingId) {
+        final auth = ref.read(authStateProvider).value;
+        if (auth == null) return Future.value();
+        return svc.removeByParkingId(auth.uid, parkingId);
+      };
+    });
+
 // ¿Es favorito? (en tiempo real) para un parkingId
 final isFavoriteStreamProvider = StreamProvider.family<bool, String>((
   ref,
   parkingId,
 ) {
-  final svc = ref.watch(favoriteServiceProvider);
-  return svc.isFavoriteStream(parkingId);
+  final authAsync = ref.watch(authStateProvider);
+
+  return authAsync.when(
+    data: (user) {
+      if (user == null) return Stream.value(false);
+
+      return FirebaseFirestore.instance
+          .collection('favorites')
+          .where('userId', isEqualTo: user.uid)
+          .where('parkingId', isEqualTo: parkingId)
+          .snapshots()
+          .map((qs) => qs.docs.isNotEmpty);
+    },
+    loading: () => Stream.value(false),
+    error: (_, __) => Stream.value(false),
+  );
 });
 
 // Toggle add/remove
@@ -139,10 +175,13 @@ final toggleFavoriteProvider =
     ) {
       final svc = ref.watch(favoriteServiceProvider);
       return ({required toFav, required Parking p}) async {
+        final auth = ref.read(authStateProvider).value;
+        if (auth == null) return;
+
         if (toFav) {
-          await svc.add(p);
+          await svc.add(auth.uid, p);
         } else {
-          await svc.removeByParkingId(p.id);
+          await svc.removeByParkingId(auth.uid, p.id);
         }
       };
     });

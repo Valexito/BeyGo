@@ -271,7 +271,7 @@ class _FavoriteCard extends ConsumerWidget {
                       );
                       final isFav = favStream.maybeWhen(
                         data: (v) => v,
-                        orElse: () => true,
+                        orElse: () => false,
                       );
 
                       return Material(
@@ -283,30 +283,29 @@ class _FavoriteCard extends ConsumerWidget {
                             isFav ? Icons.favorite : Icons.favorite_border,
                             color: isFav ? Colors.red : navy,
                           ),
-                          onPressed: () async {
-                            try {
-                              if (isFav) {
-                                await r.read(removeFavoriteByDocIdProvider)(
-                                  item.id,
-                                );
-                              } else {
-                                await r.read(toggleFavoriteProvider)(
-                                  toFav: true,
-                                  p: item.toParking(),
-                                );
-                              }
-                            } catch (_) {
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'No se pudo actualizar favorito',
-                                    ),
-                                  ),
-                                );
-                              }
-                            }
-                          },
+                          onPressed:
+                              favStream.isLoading
+                                  ? null
+                                  : () async {
+                                    try {
+                                      await r.read(toggleFavoriteProvider)(
+                                        toFav: !isFav,
+                                        p: item.toParking(),
+                                      );
+                                    } catch (_) {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              'No se pudo actualizar favorito',
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  },
                         ),
                       );
                     },

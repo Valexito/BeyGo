@@ -34,6 +34,7 @@ class _HomeParkingDetailBottomSheetState
 
   late final PageController _pager;
   int _page = 0;
+  bool _isToggling = false;
 
   // Galería a mostrar (1) photos[] (2) coverUrl (3) imageUrl (4) placeholder
   List<String> get _gallery {
@@ -64,14 +65,22 @@ class _HomeParkingDetailBottomSheetState
   String _money(num v) => 'Q${v.toStringAsFixed(v % 1 == 0 ? 0 : 2)}';
 
   Future<void> _toggleFavorite(bool toFav) async {
+    if (_isToggling) return;
+
+    setState(() => _isToggling = true);
+
     try {
       await ref.read(toggleFavoriteProvider)(toFav: toFav, p: widget.parking);
-      widget.onToggleFavorite?.call(); // por si quieres refrescar algo externo
+      widget.onToggleFavorite?.call();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('No se pudo actualizar favorito: $e')),
       );
+    } finally {
+      if (mounted) {
+        setState(() => _isToggling = false);
+      }
     }
   }
 
@@ -83,10 +92,7 @@ class _HomeParkingDetailBottomSheetState
     // Escucha en tiempo real si este parking es favorito
     final favAsync = ref.watch(isFavoriteStreamProvider(widget.parking.id));
     final spacesAsync = ref.watch(availableSpacesProvider(widget.parking.id));
-    final isFav = favAsync.maybeWhen(
-      data: (v) => v,
-      orElse: () => widget.isFavorite, // fallback hasta que cargue el stream
-    );
+    final isFav = favAsync.maybeWhen(data: (v) => v, orElse: () => false);
 
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
@@ -148,7 +154,10 @@ class _HomeParkingDetailBottomSheetState
                           elevation: 3,
                           child: InkWell(
                             customBorder: const CircleBorder(),
-                            onTap: () => _toggleFavorite(!isFav),
+                            onTap:
+                                (_isToggling || favAsync.isLoading)
+                                    ? null
+                                    : () => _toggleFavorite(!isFav),
                             child: Padding(
                               padding: const EdgeInsets.all(8),
                               child: Icon(

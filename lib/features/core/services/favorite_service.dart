@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mapbox_api/features/reservations/models/parking.dart';
 
 /// Servicio para manejar /favorites asegurando compatibilidad con docs antiguos
@@ -8,21 +7,14 @@ class FavoriteService {
   FavoriteService._();
   static final instance = FavoriteService._();
 
-  final _auth = FirebaseAuth.instance;
   final _col = FirebaseFirestore.instance.collection('favorites');
 
-  String get _uid {
-    final uid = _auth.currentUser?.uid;
-    if (uid == null) throw StateError('User not signed in');
-    return uid;
-  }
-
   /// ID determinista: {uid}_{parkingId} (lo usamos al escribir de ahora en adelante)
-  String _docId(String parkingId) => '${_uid}_$parkingId';
+  String _docId(String uid, String parkingId) => '${uid}_$parkingId';
 
   /// Añadir/actualizar favorito con los datos del parking.
   /// Escribe en el doc determinista y limpia duplicados con auto-ID si los hay.
-  Future<void> add(Parking p) async {
+  Future<void> add(String uid, Parking p) async {
     if (p.id.isEmpty) {
       throw ArgumentError('Parking.id must not be empty');
     }
@@ -33,7 +25,7 @@ class FavoriteService {
         p.imageUrl;
 
     final map = <String, dynamic>{
-      'userId': _uid,
+      'userId': uid,
       'parkingId': p.id,
       'name': p.name,
       'ownerID': p.ownerID,
@@ -51,34 +43,40 @@ class FavoriteService {
     };
 
     // Escribimos en el doc determinista
-    await _col.doc(_docId(p.id)).set(map, SetOptions(merge: true));
-
+    await _col.doc(_docId(uid, p.id)).set({
+      ...map,
+      'createdAt': FieldValue.serverTimestamp(), // 👈 IMPORTANTE
+    });
     // (Opcional) limpia duplicados con auto-ID si existen
     final dupes =
         await _col
-            .where('userId', isEqualTo: _uid)
+            .where('userId', isEqualTo: uid)
             .where('parkingId', isEqualTo: p.id)
             .get();
     for (final d in dupes.docs) {
-      if (d.id != _docId(p.id)) {
+      if (d.id != _docId(uid, p.id)) {
         await d.reference.delete();
       }
     }
   }
 
   /// Quitar favorito por parkingId (borra el determinista y cualquier auto-ID previo)
-  Future<void> removeByParkingId(String parkingId) async {
+  Future<void> removeByParkingId(String uid, String parkingId) async {
     // borra determinista
-    await _col.doc(_docId(parkingId)).delete();
+    await _col.doc(_docId(uid, parkingId)).delete();
 
     // borra cualquier auto-ID que hubiera quedado
     final qs =
         await _col
-            .where('userId', isEqualTo: _uid)
+            .where('userId', isEqualTo: uid)
             .where('parkingId', isEqualTo: parkingId)
             .get();
     for (final d in qs.docs) {
-      if (d.exists) await d.reference.delete();
+      try {
+        await d.reference.delete();
+      } catch (_) {
+        // ignore permission errors for old/bad docs
+      }
     }
   }
 
@@ -88,11 +86,10 @@ class FavoriteService {
   }
 
   /// ¿Es favorito? — No dependemos del docId, sino de la existencia de un match.
-  Stream<bool> isFavoriteStream(String parkingId) {
+  Stream<bool> isFavoriteStream(String uid, String parkingId) {
     return _col
-        .where('userId', isEqualTo: _uid)
+        .where('userId', isEqualTo: uid)
         .where('parkingId', isEqualTo: parkingId)
-        .limit(1)
         .snapshots()
         .map((qs) => qs.docs.isNotEmpty);
   }

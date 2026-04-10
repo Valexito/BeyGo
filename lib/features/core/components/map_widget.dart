@@ -7,6 +7,8 @@ import 'package:mapbox_api/features/core/components/home_bottom_parking_details.
 import 'package:mapbox_api/features/reservations/services/geolocator.dart';
 import 'package:mapbox_api/features/reservations/services/parking_service.dart';
 import 'package:mapbox_api/features/reservations/models/parking.dart';
+import 'package:rxdart/rxdart.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class MapWidget extends StatefulWidget {
   const MapWidget({super.key, this.mapController, this.onMapTap});
@@ -103,7 +105,15 @@ class _MapWidgetState extends State<MapWidget> {
         return StatefulBuilder(
           builder: (context, setSheetState) {
             return StreamBuilder<bool>(
-              stream: FavoriteService.instance.isFavoriteStream(parking.id),
+              stream: FirebaseAuth.instance.authStateChanges().switchMap((
+                user,
+              ) {
+                if (user == null) return Stream.value(false);
+                return FavoriteService.instance.isFavoriteStream(
+                  user.uid,
+                  parking.id,
+                );
+              }),
               builder: (context, snap) {
                 if (localFav == null) localFav = snap.data ?? false;
                 final uiFav = localFav!;
@@ -114,10 +124,14 @@ class _MapWidgetState extends State<MapWidget> {
                     final next = !uiFav;
                     setSheetState(() => localFav = next);
                     try {
+                      final user = FirebaseAuth.instance.currentUser;
+                      if (user == null) return;
+
                       if (next) {
-                        await FavoriteService.instance.add(parking);
+                        await FavoriteService.instance.add(user.uid, parking);
                       } else {
                         await FavoriteService.instance.removeByParkingId(
+                          user.uid,
                           parking.id,
                         );
                       }
