@@ -247,17 +247,6 @@ class _ReserveSpacePageState extends ConsumerState<ReserveSpacePage> {
                                               'free';
                                           final selected = selectedSpace == num;
 
-                                          if (selected && occupied) {
-                                            WidgetsBinding.instance
-                                                .addPostFrameCallback((_) {
-                                                  if (mounted) {
-                                                    setState(() {
-                                                      selectedSpace = null;
-                                                    });
-                                                  }
-                                                });
-                                          }
-
                                           return _SpaceTile(
                                             number: num,
                                             occupied: occupied,
