@@ -41,6 +41,8 @@ class _ReserveSpaceContentState extends ConsumerState<ReserveSpaceContent> {
             ? 4
             : 3;
 
+    final parkingAsync = ref.watch(parkingStreamProvider(widget.parking.id));
+    final currentParking = parkingAsync.asData?.value ?? widget.parking;
     final spacesAsync = ref.watch(parkingSpacesProvider(widget.parking.id));
 
     return Scaffold(
@@ -96,7 +98,7 @@ class _ReserveSpaceContentState extends ConsumerState<ReserveSpaceContent> {
                                           fontSize: 22,
                                         ),
                                       ),
-                                      _buildOpenStatus(),
+                                      _buildOpenStatus(currentParking),
                                     ],
                                   ),
                                   const SizedBox(height: 6),
@@ -139,11 +141,12 @@ class _ReserveSpaceContentState extends ConsumerState<ReserveSpaceContent> {
                                       ),
                                       _InfoChip(
                                         icon: Icons.attach_money_rounded,
-                                        label: 'Q${widget.parking.price}/h',
+                                        label: 'Q${currentParking.price}/h',
                                       ),
-                                      const _InfoChip(
+                                      _InfoChip(
                                         icon: Icons.access_time_rounded,
-                                        label: '8:00 AM - 6:00 PM',
+                                        label:
+                                            '${currentParking.businessHours?['open'] ?? '--'} - ${currentParking.businessHours?['close'] ?? '--'}',
                                       ),
                                     ],
                                   ),
@@ -298,26 +301,82 @@ class _ReserveSpaceContentState extends ConsumerState<ReserveSpaceContent> {
                                   widget.selectedSpace != null &&
                                           !widget.isSubmitting
                                       ? () {
-                                        if (!_isParkingOpen()) {
+                                        if (!_isParkingOpen(currentParking)) {
                                           showDialog(
                                             context: context,
                                             builder:
-                                                (_) => AlertDialog(
-                                                  title: const Text(
-                                                    'Fuera de horario',
+                                                (_) => Dialog(
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          20,
+                                                        ),
                                                   ),
-                                                  content: const Text(
-                                                    'El parqueo se encuentra fuera de horario de servicio. Intenta en horas regulares.',
-                                                  ),
-                                                  actions: [
-                                                    TextButton(
-                                                      onPressed:
-                                                          () => Navigator.pop(
-                                                            context,
+                                                  child: Container(
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                          20,
+                                                        ),
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.white,
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            20,
                                                           ),
-                                                      child: const Text('OK'),
                                                     ),
-                                                  ],
+                                                    child: Column(
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      children: [
+                                                        Icon(
+                                                          Icons
+                                                              .access_time_rounded,
+                                                          size: 40,
+                                                          color:
+                                                              AppColors
+                                                                  .headerBottom,
+                                                        ),
+                                                        const SizedBox(
+                                                          height: 12,
+                                                        ),
+                                                        const MyText(
+                                                          text:
+                                                              'Fuera de horario',
+                                                          variant:
+                                                              MyTextVariant
+                                                                  .title,
+                                                          fontSize: 18,
+                                                        ),
+                                                        const SizedBox(
+                                                          height: 8,
+                                                        ),
+                                                        const MyText(
+                                                          text:
+                                                              'El parqueo se encuentra fuera de horario de servicio. Intenta en horas regulares.',
+                                                          variant:
+                                                              MyTextVariant
+                                                                  .bodyMuted,
+                                                          textAlign:
+                                                              TextAlign.center,
+                                                        ),
+                                                        const SizedBox(
+                                                          height: 16,
+                                                        ),
+                                                        SizedBox(
+                                                          width:
+                                                              double.infinity,
+                                                          child: MyButton(
+                                                            text: 'Entendido',
+                                                            onTap:
+                                                                () =>
+                                                                    Navigator.pop(
+                                                                      context,
+                                                                    ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
                                                 ),
                                           );
                                           return;
@@ -342,10 +401,10 @@ class _ReserveSpaceContentState extends ConsumerState<ReserveSpaceContent> {
     );
   }
 
-  Widget _buildOpenStatus() {
+  Widget _buildOpenStatus(Parking parking) {
     try {
-      final open = widget.parking.businessHours?['open'];
-      final close = widget.parking.businessHours?['close'];
+      final open = parking.businessHours?['open'];
+      final close = parking.businessHours?['close'];
 
       if (open == null || close == null) {
         return _statusChip('N/A', Colors.grey);
@@ -387,10 +446,10 @@ class _ReserveSpaceContentState extends ConsumerState<ReserveSpaceContent> {
     }
   }
 
-  bool _isParkingOpen() {
+  bool _isParkingOpen(Parking parking) {
     try {
-      final open = widget.parking.businessHours?['open'];
-      final close = widget.parking.businessHours?['close'];
+      final open = parking.businessHours?['open'];
+      final close = parking.businessHours?['close'];
 
       if (open == null || close == null) return true;
 

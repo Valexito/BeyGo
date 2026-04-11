@@ -117,6 +117,14 @@ final parkingByIdProvider = FutureProvider.family<Parking, String>((
   return Parking.fromDoc(snap as DocumentSnapshot<Map<String, dynamic>>);
 });
 
+final parkingStreamProvider = StreamProvider.family<Parking, String>((ref, id) {
+  final db = ref.watch(_dbProvider);
+
+  return _parkingDoc(db, id).snapshots().map(
+    (snap) => Parking.fromDoc(snap as DocumentSnapshot<Map<String, dynamic>>),
+  );
+});
+
 final userReservationControlProvider = StreamProvider<Map<String, dynamic>?>((
   ref,
 ) {
