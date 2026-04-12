@@ -20,10 +20,10 @@ final submitProviderRequestProvider = Provider<
     required String description,
     required double lat,
     required double lng,
-    required List<XFile> parkingImages,
-    required XFile dpiFront,
-    required XFile dpiBack,
-    required XFile patent,
+    required List<Uint8List> parkingImages,
+    required Uint8List dpiFront,
+    required Uint8List dpiBack,
+    required Uint8List patent,
     required int price,
     required int freeCancellationMinutes,
     required String openTime,
@@ -60,18 +60,19 @@ final submitProviderRequestProvider = Provider<
   }
 
   Future<String> _uploadFile({
-    required XFile file,
+    required Uint8List fileBytes,
+    required String fileName,
     required String path,
   }) async {
-    final bytes = await file.readAsBytes();
+    final bytes = fileBytes;
     if (bytes.isEmpty) {
-      throw Exception('Archivo vacío: ${file.name}');
+      throw Exception('Archivo vacío');
     }
     if (bytes.length > 10 * 1024 * 1024) {
-      throw Exception('El archivo ${file.name} excede 10MB.');
+      throw Exception('El archivo excede 10MB.');
     }
 
-    final ext = _guessExt(file.name);
+    final ext = _guessExt(fileName);
     final contentType = _guessContentType(ext);
 
     final refSt = storage.ref(path);
@@ -97,10 +98,10 @@ final submitProviderRequestProvider = Provider<
     required String description,
     required double lat,
     required double lng,
-    required List<XFile> parkingImages,
-    required XFile dpiFront,
-    required XFile dpiBack,
-    required XFile patent,
+    required List<Uint8List> parkingImages,
+    required Uint8List dpiFront,
+    required Uint8List dpiBack,
+    required Uint8List patent,
     required int price,
     required int freeCancellationMinutes,
     required String openTime,
@@ -163,32 +164,31 @@ final submitProviderRequestProvider = Provider<
     final List<String> parkingImageUrls = [];
 
     try {
-      final dpiFrontExt = _guessExt(dpiFront.name);
-      final dpiBackExt = _guessExt(dpiBack.name);
-      final patentExt = _guessExt(patent.name);
-
       final dpiFrontPath =
-          'provider_requests/$requestId/documents/dpi_front.$dpiFrontExt';
+          'provider_requests/$requestId/documents/dpi_front.jpg';
       final dpiBackPath =
-          'provider_requests/$requestId/documents/dpi_back.$dpiBackExt';
+          'provider_requests/$requestId/documents/dpi_back.jpg';
       final patentPath =
-          'provider_requests/$requestId/documents/patent.$patentExt';
+          'provider_requests/$requestId/documents/patent.jpg';
 
-      final dpiFrontUrl = await _uploadFile(file: dpiFront, path: dpiFrontPath);
+      final dpiFrontUrl = await _uploadFile(fileBytes: dpiFront, fileName: 'dpi_front.jpg', path: dpiFrontPath);
       uploadedPaths.add(dpiFrontPath);
 
-      final dpiBackUrl = await _uploadFile(file: dpiBack, path: dpiBackPath);
+      final dpiBackUrl = await _uploadFile(fileBytes: dpiBack, fileName: 'dpi_back.jpg', path: dpiBackPath);
       uploadedPaths.add(dpiBackPath);
 
-      final patentUrl = await _uploadFile(file: patent, path: patentPath);
+      final patentUrl = await _uploadFile(fileBytes: patent, fileName: 'patent.jpg', path: patentPath);
       uploadedPaths.add(patentPath);
 
       for (final img in parkingImages) {
-        final ext = _guessExt(img.name);
         final filePath =
-            'provider_requests/$requestId/parking/${uuid.v4()}.$ext';
+            'provider_requests/$requestId/parking/${uuid.v4()}.jpg';
 
-        final url = await _uploadFile(file: img, path: filePath);
+        final url = await _uploadFile(
+          fileBytes: img,
+          fileName: 'parking.jpg',
+          path: filePath,
+        );
 
         uploadedPaths.add(filePath);
         parkingImageUrls.add(url);

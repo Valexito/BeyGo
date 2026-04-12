@@ -203,7 +203,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 ),
               ),
               Positioned(
-                top: screen.height * 0.31,
+                top: screen.height * 0.26,
                 left: 0,
                 right: 0,
                 bottom: 0,

@@ -62,6 +62,7 @@ class _ReservationCardShell extends StatelessWidget {
     final durationText = _durationText(reservation);
     final showNavigate =
         reservation.state != 'cancelled' && reservation.state != 'completed';
+    final isActive = reservation.state == 'active';
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -221,6 +222,39 @@ class _ReservationCardShell extends StatelessWidget {
                               ),
                             ),
                           ),
+                          if (isActive) ...[
+                            const SizedBox(height: 8),
+                            SizedBox(
+                              width: double.infinity,
+                              height: 32,
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  final phone = (parking?.phone ?? '')
+                                      .replaceAll('+', '');
+
+                                  print('PHONE DEBUG: $phone');
+                                  if (phone.isEmpty) return;
+
+                                  final uri = Uri.parse('https://wa.me/$phone');
+                                  launchUrl(
+                                    uri,
+                                    mode: LaunchMode.externalApplication,
+                                  );
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF25D366),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                ),
+                                child: const Icon(
+                                  Icons.chat,
+                                  size: 15,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
                         ],
                       ],
                     ),

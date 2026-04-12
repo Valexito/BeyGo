@@ -7,6 +7,7 @@ class Parking {
   final String name;
   final String ownerID;
   final int price;
+  final String? phone;
   final int spaces;
   final double? rating;
   final double? originalPrice;
@@ -35,6 +36,7 @@ class Parking {
     this.photos = const [],
     this.pricePerHour = 0,
     this.businessHours,
+    this.phone,
   });
 
   static double _toDouble(dynamic value) {
@@ -95,6 +97,7 @@ class Parking {
       photos: _toStringList(data['photos']),
       pricePerHour: parsedPricePerHour > 0 ? parsedPricePerHour : parsedPrice,
       businessHours: parsedHours,
+      phone: data['phone'] as String?,
     );
   }
 
@@ -114,6 +117,7 @@ class Parking {
     'photos': photos,
     'pricePerHour': pricePerHour,
     'businessHours': businessHours,
+    'phone': phone,
   };
 
   Parking copyWith({
@@ -133,6 +137,7 @@ class Parking {
     List<String>? photos,
     int? pricePerHour,
     Map<String, String>? businessHours,
+    String? phone,
   }) {
     return Parking(
       id: id ?? this.id,
@@ -151,6 +156,7 @@ class Parking {
       photos: photos ?? this.photos,
       pricePerHour: pricePerHour ?? this.pricePerHour,
       businessHours: businessHours ?? this.businessHours,
+      phone: phone ?? this.phone,
     );
   }
 }

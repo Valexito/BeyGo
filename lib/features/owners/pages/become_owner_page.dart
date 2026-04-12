@@ -35,10 +35,10 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage> {
   final _formKey = GlobalKey<FormState>();
   final _picker = ImagePicker();
 
-  final List<XFile> _parkingImages = [];
-  XFile? _dpiFront;
-  XFile? _dpiBack;
-  XFile? _patent;
+  final List<Uint8List> _parkingImages = [];
+  Uint8List? _dpiFront;
+  Uint8List? _dpiBack;
+  Uint8List? _patent;
 
   bool _accept = false;
   bool _sending = false;
@@ -89,10 +89,16 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage> {
       maxWidth: 1920,
     );
     if (picked.isNotEmpty) {
+      const maxTotal = 10;
+      final remaining = maxTotal - _parkingImages.length;
+      final selected = picked.take(remaining);
+
+      final bytesList = await Future.wait(
+        selected.map((img) => img.readAsBytes()),
+      );
+
       setState(() {
-        const maxTotal = 10;
-        final remaining = maxTotal - _parkingImages.length;
-        _parkingImages.addAll(picked.take(remaining));
+        _parkingImages.addAll(bytesList);
       });
     }
   }
@@ -104,7 +110,8 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage> {
       maxWidth: 1920,
     );
     if (img != null) {
-      setState(() => _dpiFront = img);
+      final bytes = await img.readAsBytes();
+      setState(() => _dpiFront = bytes);
     }
   }
 
@@ -115,7 +122,8 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage> {
       maxWidth: 1920,
     );
     if (img != null) {
-      setState(() => _dpiBack = img);
+      final bytes = await img.readAsBytes();
+      setState(() => _dpiBack = bytes);
     }
   }
 
@@ -126,11 +134,12 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage> {
       maxWidth: 1920,
     );
     if (img != null) {
-      setState(() => _patent = img);
+      final bytes = await img.readAsBytes();
+      setState(() => _patent = bytes);
     }
   }
 
-  void _removeParkingImage(XFile img) {
+  void _removeParkingImage(Uint8List img) {
     setState(() => _parkingImages.remove(img));
   }
 
@@ -293,7 +302,7 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage> {
   }
 
   Widget _buildSinglePreview({
-    required XFile? file,
+    required Uint8List? file,
     required VoidCallback onPick,
     required VoidCallback onRemove,
     required String emptyLabel,
@@ -336,20 +345,7 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage> {
                 child: SizedBox(
                   height: 140,
                   width: double.infinity,
-                  child: FutureBuilder<Uint8List>(
-                    future: file.readAsBytes(),
-                    builder: (context, snap) {
-                      if (snap.connectionState != ConnectionState.done ||
-                          !snap.hasData) {
-                        return Container(
-                          color: const Color(0xFFEAEFF5),
-                          alignment: Alignment.center,
-                          child: const CircularProgressIndicator(),
-                        );
-                      }
-                      return Image.memory(snap.data!, fit: BoxFit.cover);
-                    },
-                  ),
+                  child: Image.memory(file, fit: BoxFit.cover),
                 ),
               ),
               Positioned(
@@ -390,16 +386,7 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage> {
                 child: SizedBox(
                   width: 92,
                   height: 92,
-                  child: FutureBuilder<Uint8List>(
-                    future: img.readAsBytes(),
-                    builder: (context, snap) {
-                      if (snap.connectionState != ConnectionState.done ||
-                          !snap.hasData) {
-                        return Container(color: const Color(0xFFEAEFF5));
-                      }
-                      return Image.memory(snap.data!, fit: BoxFit.cover);
-                    },
-                  ),
+                  child: Image.memory(img, fit: BoxFit.cover),
                 ),
               ),
               Positioned(
@@ -688,7 +675,7 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage> {
                           const SizedBox(height: 6),
                           MyTextField(
                             controller: _nit,
-                            hintText: 'Ej. 1234567-8',
+                            hintText: 'Ej. 112615953',
                             prefixIcon: Icons.badge_outlined,
                             margin: EdgeInsets.zero,
                             validator: (v) => _requiredValidator(v, 'NIT'),
@@ -696,22 +683,84 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage> {
 
                           const SizedBox(height: 14),
 
-                          const MyText(
-                            text: 'Ventana de cancelación gratis (minutos)',
-                            variant: MyTextVariant.normalBold,
-                            fontSize: 13,
+                          Row(
+                            children: [
+                              const MyText(
+                                text: 'Tiempo de cancelación gratis (min)',
+                                variant: MyTextVariant.normalBold,
+                                fontSize: 13,
+                              ),
+                              const SizedBox(width: 6),
+                              GestureDetector(
+                                onTap: () {
+                                  showDialog(
+                                    context: context,
+                                    builder:
+                                        (_) => AlertDialog(
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              16,
+                                            ),
+                                          ),
+                                          title: const MyText(
+                                            text: '¿Cómo funciona?',
+                                            variant: MyTextVariant.title,
+                                          ),
+                                          content: const MyText(
+                                            text:
+                                                'Este tiempo define cuántos minutos tiene el usuario para cancelar una reservación sin costo. '
+                                                'Si cancela después de este tiempo, se le aplicarán cargos automáticamente.',
+                                            variant: MyTextVariant.body,
+                                          ),
+                                          actions: [
+                                            TextButton(
+                                              onPressed:
+                                                  () => Navigator.pop(context),
+                                              child: const Text('Entendido'),
+                                            ),
+                                          ],
+                                        ),
+                                  );
+                                },
+                                child: const Icon(
+                                  Icons.info_outline,
+                                  size: 18,
+                                  color: AppColors.headerBottom,
+                                ),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 6),
-                          MyTextField(
-                            controller: _cancellationWindow,
-                            hintText: 'Mínimo 3 minutos',
-                            keyboardType: TextInputType.number,
-                            prefixIcon: Icons.timer_outlined,
-                            margin: EdgeInsets.zero,
-                            validator: (v) {
-                              final n = int.tryParse((v ?? '').trim());
-                              if (n == null || n < 3) {
-                                return 'Debe ser mínimo 3 minutos';
+                          DropdownButtonFormField<int>(
+                            value:
+                                _cancellationWindow.text.isEmpty
+                                    ? null
+                                    : int.tryParse(_cancellationWindow.text),
+                            decoration: InputDecoration(
+                              prefixIcon: const Icon(Icons.timer_outlined),
+                              hintText: 'Selecciona (mín. 3 min)',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFFD7E0EA),
+                                ),
+                              ),
+                            ),
+                            items:
+                                List.generate(10, (i) => i + 1).map((min) {
+                                  return DropdownMenuItem(
+                                    value: min,
+                                    child: Text('$min minutos'),
+                                  );
+                                }).toList(),
+                            onChanged: (value) {
+                              if (value != null) {
+                                _cancellationWindow.text = value.toString();
+                              }
+                            },
+                            validator: (value) {
+                              if (value == null || value < 3) {
+                                return 'Mínimo 3 minutos';
                               }
                               return null;
                             },

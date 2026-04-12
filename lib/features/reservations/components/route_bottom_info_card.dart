@@ -214,24 +214,22 @@ class RouteBottomInfoCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 14),
+
                 Row(
                   children: [
                     Expanded(
                       child: _MiniDetailTile(
-                        icon: Icons.pin_outlined,
-                        title: 'Espacio',
-                        value:
-                            spaceNumber == null
-                                ? 'No definido'
-                                : '$spaceNumber',
+                        icon: Icons.route_rounded,
+                        title: 'Distancia',
+                        value: distance,
                       ),
                     ),
                     const SizedBox(width: 10),
-                    const Expanded(
+                    Expanded(
                       child: _MiniDetailTile(
-                        icon: Icons.navigation_outlined,
-                        title: 'Destino',
-                        value: 'Parqueo',
+                        icon: Icons.access_time_rounded,
+                        title: 'Tiempo',
+                        value: duration,
                       ),
                     ),
                   ],

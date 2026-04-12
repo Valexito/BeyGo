@@ -11,6 +11,8 @@ import 'package:mapbox_api/features/core/components/map_widget.dart';
 import 'package:mapbox_api/features/core/providers/map_providers.dart';
 import 'package:mapbox_api/features/reservations/providers/location_providers.dart';
 
+const mapboxToken = String.fromEnvironment('MAPBOX_TOKEN');
+
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
   @override
@@ -39,6 +41,12 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     // 2) (Opcional) Ubicación actual para “esperar” antes de mostrar algo o centrar una vez
     final locAsync = ref.watch(currentLocationProvider);
+
+    debugPrint('MAPBOX_TOKEN length: ${mapboxToken.length}');
+    debugPrint(
+      'MAPBOX_TOKEN preview: ${mapboxToken.isEmpty ? 'EMPTY' : mapboxToken.substring(0, mapboxToken.length > 12 ? 12 : mapboxToken.length)}',
+    );
+    debugPrint('MAPBOX_TOKEN available: ${mapboxToken.isNotEmpty}');
 
     return Scaffold(
       key: _scaffoldKey,

@@ -127,20 +127,31 @@ class RouteViewPage extends ConsumerWidget {
                       onBack: () => Navigator.pop(context),
                     ),
                     Positioned(
-                      top: 132,
-                      left: 18,
-                      right: 18,
-                      child: _RouteInfoCard(
-                        parkingName: parkingName,
-                        distance: distance,
-                        duration: duration,
-                      ),
-                    ),
-                    Positioned(
                       right: 16,
                       bottom: 260,
                       child: _RecenterButton(
                         onTap: () => map.move(origin, map.camera.zoom),
+                      ),
+                    ),
+                    Positioned(
+                      right: 16,
+                      bottom: 330,
+                      child: Column(
+                        children: [
+                          _ZoomButton(
+                            icon: Icons.add,
+                            onTap: () {
+                              map.move(map.camera.center, map.camera.zoom + 1);
+                            },
+                          ),
+                          const SizedBox(height: 10),
+                          _ZoomButton(
+                            icon: Icons.remove,
+                            onTap: () {
+                              map.move(map.camera.center, map.camera.zoom - 1);
+                            },
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -149,8 +160,8 @@ class RouteViewPage extends ConsumerWidget {
                   parkingName: parkingName,
                   distance: distance,
                   duration: duration,
-                  destination: destination,
                   spaceNumber: spaceNumber,
+                  destination: destination,
                   reservationStatus:
                       reservationId == null
                           ? 'Dirigiéndote a tu espacio reservado'
@@ -258,6 +269,27 @@ class _RouteHeader extends StatelessWidget {
                 ),
                 icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 16),
                 label: const Text('Regresar'),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 80,
+            left: 35,
+            right: 0,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  'RUTA AL $parkingName',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ),
             ),
           ),
@@ -581,6 +613,31 @@ class _RouteErrorPage extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ZoomButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _ZoomButton({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      elevation: 5,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: SizedBox(
+          width: 44,
+          height: 44,
+          child: Icon(icon, color: AppColors.headerBottom),
+        ),
       ),
     );
   }
