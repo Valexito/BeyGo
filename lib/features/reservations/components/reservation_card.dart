@@ -60,9 +60,18 @@ class _ReservationCardShell extends StatelessWidget {
     final priceText = _priceText(parking, reservation);
     final startText = _formatDateTime(reservation.reservedAt);
     final durationText = _durationText(reservation);
-    final showNavigate =
-        reservation.state != 'cancelled' && reservation.state != 'completed';
-    final isActive = reservation.state == 'active';
+    final isPendingApproval =
+        reservation.state == 'pending' ||
+        reservation.providerApprovalStatus == 'pending';
+    final isRejected =
+        reservation.state == 'rejected' ||
+        reservation.providerApprovalStatus == 'rejected';
+    final isApprovedActive =
+        reservation.state == 'active' &&
+        reservation.providerApprovalStatus == 'approved';
+
+    final showNavigate = isApprovedActive;
+    final isActive = isApprovedActive;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -324,7 +333,12 @@ class _ReservationCardShell extends StatelessWidget {
   static String _statusLabel(Reservation r) {
     if (r.state == 'completed') return 'COMPLETADA';
     if (r.state == 'cancelled') return 'CANCELADA';
-    if (r.state == 'cancellation_requested') return 'CANCELACIÓN';
+    if (r.state == 'rejected' || r.providerApprovalStatus == 'rejected') {
+      return 'DENEGADA';
+    }
+    if (r.state == 'pending' || r.providerApprovalStatus == 'pending') {
+      return 'PENDIENTE';
+    }
     if (r.state == 'active' && r.exitStatus == 'approved') return 'SALIDA OK';
     if (r.state == 'active' && r.exitStatus == 'requested')
       return 'SALIDA SOL.';
@@ -334,13 +348,23 @@ class _ReservationCardShell extends StatelessWidget {
   static Color _statusColor(Reservation r) {
     if (r.state == 'completed') return const Color(0xFF2563EB);
     if (r.state == 'cancelled') return const Color(0xFFDC2626);
-    if (r.state == 'cancellation_requested') return const Color(0xFFF59E0B);
+
+    if (r.state == 'rejected' || r.providerApprovalStatus == 'rejected') {
+      return const Color(0xFFDC2626);
+    }
+
+    if (r.state == 'pending' || r.providerApprovalStatus == 'pending') {
+      return const Color(0xFFF59E0B);
+    }
+
     if (r.state == 'active' && r.exitStatus == 'approved') {
       return const Color(0xFF0EA5E9);
     }
+
     if (r.state == 'active' && r.exitStatus == 'requested') {
       return const Color(0xFFF59E0B);
     }
+
     return const Color(0xFF16A34A);
   }
 

@@ -10,12 +10,14 @@ class Reservation {
   final String parkingId;
   final String parkingName;
   final String ownerId;
+  final String? userName;
+  final String? plate;
   final int spaceNumber;
 
   final DateTime reservedAt;
   final DateTime? endedAt;
 
-  /// active | completed | cancelled | cancellation_requested
+  /// pending | active | completed | cancelled | rejected | cancellation_requested
   final String state;
 
   final int? pricePerHour;
@@ -59,10 +61,12 @@ class Reservation {
     required this.parkingId,
     required this.parkingName,
     required this.ownerId,
+    this.userName,
+    this.plate,
     required this.spaceNumber,
     required this.reservedAt,
     this.endedAt,
-    this.state = 'active',
+    this.state = 'pending',
     this.pricePerHour,
     this.amount,
     this.durationMinutes,
@@ -102,6 +106,12 @@ class Reservation {
   bool get isExitRequested => exitStatus == 'requested';
   bool get isExitApproved => exitStatus == 'approved';
   bool get isExitRejected => exitStatus == 'rejected';
+  bool get isPending => state == 'pending';
+  bool get isRejected => state == 'rejected';
+  bool get isActive => state == 'active';
+
+  bool get isApproved => providerApprovalStatus == 'approved';
+  bool get isRejectedByProvider => providerApprovalStatus == 'rejected';
 
   factory Reservation.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data() ?? <String, dynamic>{};
@@ -117,12 +127,14 @@ class Reservation {
       parkingId: (data['parkingId'] as String?) ?? '',
       parkingName: (data['parkingName'] as String?) ?? '',
       ownerId: (data['ownerId'] as String?) ?? '',
+      userName: data['userName'] as String?,
+      plate: data['plate'] as String?,
       spaceNumber: (data['spaceNumber'] as num?)?.toInt() ?? 0,
       reservedAt:
           parseTimestamp(data['reservedAt'] ?? data['startedAt']) ??
           Timestamp.now().toDate(),
       endedAt: parseTimestamp(data['endedAt']),
-      state: (data['state'] as String?) ?? 'active',
+      state: (data['state'] as String?) ?? 'pending',
       pricePerHour: (data['pricePerHour'] as num?)?.toInt(),
       amount: (data['amount'] as num?)?.toInt(),
       durationMinutes: (data['durationMinutes'] as num?)?.toInt(),
@@ -149,6 +161,8 @@ class Reservation {
       'parkingId': parkingId,
       'parkingName': parkingName,
       'ownerId': ownerId,
+      'userName': userName,
+      'plate': plate,
       'spaceNumber': spaceNumber,
       'reservedAt': Timestamp.fromDate(reservedAt),
       'startedAt': Timestamp.fromDate(reservedAt),
@@ -188,6 +202,8 @@ class Reservation {
     String? parkingId,
     String? parkingName,
     String? ownerId,
+    String? userName,
+    String? plate,
     int? spaceNumber,
     DateTime? reservedAt,
     DateTime? endedAt,
@@ -215,6 +231,8 @@ class Reservation {
       parkingId: parkingId ?? this.parkingId,
       parkingName: parkingName ?? this.parkingName,
       ownerId: ownerId ?? this.ownerId,
+      userName: userName ?? this.userName,
+      plate: plate ?? this.plate,
       spaceNumber: spaceNumber ?? this.spaceNumber,
       reservedAt: reservedAt ?? this.reservedAt,
       endedAt: endedAt ?? this.endedAt,

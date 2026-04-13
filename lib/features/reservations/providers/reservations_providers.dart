@@ -231,7 +231,8 @@ final reserveSpaceProvider = Provider<
       ownerId: p.ownerID,
       spaceNumber: spaceNumber,
       reservedAt: now,
-      state: 'active',
+      state: 'pending',
+      providerApprovalStatus: 'pending',
       pricePerHour: p.pricePerHour,
       freeCancellationUntil: freeUntil,
       exitStatus: 'none',
@@ -241,14 +242,17 @@ final reserveSpaceProvider = Provider<
       final spaceSnap = await tx.get(spaceRef);
       final spaceData = spaceSnap.data() as Map<String, dynamic>? ?? {};
 
-      if ((spaceData['status'] ?? 'free') != 'free') {
-        throw StateError('El espacio ya está ocupado.');
+      final currentStatus =
+          ((spaceData['status'] ?? 'free') as String).toLowerCase().trim();
+
+      if (currentStatus != 'free') {
+        throw StateError('El espacio ya no está disponible.');
       }
 
       tx.set(resRef, reservation.toMap());
 
       tx.set(spaceRef, {
-        'status': 'occupied',
+        'status': 'requested',
         'currentReservationId': resRef.id,
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));

@@ -166,18 +166,28 @@ final submitProviderRequestProvider = Provider<
     try {
       final dpiFrontPath =
           'provider_requests/$requestId/documents/dpi_front.jpg';
-      final dpiBackPath =
-          'provider_requests/$requestId/documents/dpi_back.jpg';
-      final patentPath =
-          'provider_requests/$requestId/documents/patent.jpg';
+      final dpiBackPath = 'provider_requests/$requestId/documents/dpi_back.jpg';
+      final patentPath = 'provider_requests/$requestId/documents/patent.jpg';
 
-      final dpiFrontUrl = await _uploadFile(fileBytes: dpiFront, fileName: 'dpi_front.jpg', path: dpiFrontPath);
+      final dpiFrontUrl = await _uploadFile(
+        fileBytes: dpiFront,
+        fileName: 'dpi_front.jpg',
+        path: dpiFrontPath,
+      );
       uploadedPaths.add(dpiFrontPath);
 
-      final dpiBackUrl = await _uploadFile(fileBytes: dpiBack, fileName: 'dpi_back.jpg', path: dpiBackPath);
+      final dpiBackUrl = await _uploadFile(
+        fileBytes: dpiBack,
+        fileName: 'dpi_back.jpg',
+        path: dpiBackPath,
+      );
       uploadedPaths.add(dpiBackPath);
 
-      final patentUrl = await _uploadFile(fileBytes: patent, fileName: 'patent.jpg', path: patentPath);
+      final patentUrl = await _uploadFile(
+        fileBytes: patent,
+        fileName: 'patent.jpg',
+        path: patentPath,
+      );
       uploadedPaths.add(patentPath);
 
       for (final img in parkingImages) {
@@ -271,3 +281,55 @@ String _guessContentType(String ext) {
       return 'image/jpeg';
   }
 }
+
+/* ===============================
+   OWNER APPROVE RESERVATION
+================================ */
+final ownerApproveReservationProvider =
+    Provider<Future<void> Function({required dynamic reservation})>((ref) {
+      final db = ref.watch(firestoreProvider);
+
+      return ({required reservation}) async {
+        final reservationRef = db
+            .collection('reservations')
+            .doc(reservation.id);
+
+        final spaceRef = db
+            .collection('parkings')
+            .doc(reservation.parkingId)
+            .collection('spaces')
+            .doc('${reservation.spaceNumber}');
+
+        await db.runTransaction((tx) async {
+          final resSnap = await tx.get(reservationRef);
+          final spaceSnap = await tx.get(spaceRef);
+
+          if (!resSnap.exists) {
+            throw StateError('Reservation not found');
+          }
+
+          final data = resSnap.data() as Map<String, dynamic>;
+
+          if (data['providerApprovalStatus'] != 'pending') {
+            throw StateError('Already processed');
+          }
+
+          final spaceData = spaceSnap.data() as Map<String, dynamic>? ?? {};
+
+          /// APPROVE RESERVATION
+          tx.update(reservationRef, {
+            'state': 'active',
+            'providerApprovalStatus': 'approved',
+          });
+
+          /// MARK SPACE OCCUPIED
+          if ((spaceData['status'] ?? 'free') == 'free') {
+            tx.set(spaceRef, {
+              'status': 'occupied',
+              'currentReservationId': reservation.id,
+              'updatedAt': FieldValue.serverTimestamp(),
+            }, SetOptions(merge: true));
+          }
+        });
+      };
+    });

@@ -83,10 +83,15 @@ class _ReservationDetailsSheetState
     required int maxStrikes,
     required bool limitReached,
   }) {
+    final isPending = reservation.state == 'pending';
+    final isApproved = reservation.providerApprovalStatus == 'approved';
+    final isRejected = reservation.providerApprovalStatus == 'rejected';
+
     final canCancel =
         reservation.state == 'active' &&
         reservation.exitStatus == 'none' &&
-        !limitReached;
+        !limitReached &&
+        isApproved;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -188,7 +193,22 @@ class _ReservationDetailsSheetState
           ),
         ),
         const SizedBox(height: 20),
-        if (reservation.state == 'active' && reservation.exitStatus == 'none')
+        if (reservation.state == 'pending')
+          MyButton(
+            text: 'Esperando aprobación del dueño...',
+            onTap: null,
+            margin: EdgeInsets.zero,
+          ),
+        if (reservation.state == 'active' &&
+            reservation.providerApprovalStatus != 'approved')
+          MyButton(
+            text: 'Pendiente de aprobación...',
+            onTap: null,
+            margin: EdgeInsets.zero,
+          ),
+        if (reservation.state == 'active' &&
+            reservation.exitStatus == 'none' &&
+            reservation.providerApprovalStatus == 'approved')
           Row(
             children: [
               if (canCancel)
@@ -502,6 +522,8 @@ class _ReservationDetailsSheetState
   }
 
   String _displayStatus(Reservation r) {
+    if (r.state == 'pending') return 'Pendiente';
+    if (r.providerApprovalStatus == 'rejected') return 'Denegada';
     if (r.state == 'completed') return 'Completada';
     if (r.state == 'cancelled') return 'Cancelada';
     if (r.state == 'cancellation_requested') return 'Cancelación pendiente';

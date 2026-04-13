@@ -117,7 +117,11 @@ class _ReserveSpaceContentState extends ConsumerState<ReserveSpaceContent> {
                                           final available =
                                               spacesMap.values
                                                   .where(
-                                                    (s) => s.status == 'free',
+                                                    (s) =>
+                                                        s.status
+                                                            .toLowerCase()
+                                                            .trim() ==
+                                                        'free',
                                                   )
                                                   .length;
                                           return _InfoChip(
@@ -188,6 +192,10 @@ class _ReserveSpaceContentState extends ConsumerState<ReserveSpaceContent> {
                                           label: 'Seleccionado',
                                           filled: true,
                                         ),
+                                        _LegendDot(
+                                          color: Color(0xFFF59E0B),
+                                          label: 'Solicitado',
+                                        ),
                                       ],
                                     ),
                                     const SizedBox(height: 16),
@@ -217,22 +225,34 @@ class _ReserveSpaceContentState extends ConsumerState<ReserveSpaceContent> {
                                           itemBuilder: (_, idx) {
                                             final num = idx + 1;
                                             final space = spacesMap[num];
+                                            final status =
+                                                (space?.status ?? 'free')
+                                                    .toLowerCase()
+                                                    .trim();
                                             final occupied =
-                                                (space?.status ?? 'free') !=
-                                                'free';
+                                                status == 'occupied';
+                                            final requested =
+                                                status == 'requested' ||
+                                                status == 'pending' ||
+                                                status == 'solicitado';
+                                            final selectable =
+                                                !occupied &&
+                                                !requested &&
+                                                !widget.isSubmitting;
                                             final selected =
+                                                selectable &&
                                                 widget.selectedSpace == num;
 
                                             return _SpaceTile(
                                               number: num,
                                               occupied: occupied,
+                                              requested: requested,
                                               selected: selected,
                                               onTap:
-                                                  occupied ||
-                                                          widget.isSubmitting
-                                                      ? null
-                                                      : () => widget
-                                                          .onSelectSpace(num),
+                                                  selectable
+                                                      ? () => widget
+                                                          .onSelectSpace(num)
+                                                      : null,
                                             );
                                           },
                                         );
@@ -657,12 +677,14 @@ class _InfoChip extends StatelessWidget {
 class _SpaceTile extends StatelessWidget {
   final int number;
   final bool occupied;
+  final bool requested;
   final bool selected;
   final VoidCallback? onTap;
 
   const _SpaceTile({
     required this.number,
     required this.occupied,
+    required this.requested,
     required this.selected,
     required this.onTap,
   });
@@ -674,6 +696,12 @@ class _SpaceTile extends StatelessWidget {
             ? BoxDecoration(
               color: const Color(0xFFE5E7EB),
               borderRadius: BorderRadius.circular(14),
+            )
+            : requested
+            ? BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFFF59E0B), width: 1.6),
             )
             : selected
             ? BoxDecoration(
@@ -696,6 +724,8 @@ class _SpaceTile extends StatelessWidget {
     final Color iconColor =
         occupied
             ? const Color(0xFF6B7280)
+            : requested
+            ? const Color(0xFFF59E0B)
             : selected
             ? Colors.white
             : AppColors.textPrimary;
@@ -703,33 +733,38 @@ class _SpaceTile extends StatelessWidget {
     final Color labelColor =
         occupied
             ? const Color(0xFF6B7280)
+            : requested
+            ? const Color(0xFFF59E0B)
             : selected
             ? Colors.white
             : AppColors.textPrimary;
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: onTap,
-        child: Container(
-          decoration: decoration,
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.directions_car_outlined, size: 21, color: iconColor),
-              const SizedBox(height: 6),
-              Text(
-                'Espacio $number',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: labelColor,
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w700,
+    return Opacity(
+      opacity: occupied ? 0.9 : 1,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onTap,
+          child: Container(
+            decoration: decoration,
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.directions_car_outlined, size: 21, color: iconColor),
+                const SizedBox(height: 6),
+                Text(
+                  'Espacio $number',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: labelColor,
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

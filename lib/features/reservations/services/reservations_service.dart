@@ -10,7 +10,7 @@ class Reservation {
   final DateTime reservedAt;
   final DateTime? endedAt;
 
-  /// active | completed | cancelled | cancellation_requested
+  /// pending | active | completed | cancelled | cancellation_requested | rejected
   final String state;
 
   final int? pricePerHour;
@@ -48,7 +48,7 @@ class Reservation {
     required this.spaceNumber,
     required this.reservedAt,
     this.endedAt,
-    this.state = 'active',
+    this.state = 'pending',
     this.pricePerHour,
     this.amount,
     this.durationMinutes,
@@ -94,7 +94,7 @@ class Reservation {
           parseTimestamp(data['reservedAt'] ?? data['startedAt']) ??
           Timestamp.now().toDate(),
       endedAt: parseTimestamp(data['endedAt']),
-      state: data['state'] ?? 'active',
+      state: data['state'] ?? 'pending',
       pricePerHour: (data['pricePerHour'] as num?)?.toInt(),
       amount: (data['amount'] as num?)?.toInt(),
       durationMinutes: (data['durationMinutes'] as num?)?.toInt(),
