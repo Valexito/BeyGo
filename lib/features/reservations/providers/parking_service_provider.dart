@@ -7,6 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/parking.dart';
 
@@ -208,3 +209,10 @@ class ParkingService {
     }
   }
 }
+
+/// ============================
+/// 🔥 PROVIDER
+/// ============================
+final parkingServiceProvider = Provider<ParkingService>(
+  (ref) => ParkingService(),
+);

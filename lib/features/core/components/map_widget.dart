@@ -5,7 +5,7 @@ import 'package:mapbox_api/common/env/env.dart';
 import 'package:mapbox_api/features/core/services/favorite_service.dart';
 import 'package:mapbox_api/features/core/components/home_bottom_parking_details.dart';
 import 'package:mapbox_api/features/reservations/services/geolocator.dart';
-import 'package:mapbox_api/features/reservations/services/parking_service.dart';
+import 'package:mapbox_api/features/reservations/providers/parking_service_provider.dart';
 import 'package:mapbox_api/features/reservations/models/parking.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:firebase_auth/firebase_auth.dart';

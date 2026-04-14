@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
@@ -17,6 +18,7 @@ class RouteViewPage extends ConsumerWidget {
   final String parkingName;
   final int? spaceNumber;
   final String? reservationId;
+  final String reservationState;
 
   const RouteViewPage({
     super.key,
@@ -24,6 +26,7 @@ class RouteViewPage extends ConsumerWidget {
     required this.parkingName,
     this.spaceNumber,
     this.reservationId,
+    this.reservationState = 'active',
   });
 
   @override
@@ -156,20 +159,56 @@ class RouteViewPage extends ConsumerWidget {
                     ),
                   ],
                 ),
-                bottomSheet: RouteBottomInfoCard(
-                  parkingName: parkingName,
-                  distance: distance,
-                  duration: duration,
-                  spaceNumber: spaceNumber,
-                  destination: destination,
-                  reservationStatus:
-                      reservationId == null
-                          ? 'Dirigiéndote a tu espacio reservado'
-                          : 'Reserva activa #$reservationId',
-                  onGoToReservations: () {
-                    Navigator.of(context).pushNamed('/reservationsPage');
-                  },
-                ),
+                bottomSheet:
+                    reservationId == null
+                        ? RouteBottomInfoCard(
+                          parkingName: parkingName,
+                          distance: distance,
+                          duration: duration,
+                          spaceNumber: spaceNumber,
+                          destination: destination,
+                          reservationStatus: reservationState,
+                          onGoToReservations: () {
+                            Navigator.of(
+                              context,
+                            ).pushNamed('/reservationsPage');
+                          },
+                        )
+                        : StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                          stream:
+                              FirebaseFirestore.instance
+                                  .collection('reservations')
+                                  .doc(reservationId)
+                                  .snapshots(),
+                          builder: (context, snapshot) {
+                            final data = snapshot.data?.data();
+                            final rawState =
+                                (data?['state'] as String?) ?? reservationState;
+                            final providerApproval =
+                                (data?['providerApprovalStatus'] as String?) ??
+                                '';
+
+                            // Combine logic: if not approved yet, treat as pending
+                            final state =
+                                providerApproval == 'approved'
+                                    ? rawState
+                                    : 'pending';
+
+                            return RouteBottomInfoCard(
+                              parkingName: parkingName,
+                              distance: distance,
+                              duration: duration,
+                              spaceNumber: spaceNumber,
+                              destination: destination,
+                              reservationStatus: state,
+                              onGoToReservations: () {
+                                Navigator.of(
+                                  context,
+                                ).pushNamed('/reservationsPage');
+                              },
+                            );
+                          },
+                        ),
               ),
             );
           },
@@ -255,7 +294,7 @@ class _RouteHeader extends StatelessWidget {
           ),
           Positioned(
             top: 15,
-            left: 14,
+            left: 10,
             child: SafeArea(
               bottom: false,
               child: TextButton.icon(
@@ -274,14 +313,14 @@ class _RouteHeader extends StatelessWidget {
           ),
           Positioned(
             top: 80,
-            left: 35,
+            left: 10,
             right: 0,
             child: Align(
               alignment: Alignment.centerLeft,
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Text(
-                  'RUTA AL $parkingName',
+                  'RUTA A $parkingName',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(

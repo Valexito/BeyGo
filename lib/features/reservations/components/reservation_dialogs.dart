@@ -11,6 +11,7 @@ class ReservationDialogs {
     required LatLng destination,
     required String parkingName,
     required int spaceNumber,
+    required int pricePerHour,
   }) {
     return showDialog<bool>(
       context: context,
@@ -128,10 +129,15 @@ class ReservationDialogs {
                             ),
                             const SizedBox(height: 12),
                             _SummaryRow(
-                              icon: Icons.place_outlined,
-                              title: 'Destino',
-                              value:
-                                  '${destination.latitude.toStringAsFixed(5)}, ${destination.longitude.toStringAsFixed(5)}',
+                              icon: Icons.access_time_rounded,
+                              title: 'Inicio',
+                              value: _format(DateTime.now()),
+                            ),
+                            const SizedBox(height: 12),
+                            _SummaryRow(
+                              icon: Icons.payments_outlined,
+                              title: 'Precio por hora',
+                              value: 'Q $pricePerHour/h',
                             ),
                           ],
                         ),

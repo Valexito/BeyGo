@@ -132,6 +132,9 @@ class RouteBottomInfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint(
+      'RouteBottomInfoCard -> reservationStatus: $reservationStatus | spaceNumber: $spaceNumber',
+    );
     return ClipRRect(
       borderRadius: const BorderRadius.only(
         topLeft: Radius.circular(26),
@@ -187,30 +190,58 @@ class RouteBottomInfoCard extends StatelessWidget {
                           const SizedBox(height: 4),
                           MyText(
                             text: reservationStatus,
-                            variant: MyTextVariant.bodyMuted,
+                            variant: MyTextVariant.bodyBold,
                             fontSize: 12,
                           ),
                         ],
                       ),
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE8F5E9),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: const Text(
-                        'Activo',
-                        style: TextStyle(
-                          color: Color(0xFF16A34A),
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
+                    (() {
+                      final status = reservationStatus.toLowerCase().trim();
+
+                      final isPending = status == 'pending';
+                      final isActive = status == 'active';
+
+                      final chipColor =
+                          isPending
+                              ? const Color(0xFFFFF3E0)
+                              : isActive
+                              ? const Color(0xFFE8F5E9)
+                              : const Color(0xFFE3F2FD);
+
+                      final textColor =
+                          isPending
+                              ? const Color(0xFFF59E0B)
+                              : isActive
+                              ? const Color(0xFF16A34A)
+                              : const Color(0xFF1976D2);
+
+                      final label =
+                          isPending
+                              ? 'PENDIENTE'
+                              : isActive
+                              ? 'ACTIVO'
+                              : status.toUpperCase();
+
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
                         ),
-                      ),
-                    ),
+                        decoration: BoxDecoration(
+                          color: chipColor,
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          label,
+                          style: TextStyle(
+                            color: textColor,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      );
+                    })(),
                   ],
                 ),
                 const SizedBox(height: 14),

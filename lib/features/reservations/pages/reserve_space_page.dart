@@ -52,6 +52,7 @@ class _ReserveSpacePageState extends ConsumerState<ReserveSpacePage> {
       destination: LatLng(widget.parking.lat, widget.parking.lng),
       parkingName: widget.parking.name,
       spaceNumber: selectedSpace!,
+      pricePerHour: widget.parking.pricePerHour ?? 0,
     );
 
     if (ok != true || !mounted) return;
