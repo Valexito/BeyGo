@@ -323,7 +323,10 @@ final ownerApproveReservationProvider =
           });
 
           /// MARK SPACE OCCUPIED
-          if ((spaceData['status'] ?? 'free') == 'free') {
+          final currentStatus =
+              (spaceData['status'] ?? 'free').toString().toLowerCase().trim();
+
+          if (currentStatus == 'free' || currentStatus == 'requested') {
             tx.set(spaceRef, {
               'status': 'occupied',
               'currentReservationId': reservation.id,

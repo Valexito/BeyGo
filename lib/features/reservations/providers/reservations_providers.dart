@@ -189,6 +189,11 @@ final reserveSpaceProvider = Provider<
     required int spaceNumber,
   }) async {
     final uid = auth.currentUser?.uid;
+    final userSnap = await db.collection('users').doc(uid).get();
+    final userData = userSnap.data() ?? <String, dynamic>{};
+
+    final userName = userData['name'] ?? userData['displayName'] ?? '';
+    final plate = userData['vehiclePlate'] ?? '';
     if (uid == null) {
       throw StateError('Debes iniciar sesión para reservar.');
     }
@@ -229,6 +234,8 @@ final reserveSpaceProvider = Provider<
       parkingId: parkingId,
       parkingName: parkingName,
       ownerId: p.ownerID,
+      userName: userName,
+      plate: plate,
       spaceNumber: spaceNumber,
       reservedAt: now,
       state: 'pending',
@@ -615,7 +622,10 @@ final ownerConfirmExitProvider =
             'amount': amount,
           });
 
-          if ((spaceData['status'] ?? 'free') == 'occupied' &&
+          final currentStatus =
+              (spaceData['status'] ?? 'free').toString().toLowerCase().trim();
+
+          if ((currentStatus == 'occupied' || currentStatus == 'requested') &&
               spaceData['currentReservationId'] == reservation.id) {
             tx.set(spaceRef, {
               'status': 'free',
@@ -665,7 +675,10 @@ final ownerConfirmCancellationProvider =
             'endedAt': Timestamp.fromDate(now),
           });
 
-          if ((spaceData['status'] ?? 'free') == 'occupied' &&
+          final currentStatus =
+              (spaceData['status'] ?? 'free').toString().toLowerCase().trim();
+
+          if ((currentStatus == 'occupied' || currentStatus == 'requested') &&
               spaceData['currentReservationId'] == reservation.id) {
             tx.set(spaceRef, {
               'status': 'free',
