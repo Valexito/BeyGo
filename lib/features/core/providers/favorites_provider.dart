@@ -22,7 +22,6 @@ class FavoriteItem {
   final String parkingId;
   final String name;
   final String ownerID;
-  final int price;
   final int spaces;
   final double rating;
   final String? imageUrl;
@@ -37,7 +36,6 @@ class FavoriteItem {
     required this.parkingId,
     required this.name,
     required this.ownerID,
-    required this.price,
     required this.spaces,
     required this.rating,
     required this.lat,
@@ -57,7 +55,7 @@ class FavoriteItem {
     lng: lng,
     name: name,
     ownerID: ownerID,
-    price: price,
+    price: 0,
     spaces: spaces,
     rating: rating,
     originalPrice: null,
@@ -84,7 +82,6 @@ class FavoriteItem {
       parkingId: (m['parkingId'] ?? '') as String,
       name: m['name'] ?? 'Parking',
       ownerID: m['ownerID'] ?? '',
-      price: (m['price'] ?? 0) as int,
       spaces: (m['spaces'] ?? 0) as int,
       rating: _d(m['rating'] ?? 0),
       imageUrl: m['imageUrl'] as String?,

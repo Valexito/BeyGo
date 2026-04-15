@@ -6,6 +6,7 @@ class Reservation {
   static const int reservationCooldownDaysLimit = 20;
 
   final String id;
+  final String? reservationNumber;
   final String userId;
   final String parkingId;
   final String parkingName;
@@ -23,6 +24,8 @@ class Reservation {
   final int? pricePerHour;
   final int? amount;
   final int? durationMinutes;
+  final int? estimatedAmount;
+  final int? estimatedDurationMinutes;
 
   /// Intentos acumulados del usuario al momento de esta reserva.
   final int cancelAttempts;
@@ -49,6 +52,7 @@ class Reservation {
   final String exitStatus;
   final DateTime? exitRequestedAt;
   final DateTime? exitApprovedAt;
+  final DateTime? exitLockedAt;
   final String? exitRequestedBy;
   final String? exitApprovedBy;
 
@@ -57,6 +61,7 @@ class Reservation {
 
   const Reservation({
     required this.id,
+    this.reservationNumber,
     required this.userId,
     required this.parkingId,
     required this.parkingName,
@@ -70,6 +75,8 @@ class Reservation {
     this.pricePerHour,
     this.amount,
     this.durationMinutes,
+    this.estimatedAmount,
+    this.estimatedDurationMinutes,
     this.cancelAttempts = 0,
     this.userCancelAttempts = 0,
     this.freeCancellationUntil,
@@ -80,6 +87,7 @@ class Reservation {
     this.exitStatus = 'none',
     this.exitRequestedAt,
     this.exitApprovedAt,
+    this.exitLockedAt,
     this.exitRequestedBy,
     this.exitApprovedBy,
     this.restrictedUntil,
@@ -123,6 +131,7 @@ class Reservation {
 
     return Reservation(
       id: doc.id,
+      reservationNumber: data['reservationNumber'] as String?,
       userId: (data['userId'] as String?) ?? '',
       parkingId: (data['parkingId'] as String?) ?? '',
       parkingName: (data['parkingName'] as String?) ?? '',
@@ -138,6 +147,9 @@ class Reservation {
       pricePerHour: (data['pricePerHour'] as num?)?.toInt(),
       amount: (data['amount'] as num?)?.toInt(),
       durationMinutes: (data['durationMinutes'] as num?)?.toInt(),
+      estimatedAmount: (data['estimatedAmount'] as num?)?.toInt(),
+      estimatedDurationMinutes:
+          (data['estimatedDurationMinutes'] as num?)?.toInt(),
       cancelAttempts: (data['cancelAttempts'] as num?)?.toInt() ?? 0,
       userCancelAttempts: (data['userCancelAttempts'] as num?)?.toInt() ?? 0,
       freeCancellationUntil: parseTimestamp(data['freeCancellationUntil']),
@@ -149,6 +161,7 @@ class Reservation {
       exitStatus: (data['exitStatus'] as String?) ?? 'none',
       exitRequestedAt: parseTimestamp(data['exitRequestedAt']),
       exitApprovedAt: parseTimestamp(data['exitApprovedAt']),
+      exitLockedAt: parseTimestamp(data['exitLockedAt']),
       exitRequestedBy: data['exitRequestedBy'] as String?,
       exitApprovedBy: data['exitApprovedBy'] as String?,
       restrictedUntil: parseTimestamp(data['restrictedUntil']),
@@ -158,6 +171,7 @@ class Reservation {
   Map<String, dynamic> toMap() {
     return {
       'userId': userId,
+      'reservationNumber': reservationNumber,
       'parkingId': parkingId,
       'parkingName': parkingName,
       'ownerId': ownerId,
@@ -171,6 +185,8 @@ class Reservation {
       'pricePerHour': pricePerHour,
       'amount': amount,
       'durationMinutes': durationMinutes,
+      'estimatedAmount': estimatedAmount,
+      'estimatedDurationMinutes': estimatedDurationMinutes,
       'cancelAttempts': cancelAttempts,
       'userCancelAttempts': userCancelAttempts,
       'freeCancellationUntil':
@@ -189,6 +205,8 @@ class Reservation {
           exitRequestedAt != null ? Timestamp.fromDate(exitRequestedAt!) : null,
       'exitApprovedAt':
           exitApprovedAt != null ? Timestamp.fromDate(exitApprovedAt!) : null,
+      'exitLockedAt':
+          exitLockedAt != null ? Timestamp.fromDate(exitLockedAt!) : null,
       'exitRequestedBy': exitRequestedBy,
       'exitApprovedBy': exitApprovedBy,
       'restrictedUntil':
@@ -198,6 +216,7 @@ class Reservation {
 
   Reservation copyWith({
     String? id,
+    String? reservationNumber,
     String? userId,
     String? parkingId,
     String? parkingName,
@@ -211,6 +230,8 @@ class Reservation {
     int? pricePerHour,
     int? amount,
     int? durationMinutes,
+    int? estimatedAmount,
+    int? estimatedDurationMinutes,
     int? cancelAttempts,
     int? userCancelAttempts,
     DateTime? freeCancellationUntil,
@@ -221,12 +242,14 @@ class Reservation {
     String? exitStatus,
     DateTime? exitRequestedAt,
     DateTime? exitApprovedAt,
+    DateTime? exitLockedAt,
     String? exitRequestedBy,
     String? exitApprovedBy,
     DateTime? restrictedUntil,
   }) {
     return Reservation(
       id: id ?? this.id,
+      reservationNumber: reservationNumber ?? this.reservationNumber,
       userId: userId ?? this.userId,
       parkingId: parkingId ?? this.parkingId,
       parkingName: parkingName ?? this.parkingName,
@@ -240,6 +263,9 @@ class Reservation {
       pricePerHour: pricePerHour ?? this.pricePerHour,
       amount: amount ?? this.amount,
       durationMinutes: durationMinutes ?? this.durationMinutes,
+      estimatedAmount: estimatedAmount ?? this.estimatedAmount,
+      estimatedDurationMinutes:
+          estimatedDurationMinutes ?? this.estimatedDurationMinutes,
       cancelAttempts: cancelAttempts ?? this.cancelAttempts,
       userCancelAttempts: userCancelAttempts ?? this.userCancelAttempts,
       freeCancellationUntil:
@@ -253,6 +279,7 @@ class Reservation {
       exitStatus: exitStatus ?? this.exitStatus,
       exitRequestedAt: exitRequestedAt ?? this.exitRequestedAt,
       exitApprovedAt: exitApprovedAt ?? this.exitApprovedAt,
+      exitLockedAt: exitLockedAt ?? this.exitLockedAt,
       exitRequestedBy: exitRequestedBy ?? this.exitRequestedBy,
       exitApprovedBy: exitApprovedBy ?? this.exitApprovedBy,
       restrictedUntil: restrictedUntil ?? this.restrictedUntil,

@@ -165,6 +165,17 @@ class _ReservationDetailsSheetState
                 label: 'Estado',
                 value: _displayStatus(reservation),
               ),
+              if ((reservation.state == 'active' ||
+                      reservation.state == 'completed') &&
+                  reservation.providerApprovalStatus == 'approved' &&
+                  reservation.reservationNumber != null) ...[
+                const SizedBox(height: 12),
+                _InfoRow(
+                  icon: Icons.confirmation_number_outlined,
+                  label: 'No. de reservación',
+                  value: reservation.reservationNumber!,
+                ),
+              ],
               const SizedBox(height: 12),
               _InfoRow(
                 icon: Icons.access_time_rounded,
@@ -180,14 +191,45 @@ class _ReservationDetailsSheetState
                         ? 'Q ${reservation.pricePerHour}/hora'
                         : 'Pendiente',
               ),
+
+              if (reservation.state == 'completed') ...[
+                const SizedBox(height: 12),
+                _InfoRow(
+                  icon: Icons.stop_circle_outlined,
+                  label: 'Salida',
+                  value:
+                      reservation.endedAt != null
+                          ? _formatDateTime(reservation.endedAt!)
+                          : 'Pendiente',
+                ),
+                const SizedBox(height: 12),
+                _InfoRow(
+                  icon: Icons.timelapse_outlined,
+                  label: 'Duración',
+                  value:
+                      reservation.durationMinutes != null
+                          ? _formatDuration(reservation.durationMinutes!)
+                          : 'Pendiente',
+                ),
+              ],
+
               const SizedBox(height: 12),
               _InfoRow(
                 icon: Icons.receipt_long_outlined,
                 label: 'Monto',
                 value:
-                    reservation.amount != null
-                        ? 'Q ${reservation.amount}'
-                        : 'Pendiente',
+                    reservation.exitStatus == 'requested' ||
+                            reservation.exitStatus == 'approved'
+                        ? (reservation.estimatedAmount != null
+                            ? 'Q ${reservation.estimatedAmount}'
+                            : 'Calculando...')
+                        : (reservation.amount != null
+                            ? 'Q ${reservation.amount}'
+                            : (reservation.estimatedAmount != null
+                                ? 'Q ${reservation.estimatedAmount}'
+                                : (reservation.state == 'completed'
+                                    ? 'Pendiente'
+                                    : 'Calculando...'))),
               ),
             ],
           ),
@@ -276,17 +318,35 @@ class _ReservationDetailsSheetState
                       _isProcessing
                           ? null
                           : () async {
+                            final now = DateTime.now();
+                            final durationMinutes =
+                                now
+                                    .difference(reservation.reservedAt)
+                                    .inMinutes;
+
+                            final pricePerHour = reservation.pricePerHour ?? 0;
+                            final estimated =
+                                (pricePerHour / 60.0) * durationMinutes;
+
+                            final updatedReservation = reservation.copyWith(
+                              estimatedAmount: estimated.toInt(),
+                              estimatedDurationMinutes: durationMinutes,
+                              exitLockedAt: now,
+                            );
+
                             final confirm =
                                 await ReservationDialogs.showExitDialog(
                                   context,
-                                  reservation: reservation,
+                                  reservation: updatedReservation,
                                 );
 
                             if (confirm != true || !mounted) return;
 
                             setState(() => _isProcessing = true);
                             try {
-                              await requestExit(reservation: reservation);
+                              await requestExit(
+                                reservation: updatedReservation,
+                              );
                               if (!mounted) return;
                               Navigator.pop(context);
                             } catch (e, st) {
@@ -543,6 +603,13 @@ class _ReservationDetailsSheetState
     final h = value.hour.toString().padLeft(2, '0');
     final min = value.minute.toString().padLeft(2, '0');
     return '$d/$m/$y $h:$min';
+  }
+
+  String _formatDuration(int minutes) {
+    if (minutes < 60) return '$minutes min';
+    final h = minutes ~/ 60;
+    final m = minutes % 60;
+    return m == 0 ? '$h h' : '$h h $m min';
   }
 
   void _showError(BuildContext context, String msg) {

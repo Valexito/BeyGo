@@ -13,6 +13,12 @@ class ReservationDialogs {
     required int spaceNumber,
     required int pricePerHour,
   }) {
+    debugPrint('[CONFIRM DIALOG] parkingName: $parkingName');
+    debugPrint('[CONFIRM DIALOG] spaceNumber: $spaceNumber');
+    debugPrint('[CONFIRM DIALOG] pricePerHour: $pricePerHour');
+    debugPrint(
+      '[CONFIRM DIALOG] destination: ${destination.latitude}, ${destination.longitude}',
+    );
     return showDialog<bool>(
       context: context,
       barrierDismissible: true,
@@ -137,7 +143,10 @@ class ReservationDialogs {
                             _SummaryRow(
                               icon: Icons.payments_outlined,
                               title: 'Precio por hora',
-                              value: 'Q $pricePerHour/h',
+                              value:
+                                  pricePerHour > 0
+                                      ? 'Q $pricePerHour/h'
+                                      : 'No disponible',
                             ),
                           ],
                         ),
@@ -263,7 +272,8 @@ class ReservationDialogs {
   }) {
     final now = DateTime.now();
     final start = reservation.reservedAt;
-    final duration = now.difference(start);
+    final lockedAt = reservation.exitLockedAt ?? reservation.reservedAt;
+    final duration = lockedAt.difference(start);
 
     final totalMinutes = duration.inMinutes < 0 ? 0 : duration.inMinutes;
     final hours = totalMinutes ~/ 60;
@@ -271,7 +281,7 @@ class ReservationDialogs {
     final durationText = hours > 0 ? '${hours}h ${minutes}m' : '${minutes}m';
 
     final rate = reservation.pricePerHour ?? 0;
-    final estimated = rate > 0 ? ((totalMinutes / 60) * rate).ceil() : null;
+    final estimated = reservation.estimatedAmount;
 
     return showDialog<bool>(
       context: context,
@@ -331,7 +341,11 @@ class ReservationDialogs {
                       'Inicio',
                       _format(start),
                     ),
-                    _Row(Icons.schedule_rounded, 'Hora actual', _format(now)),
+                    _Row(
+                      Icons.lock_clock_rounded,
+                      'Salida registrada',
+                      _format(lockedAt),
+                    ),
                     _Row(Icons.timelapse_rounded, 'Duración', durationText),
                     _Row(
                       Icons.payments_outlined,

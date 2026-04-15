@@ -401,20 +401,52 @@ class _FavoriteCard extends ConsumerWidget {
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: Column(
-                          children: [
-                            _InfoPill(
-                              icon: Icons.attach_money_rounded,
-                              text: 'Q${item.price} por hora',
-                              iconColor: accentBlue,
-                            ),
-                            const SizedBox(height: 8),
-                            const _InfoPill(
-                              icon: Icons.access_time_rounded,
-                              text: '8:00 AM - 18:00 PM',
-                              iconColor: Color(0xFF2563EB),
-                            ),
-                          ],
+                        child: StreamBuilder<DocumentSnapshot>(
+                          stream:
+                              FirebaseFirestore.instance
+                                  .collection('parkings')
+                                  .doc(item.parkingId)
+                                  .snapshots(),
+                          builder: (context, snapshot) {
+                            final data =
+                                snapshot.data?.data() as Map<String, dynamic>?;
+
+                            final pricePerHour =
+                                (data?['pricePerHour'] is num)
+                                    ? (data!['pricePerHour'] as num).toInt()
+                                    : ((data?['price'] is num)
+                                        ? (data!['price'] as num).toInt()
+                                        : 0);
+
+                            final hours =
+                                data?['businessHours'] as Map<String, dynamic>?;
+                            final open = hours?['open']?.toString();
+                            final close = hours?['close']?.toString();
+
+                            final schedule =
+                                (open != null &&
+                                        open.isNotEmpty &&
+                                        close != null &&
+                                        close.isNotEmpty)
+                                    ? '$open - $close'
+                                    : 'Horario no disponible';
+
+                            return Column(
+                              children: [
+                                _InfoPill(
+                                  icon: Icons.attach_money_rounded,
+                                  text: 'Q$pricePerHour por hora',
+                                  iconColor: accentBlue,
+                                ),
+                                const SizedBox(height: 8),
+                                _InfoPill(
+                                  icon: Icons.access_time_rounded,
+                                  text: schedule,
+                                  iconColor: accentBlue,
+                                ),
+                              ],
+                            );
+                          },
                         ),
                       ),
                     ],

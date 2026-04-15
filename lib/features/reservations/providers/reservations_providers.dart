@@ -73,13 +73,14 @@ int _calculateDurationMinutes(DateTime start, DateTime end) {
   return minutes <= 0 ? 1 : minutes;
 }
 
-int _calculateAmount({
+double _calculateAmount({
   required int pricePerHour,
   required int durationMinutes,
 }) {
-  final chargedHours = (durationMinutes / 60).ceil();
-  final safeHours = chargedHours <= 0 ? 1 : chargedHours;
-  return pricePerHour * safeHours;
+  final minutes = durationMinutes <= 0 ? 1 : durationMinutes;
+  final pricePerMinute = pricePerHour / 60.0;
+  final raw = pricePerMinute * minutes;
+  return double.parse(raw.toStringAsFixed(2));
 }
 
 final authStateProvider = StreamProvider<User?>((ref) {
@@ -227,9 +228,11 @@ final reserveSpaceProvider = Provider<
     final freeUntil = now.add(
       const Duration(minutes: freeCancellationWindowMinutes),
     );
+    final number = _generateReservationNumber();
 
     final reservation = Reservation(
       id: resRef.id,
+      reservationNumber: number,
       userId: uid,
       parkingId: parkingId,
       parkingName: parkingName,
@@ -436,10 +439,24 @@ final requestExitProvider =
           throw StateError('La salida ya fue aprobada.');
         }
 
+        final now = DateTime.now();
+        final durationMinutes = _calculateDurationMinutes(
+          reservation.reservedAt,
+          now,
+        );
+        final pricePerHour = reservation.pricePerHour ?? 0;
+        final estimatedAmount = _calculateAmount(
+          pricePerHour: pricePerHour,
+          durationMinutes: durationMinutes,
+        );
+
         await _reservationDoc(db, reservation.id).update({
           'exitStatus': 'requested',
           'exitRequestedAt': FieldValue.serverTimestamp(),
           'exitRequestedBy': uid,
+          'estimatedAmount': estimatedAmount,
+          'estimatedDurationMinutes': durationMinutes,
+          'exitLockedAt': FieldValue.serverTimestamp(),
         });
       };
     });
@@ -583,17 +600,6 @@ final ownerConfirmExitProvider =
           reservation.spaceNumber,
         );
 
-        final end = DateTime.now();
-        final durationMinutes = _calculateDurationMinutes(
-          reservation.reservedAt,
-          end,
-        );
-        final pricePerHour = reservation.pricePerHour ?? 0;
-        final amount = _calculateAmount(
-          pricePerHour: pricePerHour,
-          durationMinutes: durationMinutes,
-        );
-
         await db.runTransaction((tx) async {
           final reservationSnap = await tx.get(reservationRef);
           final spaceSnap = await tx.get(spaceRef);
@@ -615,11 +621,13 @@ final ownerConfirmExitProvider =
           tx.update(reservationRef, {
             'state': 'completed',
             'exitStatus': 'approved',
-            'exitApprovedAt': Timestamp.fromDate(end),
-            'endedAt': Timestamp.fromDate(end),
-            'durationMinutes': durationMinutes,
-            'pricePerHour': pricePerHour,
-            'amount': amount,
+            'exitApprovedAt': FieldValue.serverTimestamp(),
+            'endedAt':
+                latest.exitRequestedAt != null
+                    ? Timestamp.fromDate(latest.exitRequestedAt!)
+                    : FieldValue.serverTimestamp(),
+            'durationMinutes': latest.estimatedDurationMinutes,
+            'amount': latest.estimatedAmount,
           });
 
           final currentStatus =
@@ -727,10 +735,13 @@ final ownerApproveReservationProvider =
             throw StateError('El espacio ya no está en estado solicitado.');
           }
 
-          tx.update(reservationRef, {
+          final number = _generateReservationNumber();
+
+          tx.set(reservationRef, {
             'state': 'active',
             'providerApprovalStatus': 'approved',
-          });
+            'reservationNumber': number,
+          }, SetOptions(merge: true));
 
           tx.set(spaceRef, {
             'status': 'occupied',
@@ -740,3 +751,10 @@ final ownerApproveReservationProvider =
         });
       };
     });
+
+String _generateReservationNumber() {
+  final now = DateTime.now();
+  final ts = now.millisecondsSinceEpoch.toString().substring(8);
+  final random = (1000 + (now.microsecondsSinceEpoch % 9000)).toString();
+  return 'RES-$ts$random';
+}

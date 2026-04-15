@@ -300,6 +300,14 @@ class _RequestCardState extends ConsumerState<_RequestCard> {
             label: 'Entrada',
             value: _format(widget.reservation.reservedAt),
           ),
+          if (widget.isExit && widget.reservation.estimatedAmount != null) ...[
+            const SizedBox(height: 10),
+            _InfoRow(
+              icon: Icons.receipt_long_outlined,
+              label: 'Monto a cobrar',
+              value: 'Q ${widget.reservation.estimatedAmount}',
+            ),
+          ],
 
           const SizedBox(height: 16),
 

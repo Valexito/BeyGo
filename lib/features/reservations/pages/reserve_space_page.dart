@@ -47,12 +47,24 @@ class _ReserveSpacePageState extends ConsumerState<ReserveSpacePage> {
   Future<void> _confirmReservation() async {
     if (selectedSpace == null || _isSubmitting) return;
 
+    print(
+      '[RESERVE PAGE] parking.pricePerHour: ${widget.parking.pricePerHour}',
+    );
+    print('[RESERVE PAGE] parking.price: ${widget.parking.price}');
+
     final ok = await ReservationDialogs.showConfirmReservationDialog(
       context,
       destination: LatLng(widget.parking.lat, widget.parking.lng),
       parkingName: widget.parking.name,
       spaceNumber: selectedSpace!,
-      pricePerHour: widget.parking.pricePerHour ?? 0,
+      pricePerHour:
+          ref
+              .read(parkingStreamProvider(widget.parking.id))
+              .asData
+              ?.value
+              .pricePerHour ??
+          widget.parking.pricePerHour ??
+          0,
     );
 
     if (ok != true || !mounted) return;

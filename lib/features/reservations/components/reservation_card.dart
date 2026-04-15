@@ -16,7 +16,9 @@ class ReservationCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final parkingAsync = ref.watch(parkingByIdProvider(reservation.parkingId));
+    final parkingAsync = ref.watch(
+      parkingStreamProvider(reservation.parkingId),
+    );
 
     return parkingAsync.when(
       loading:
@@ -70,7 +72,11 @@ class _ReservationCardShell extends StatelessWidget {
         reservation.state == 'active' &&
         reservation.providerApprovalStatus == 'approved';
 
-    final showNavigate = isApprovedActive;
+    final showNavigate =
+        reservation.state == 'active' ||
+        reservation.state == 'pending' ||
+        reservation.providerApprovalStatus == 'pending';
+
     final isActive = isApprovedActive;
 
     return LayoutBuilder(
@@ -125,6 +131,17 @@ class _ReservationCardShell extends StatelessWidget {
                             variant: MyTextVariant.bodyBold,
                             fontSize: 15,
                           ),
+                          if (reservation.reservationNumber != null &&
+                              (reservation.state == 'active' ||
+                                  reservation.state == 'completed')) ...[
+                            const SizedBox(height: 4),
+                            MyText(
+                              text: 'No. ${reservation.reservationNumber}',
+                              variant: MyTextVariant.bodyMuted,
+                              fontSize: 12,
+                              customColor: AppColors.headerBottom,
+                            ),
+                          ],
                           const SizedBox(height: 8),
                           _InfoChipLine(
                             icon: Icons.local_parking_outlined,
@@ -188,6 +205,7 @@ class _ReservationCardShell extends StatelessWidget {
                                       : () => _openNavigationChooser(
                                         context,
                                         LatLng(parking!.lat, parking!.lng),
+                                        reservation,
                                       ),
                               style: OutlinedButton.styleFrom(
                                 side: BorderSide(
@@ -297,10 +315,12 @@ class _ReservationCardShell extends StatelessWidget {
   }
 
   static String _priceText(Parking? parking, Reservation reservation) {
-    final pricePerHour = parking?.pricePerHour ?? reservation.pricePerHour ?? 0;
+    final pricePerHour = parking?.pricePerHour ?? 0;
+
     if (pricePerHour > 0) {
       return 'Q $pricePerHour por hora';
     }
+
     return 'Tarifa no disponible';
   }
 
@@ -375,72 +395,16 @@ class _ReservationCardShell extends StatelessWidget {
   static Future<void> _openNavigationChooser(
     BuildContext context,
     LatLng destination,
+    Reservation reservation,
   ) async {
-    await showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (_) {
-        return ClipRRect(
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(26),
-            topRight: Radius.circular(26),
-          ),
-          child: Material(
-            color: const Color(0xFFF8FAFC),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 44,
-                    height: 5,
-                    margin: const EdgeInsets.only(bottom: 14),
-                    decoration: BoxDecoration(
-                      color: AppColors.borderSoft,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                  ),
-                  const MyText(
-                    text: 'Abrir navegación',
-                    variant: MyTextVariant.title,
-                    customColor: AppColors.headerBottom,
-                    fontSize: 20,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 6),
-                  const MyText(
-                    text: 'Selecciona la app con la que deseas navegar.',
-                    variant: MyTextVariant.bodyMuted,
-                    fontSize: 12,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 18),
-                  _NavAppTile(
-                    icon: Icons.map_rounded,
-                    title: 'Google Maps',
-                    subtitle: 'Abrir ruta en Google Maps',
-                    onTap: () async {
-                      Navigator.pop(context);
-                      await _openGoogleMaps(destination);
-                    },
-                  ),
-                  const SizedBox(height: 10),
-                  _NavAppTile(
-                    icon: Icons.navigation_rounded,
-                    title: 'Waze',
-                    subtitle: 'Abrir ruta en Waze',
-                    onTap: () async {
-                      Navigator.pop(context);
-                      await _openWaze(destination);
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
+    Navigator.pushNamed(
+      context,
+      '/routeView',
+      arguments: {
+        'destination': destination,
+        'parkingName': reservation.parkingName,
+        'reservationId': reservation.id,
+        'spaceNumber': reservation.spaceNumber,
       },
     );
   }

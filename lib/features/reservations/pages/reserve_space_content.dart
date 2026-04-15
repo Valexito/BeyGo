@@ -145,7 +145,8 @@ class _ReserveSpaceContentState extends ConsumerState<ReserveSpaceContent> {
                                       ),
                                       _InfoChip(
                                         icon: Icons.attach_money_rounded,
-                                        label: 'Q${currentParking.price}/h',
+                                        label:
+                                            'Q${currentParking.pricePerHour}/h',
                                       ),
                                       _InfoChip(
                                         icon: Icons.access_time_rounded,

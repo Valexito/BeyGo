@@ -159,7 +159,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 ),
               ),
               Positioned(
-                top: 60,
+                top: 30,
                 left: 28,
                 right: 28,
                 child: Column(

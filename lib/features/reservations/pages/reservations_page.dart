@@ -156,8 +156,14 @@ class _ReservationsPageState extends ConsumerState<ReservationsPage>
                     final active =
                         all.where((r) {
                           final state = norm(r.state);
+                          final providerApproval = norm(
+                            r.providerApprovalStatus,
+                          );
+
                           return state == 'active' ||
-                              state == 'cancellation_requested';
+                              state == 'pending' ||
+                              state == 'cancellation_requested' ||
+                              providerApproval == 'pending';
                         }).toList();
 
                     final completed =
