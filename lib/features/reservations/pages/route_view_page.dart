@@ -22,8 +22,8 @@ class RouteViewPage extends ConsumerWidget {
 
   const RouteViewPage({
     super.key,
-    required this.destination,
-    required this.parkingName,
+    this.destination = const LatLng(0, 0),
+    this.parkingName = '',
     this.spaceNumber,
     this.reservationId,
     this.reservationState = 'active',
@@ -34,6 +34,12 @@ class RouteViewPage extends ConsumerWidget {
     final map = ref.watch(mapControllerProvider);
     final originAsync = ref.watch(currentLocationProvider);
 
+    // 🔥 FIX: ensure we correctly read arguments from Navigator
+    final routeArgs =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final LatLng effectiveDestination =
+        routeArgs?['destination'] ?? destination;
+
     return originAsync.when(
       loading: () => const _RouteLoaderPage(),
       error:
@@ -43,7 +49,21 @@ class RouteViewPage extends ConsumerWidget {
             onRetry: () => ref.refresh(currentLocationProvider),
           ),
       data: (origin) {
-        final args = (origin: origin, destination: destination);
+        print('[ROUTE VIEW] origin: ${origin.latitude}, ${origin.longitude}');
+        print(
+          '[ROUTE VIEW] destination: ${effectiveDestination.latitude}, ${effectiveDestination.longitude}',
+        );
+
+        // Guard: destino inválido (0,0)
+        if (effectiveDestination.latitude == 0 &&
+            effectiveDestination.longitude == 0) {
+          return _RouteErrorPage(
+            message: 'Destino inválido (0,0). No se puede calcular la ruta.',
+            onRetry: () => Navigator.pop(context),
+          );
+        }
+
+        final args = (origin: origin, destination: effectiveDestination);
         final pointsAsync = ref.watch(routePointsProvider(args));
         final distanceAsync = ref.watch(routeDistanceProvider(args));
         final durationAsync = ref.watch(routeDurationProvider(args));
@@ -61,6 +81,16 @@ class RouteViewPage extends ConsumerWidget {
                 },
               ),
           data: (points) {
+            print('[ROUTE VIEW] points received: ${points.length}');
+            if (points.isEmpty) {
+              return _RouteErrorPage(
+                message:
+                    'La ruta no contiene puntos. Posible fallo en Directions API.',
+                onRetry: () {
+                  ref.invalidate(routePointsProvider(args));
+                },
+              );
+            }
             final distance = distanceAsync.maybeWhen(
               data: (v) => v,
               orElse: () => '—',
@@ -117,7 +147,7 @@ class RouteViewPage extends ConsumerWidget {
                               iconColor: const Color(0xFF16A34A),
                             ),
                             _mapPin(
-                              destination,
+                              effectiveDestination,
                               icon: Icons.location_on_rounded,
                               iconColor: Colors.red,
                             ),
@@ -166,7 +196,7 @@ class RouteViewPage extends ConsumerWidget {
                           distance: distance,
                           duration: duration,
                           spaceNumber: spaceNumber,
-                          destination: destination,
+                          destination: effectiveDestination,
                           reservationStatus: reservationState,
                           onGoToReservations: () {
                             Navigator.of(
@@ -188,18 +218,25 @@ class RouteViewPage extends ConsumerWidget {
                                 (data?['providerApprovalStatus'] as String?) ??
                                 '';
 
-                            // Combine logic: if not approved yet, treat as pending
-                            final state =
-                                providerApproval == 'approved'
-                                    ? rawState
-                                    : 'pending';
+                            final state = rawState;
+
+                            // Only override when explicitly pending approval cases
+                            if (rawState == 'pending' ||
+                                providerApproval == 'pending') {
+                              // keep pending
+                            } else if (rawState == 'cancellation_requested') {
+                              // keep as cancellation_requested (important fix)
+                            } else if (rawState == 'active' &&
+                                providerApproval != 'approved') {
+                              // fallback safety (optional)
+                            }
 
                             return RouteBottomInfoCard(
                               parkingName: parkingName,
                               distance: distance,
                               duration: duration,
                               spaceNumber: spaceNumber,
-                              destination: destination,
+                              destination: effectiveDestination,
                               reservationStatus: state,
                               onGoToReservations: () {
                                 Navigator.of(

@@ -6,7 +6,8 @@ import 'package:mapbox_api/common/utils/components/ui/my_text.dart';
 import 'package:mapbox_api/features/core/pages/ownerv/providers/owners_providers.dart';
 import 'package:mapbox_api/features/core/roles/role_utils.dart';
 import 'package:mapbox_api/features/reservations/models/reservation.dart';
-import 'package:mapbox_api/features/reservations/providers/reservations_providers.dart';
+import 'package:mapbox_api/features/reservations/providers/reservations_providers.dart'
+    as reservations;
 
 class OwnerReservationsPage extends ConsumerStatefulWidget {
   const OwnerReservationsPage({super.key});
@@ -31,7 +32,7 @@ class _OwnerReservationsPageState extends ConsumerState<OwnerReservationsPage>
 
   @override
   Widget build(BuildContext context) {
-    final allAsync = ref.watch(ownerAllReservationsProvider);
+    final allAsync = ref.watch(reservations.ownerAllReservationsProvider);
 
     return OwnerOnly(
       builder: (_) {

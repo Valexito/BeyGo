@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
+import 'package:mapbox_api/features/reservations/pages/route_view_page.dart';
 import 'firebase_options.dart';
 import 'common/utils/components/ui/app_styles.dart';
 import 'features/auth/pages/auth_gate.dart';
@@ -10,7 +11,6 @@ import 'features/core/pages/home_switch.dart';
 import 'features/core/pages/userv/home_page.dart' as userv;
 import 'features/core/pages/ownerv/owner_home_page.dart';
 import 'features/core/pages/ownerv/widgets/become_owner_page.dart';
-import 'features/reservations/components/route_view_page_wrapper.dart';
 import 'features/reservations/pages/reservations_page.dart';
 import 'common/utils/components/map_picker_page.dart';
 
@@ -55,7 +55,7 @@ class MyApp extends StatelessWidget {
         '/owner': (_) => const OwnerHomePage(),
         '/becomeProvider': (_) => const BecomeOwnerPage(),
         '/mapPicker': (_) => const MapPickerPage(),
-        '/routeView': (_) => const RouteViewPageWrapper(),
+        '/routeView': (_) => const RouteViewPage(),
         '/reservationsPage': (_) => const ReservationsPage(),
       },
     );

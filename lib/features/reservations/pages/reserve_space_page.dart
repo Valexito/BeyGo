@@ -70,7 +70,19 @@ class _ReserveSpacePageState extends ConsumerState<ReserveSpacePage> {
 
       if (!mounted) return;
 
-      Navigator.of(context).pushNamed(
+      if (widget.parking.lat == 0 && widget.parking.lng == 0) {
+        debugPrint('❌ INVALID DESTINATION (0,0)');
+        return;
+      }
+      print(
+        '[NAVIGATE] destination: ${widget.parking.lat}, ${widget.parking.lng}',
+      );
+      print('[NAVIGATE] parkingName: ${widget.parking.name}');
+      print('[NAVIGATE] reservationId: $reservationId');
+      print('[NAVIGATE] spaceNumber: $selectedSpace');
+
+      Navigator.pushNamed(
+        context,
         '/routeView',
         arguments: {
           'destination': LatLng(widget.parking.lat, widget.parking.lng),

@@ -7,8 +7,12 @@ import 'package:mapbox_api/features/reservations/services/geolocator.dart'
 /// Ubicación actual con fallback (misma lógica que ya usabas).
 final currentLocationProvider = FutureProvider<LatLng>((ref) async {
   try {
-    return await helper.getCurrentLocation();
-  } catch (_) {
+    final loc = await helper.getCurrentLocation();
+    print('[LOCATION] success: ${loc.latitude}, ${loc.longitude}');
+    return loc;
+  } catch (e) {
+    print('[LOCATION] error: $e');
+    print('[LOCATION] using fallback coordinates');
     return LatLng(14.834999, -91.518669);
   }
 });
@@ -20,5 +24,8 @@ final positionStreamProvider = StreamProvider<Position>((ref) {
       accuracy: LocationAccuracy.best,
       distanceFilter: 5,
     ),
-  );
+  ).map((pos) {
+    print('[LOCATION STREAM] ${pos.latitude}, ${pos.longitude}');
+    return pos;
+  });
 });

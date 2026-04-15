@@ -174,7 +174,9 @@ class ReservationDialogs {
                           Expanded(
                             child: MyButton(
                               text: 'Confirmar',
-                              onTap: () => Navigator.of(ctx).pop(true),
+                              onTap: () {
+                                Navigator.of(ctx).pop(true);
+                              },
                               margin: EdgeInsets.zero,
                             ),
                           ),

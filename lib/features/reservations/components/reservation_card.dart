@@ -331,30 +331,34 @@ class _ReservationCardShell extends StatelessWidget {
   }
 
   static String _statusLabel(Reservation r) {
+    // PRIORITY: provider approval pending should always be PENDIENTE
+    if (r.providerApprovalStatus == 'pending') return 'PENDIENTE';
+
+    if (r.state == 'pending') return 'PENDIENTE';
     if (r.state == 'completed') return 'COMPLETADA';
     if (r.state == 'cancelled') return 'CANCELADA';
     if (r.state == 'rejected' || r.providerApprovalStatus == 'rejected') {
       return 'DENEGADA';
     }
-    if (r.state == 'pending' || r.providerApprovalStatus == 'pending') {
-      return 'PENDIENTE';
-    }
     if (r.state == 'active' && r.exitStatus == 'approved') return 'SALIDA OK';
     if (r.state == 'active' && r.exitStatus == 'requested')
       return 'SALIDA SOL.';
+
     return 'ACTIVA';
   }
 
   static Color _statusColor(Reservation r) {
+    // PRIORITY: provider approval pending should always be orange
+    if (r.providerApprovalStatus == 'pending') {
+      return const Color(0xFFF59E0B);
+    }
+
+    if (r.state == 'pending') return const Color(0xFFF59E0B);
     if (r.state == 'completed') return const Color(0xFF2563EB);
     if (r.state == 'cancelled') return const Color(0xFFDC2626);
 
     if (r.state == 'rejected' || r.providerApprovalStatus == 'rejected') {
       return const Color(0xFFDC2626);
-    }
-
-    if (r.state == 'pending' || r.providerApprovalStatus == 'pending') {
-      return const Color(0xFFF59E0B);
     }
 
     if (r.state == 'active' && r.exitStatus == 'approved') {

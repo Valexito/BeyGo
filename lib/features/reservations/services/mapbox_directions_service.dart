@@ -34,12 +34,23 @@ class MapboxDirectionsService {
   // -------------------- internos --------------------
 
   Future<_RouteData> _fetchRoute(LatLng o, LatLng d) async {
-    // Si hay token => Mapbox, si no => OSRM público (nunca te deja en blanco)
+    print('[ROUTE] origin: ${o.latitude}, ${o.longitude}');
+    print('[ROUTE] destination: ${d.latitude}, ${d.longitude}');
+    print('[ROUTE] token present: ${_token.isNotEmpty}');
+
     if (_token.isNotEmpty) {
-      return _fetchRouteMapbox(o, d);
-    } else {
-      return _fetchRouteOsrm(o, d);
+      try {
+        print('[ROUTE] Trying Mapbox...');
+        return await _fetchRouteMapbox(o, d);
+      } catch (e) {
+        print('[ROUTE] Mapbox failed -> fallback OSRM');
+        print('[ROUTE][ERROR] $e');
+        return await _fetchRouteOsrm(o, d);
+      }
     }
+
+    print('[ROUTE] Using OSRM directly');
+    return await _fetchRouteOsrm(o, d);
   }
 
   /// Mapbox Directions (requiere token)

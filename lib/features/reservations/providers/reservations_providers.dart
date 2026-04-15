@@ -689,3 +689,54 @@ final ownerConfirmCancellationProvider =
         });
       };
     });
+
+final ownerApproveReservationProvider =
+    Provider<Future<void> Function({required Reservation reservation})>((ref) {
+      final db = ref.watch(_dbProvider);
+
+      return ({required Reservation reservation}) async {
+        final reservationRef = _reservationDoc(db, reservation.id);
+        final spaceRef = _spaceDoc(
+          db,
+          reservation.parkingId,
+          reservation.spaceNumber,
+        );
+
+        await db.runTransaction((tx) async {
+          final reservationSnap = await tx.get(reservationRef);
+          final spaceSnap = await tx.get(spaceRef);
+
+          if (!reservationSnap.exists) {
+            throw StateError('La reservación ya no existe.');
+          }
+
+          final latest = Reservation.fromDoc(
+            reservationSnap as DocumentSnapshot<Map<String, dynamic>>,
+          );
+
+          if (latest.state != 'pending') {
+            throw StateError('La reservación ya no está pendiente.');
+          }
+
+          final spaceData = spaceSnap.data() as Map<String, dynamic>? ?? {};
+
+          final currentStatus =
+              (spaceData['status'] ?? 'free').toString().toLowerCase().trim();
+
+          if (currentStatus != 'requested') {
+            throw StateError('El espacio ya no está en estado solicitado.');
+          }
+
+          tx.update(reservationRef, {
+            'state': 'active',
+            'providerApprovalStatus': 'approved',
+          });
+
+          tx.set(spaceRef, {
+            'status': 'occupied',
+            'currentReservationId': reservation.id,
+            'updatedAt': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true));
+        });
+      };
+    });
