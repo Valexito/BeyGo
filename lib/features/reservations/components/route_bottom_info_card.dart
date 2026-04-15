@@ -172,7 +172,7 @@ class RouteBottomInfoCard extends StatelessWidget {
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
-                        Icons.local_parking_rounded,
+                        Icons.directions_car_rounded,
                         color: AppColors.headerBottom,
                         size: 22,
                       ),
@@ -188,11 +188,15 @@ class RouteBottomInfoCard extends StatelessWidget {
                             fontSize: 16,
                           ),
                           const SizedBox(height: 4),
+
+                          // 👇 NEW LINE (gris)
                           MyText(
-                            text: reservationStatus,
-                            variant: MyTextVariant.bodyBold,
+                            text: 'Espacio seleccionado ${spaceNumber ?? '-'}',
+                            variant: MyTextVariant.bodyMuted,
                             fontSize: 12,
                           ),
+
+                          const SizedBox(height: 2),
                         ],
                       ),
                     ),

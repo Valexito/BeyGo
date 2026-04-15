@@ -37,8 +37,14 @@ class RouteViewPage extends ConsumerWidget {
     // 🔥 FIX: ensure we correctly read arguments from Navigator
     final routeArgs =
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final String? effectiveReservationId =
+        routeArgs?['reservationId'] ?? reservationId;
     final LatLng effectiveDestination =
         routeArgs?['destination'] ?? destination;
+    final String effectiveParkingName =
+        routeArgs?['parkingName'] ?? parkingName;
+
+    final int? effectiveSpaceNumber = routeArgs?['spaceNumber'] ?? spaceNumber;
 
     return originAsync.when(
       loading: () => const _RouteLoaderPage(),
@@ -53,6 +59,8 @@ class RouteViewPage extends ConsumerWidget {
         print(
           '[ROUTE VIEW] destination: ${effectiveDestination.latitude}, ${effectiveDestination.longitude}',
         );
+        print('[ROUTE VIEW] parkingName: $effectiveParkingName');
+        print('[ROUTE VIEW] spaceNumber: $effectiveSpaceNumber');
 
         // Guard: destino inválido (0,0)
         if (effectiveDestination.latitude == 0 &&
@@ -156,7 +164,7 @@ class RouteViewPage extends ConsumerWidget {
                       ],
                     ),
                     _RouteHeader(
-                      parkingName: parkingName,
+                      parkingName: effectiveParkingName,
                       onBack: () => Navigator.pop(context),
                     ),
                     Positioned(
@@ -190,12 +198,12 @@ class RouteViewPage extends ConsumerWidget {
                   ],
                 ),
                 bottomSheet:
-                    reservationId == null
+                    effectiveReservationId == null
                         ? RouteBottomInfoCard(
-                          parkingName: parkingName,
+                          parkingName: effectiveParkingName,
                           distance: distance,
                           duration: duration,
-                          spaceNumber: spaceNumber,
+                          spaceNumber: effectiveSpaceNumber,
                           destination: effectiveDestination,
                           reservationStatus: reservationState,
                           onGoToReservations: () {
@@ -208,34 +216,39 @@ class RouteViewPage extends ConsumerWidget {
                           stream:
                               FirebaseFirestore.instance
                                   .collection('reservations')
-                                  .doc(reservationId)
+                                  .doc(effectiveReservationId)
                                   .snapshots(),
                           builder: (context, snapshot) {
                             final data = snapshot.data?.data();
+                            print('[FIRESTORE RAW DATA] $data');
+                            print('[FIRESTORE state] ${data?['state']}');
+                            print(
+                              '[FIRESTORE providerApprovalStatus] ${data?['providerApprovalStatus']}',
+                            );
                             final rawState =
-                                (data?['state'] as String?) ?? reservationState;
+                                (data?['state'] as String?) ?? 'unknown';
                             final providerApproval =
                                 (data?['providerApprovalStatus'] as String?) ??
                                 '';
 
-                            final state = rawState;
+                            // 🔥 REAL STATE FROM FIRESTORE (priority logic)
+                            String state;
 
-                            // Only override when explicitly pending approval cases
-                            if (rawState == 'pending' ||
-                                providerApproval == 'pending') {
-                              // keep pending
+                            if (providerApproval == 'pending') {
+                              state = 'pending';
                             } else if (rawState == 'cancellation_requested') {
-                              // keep as cancellation_requested (important fix)
-                            } else if (rawState == 'active' &&
-                                providerApproval != 'approved') {
-                              // fallback safety (optional)
+                              state = 'cancellation_requested';
+                            } else if (rawState == 'pending') {
+                              state = 'pending';
+                            } else {
+                              state = rawState;
                             }
 
                             return RouteBottomInfoCard(
-                              parkingName: parkingName,
+                              parkingName: effectiveParkingName,
                               distance: distance,
                               duration: duration,
-                              spaceNumber: spaceNumber,
+                              spaceNumber: effectiveSpaceNumber,
                               destination: effectiveDestination,
                               reservationStatus: state,
                               onGoToReservations: () {
