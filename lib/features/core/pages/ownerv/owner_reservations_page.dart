@@ -3,12 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mapbox_api/common/utils/components/ui/app_styles.dart';
 import 'package:mapbox_api/common/utils/components/ui/my_button.dart';
 import 'package:mapbox_api/common/utils/components/ui/my_text.dart';
-import 'package:mapbox_api/features/core/pages/ownerv/providers/owners_providers.dart';
 import 'package:mapbox_api/features/core/pages/ownerv/widgets/app_header.dart';
 import 'package:mapbox_api/features/core/roles/role_utils.dart';
 import 'package:mapbox_api/features/reservations/models/reservation.dart';
 import 'package:mapbox_api/features/reservations/providers/reservations_providers.dart'
     as reservations;
+import 'package:mapbox_api/features/reservations/providers/reservations_providers.dart';
 
 class OwnerReservationsPage extends ConsumerStatefulWidget {
   const OwnerReservationsPage({super.key});
@@ -155,13 +155,13 @@ class _OwnerReservationsPageState extends ConsumerState<OwnerReservationsPage>
 }
 
 /// ================= ACTIVE =================
-class _OwnerActiveCard extends StatelessWidget {
+class _OwnerActiveCard extends ConsumerWidget {
   final Reservation reservation;
 
   const _OwnerActiveCard({required this.reservation});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -169,23 +169,101 @@ class _OwnerActiveCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: AppColors.borderSoft),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.local_parking, color: AppColors.headerBottom),
-          const SizedBox(width: 10),
-          Expanded(
-            child: MyText(
-              text: reservation.parkingName,
-              variant: MyTextVariant.bodyBold,
-            ),
+          Row(
+            children: [
+              const Icon(Icons.local_parking, color: AppColors.headerBottom),
+              const SizedBox(width: 10),
+              Expanded(
+                child: MyText(
+                  text: reservation.parkingName,
+                  variant: MyTextVariant.bodyBold,
+                ),
+              ),
+              const Text(
+                'ACTIVA',
+                style: TextStyle(color: Colors.green, fontSize: 11),
+              ),
+            ],
           ),
-          const Text(
-            'ACTIVA',
-            style: TextStyle(color: Colors.green, fontSize: 11),
+          const SizedBox(height: 14),
+          _InfoRow(
+            icon: Icons.person_outline,
+            label: 'Usuario',
+            value: reservation.userName ?? 'N/A',
+          ),
+          const SizedBox(height: 10),
+          _InfoRow(
+            icon: Icons.directions_car_outlined,
+            label: 'Placa',
+            value: reservation.plate ?? 'N/A',
+          ),
+          const SizedBox(height: 10),
+          _InfoRow(
+            icon: Icons.local_parking_outlined,
+            label: 'Espacio',
+            value: '${reservation.spaceNumber}',
+          ),
+          const SizedBox(height: 10),
+          _InfoRow(
+            icon: Icons.login,
+            label: 'Entrada',
+            value: _format(reservation.reservedAt),
+          ),
+          const SizedBox(height: 16),
+          MyButton(
+            text: 'Finalizar',
+            margin: EdgeInsets.zero,
+            onTap: () async {
+              final confirm = await showDialog<bool>(
+                context: context,
+                builder: (ctx) {
+                  return AlertDialog(
+                    title: const Text('Finalizar reserva'),
+                    content: const Text(
+                      '¿Seguro que deseas finalizar esta reserva?',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        child: const Text('Cancelar'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, true),
+                        child: const Text('Confirmar'),
+                      ),
+                    ],
+                  );
+                },
+              );
+
+              if (confirm != true) return;
+
+              try {
+                final complete = ref.read(
+                  completeReservationWithBillingProvider,
+                );
+                await complete(r: reservation);
+              } catch (e) {
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text(e.toString())));
+              }
+            },
           ),
         ],
       ),
     );
+  }
+
+  String _format(DateTime value) {
+    final d = value.day.toString().padLeft(2, '0');
+    final m = value.month.toString().padLeft(2, '0');
+    final h = value.hour.toString().padLeft(2, '0');
+    final min = value.minute.toString().padLeft(2, '0');
+    return '$d/$m $h:$min';
   }
 }
 
@@ -214,11 +292,20 @@ class _OwnerApproveCardState extends ConsumerState<_OwnerApproveCard> {
         border: Border.all(color: AppColors.borderSoft),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.pending_actions, color: Colors.orange),
-              const SizedBox(width: 10),
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.pending_actions, color: Colors.orange),
+              ),
+              const SizedBox(width: 12),
               Expanded(
                 child: MyText(
                   text: widget.reservation.parkingName,
@@ -232,6 +319,24 @@ class _OwnerApproveCardState extends ConsumerState<_OwnerApproveCard> {
             ],
           ),
           const SizedBox(height: 14),
+          _InfoRow(
+            icon: Icons.person_outline,
+            label: 'Usuario',
+            value: widget.reservation.userName ?? 'N/A',
+          ),
+          const SizedBox(height: 10),
+          _InfoRow(
+            icon: Icons.directions_car_outlined,
+            label: 'Placa',
+            value: widget.reservation.plate ?? 'N/A',
+          ),
+          const SizedBox(height: 10),
+          _InfoRow(
+            icon: Icons.local_parking_outlined,
+            label: 'Espacio',
+            value: '${widget.reservation.spaceNumber}',
+          ),
+          const SizedBox(height: 16),
           MyButton(
             text: _processing ? 'Aprobando...' : 'Aprobar',
             onTap:
@@ -241,6 +346,11 @@ class _OwnerApproveCardState extends ConsumerState<_OwnerApproveCard> {
                       setState(() => _processing = true);
                       try {
                         await approve(reservation: widget.reservation);
+                      } catch (e) {
+                        if (!mounted) return;
+                        ScaffoldMessenger.of(
+                          context,
+                        ).showSnackBar(SnackBar(content: Text(e.toString())));
                       } finally {
                         if (mounted) {
                           setState(() => _processing = false);
@@ -280,6 +390,45 @@ class _OwnerEmptyState extends StatelessWidget {
           MyText(text: subtitle, variant: MyTextVariant.bodyMuted),
         ],
       ),
+    );
+  }
+}
+
+/// ================ REUSABLE INFO ROW ================
+class _InfoRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const _InfoRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 30,
+          height: 30,
+          decoration: const BoxDecoration(
+            color: AppColors.iconCircle,
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, size: 16, color: AppColors.headerBottom),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: MyText(
+            text: label,
+            variant: MyTextVariant.bodyMuted,
+            fontSize: 12,
+          ),
+        ),
+        MyText(text: value, variant: MyTextVariant.bodyBold, fontSize: 13),
+      ],
     );
   }
 }

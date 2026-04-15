@@ -8,9 +8,9 @@ import 'package:mapbox_api/common/utils/components/ui/app_styles.dart';
 import 'package:mapbox_api/common/utils/components/ui/my_button.dart';
 import 'package:mapbox_api/common/utils/components/ui/my_text.dart';
 import 'package:mapbox_api/common/utils/components/ui/my_textfield.dart';
+import 'package:mapbox_api/features/core/pages/ownerv/providers/provider_request_submit_provider.dart';
 import 'package:mapbox_api/features/core/pages/userv/map_pick_page_become_owner.dart';
 import 'package:mapbox_api/features/core/providers/firebase_providers.dart';
-import 'package:mapbox_api/features/core/pages/ownerv/providers/owners_providers.dart';
 
 class BecomeOwnerPage extends ConsumerStatefulWidget {
   final VoidCallback? onBack;
