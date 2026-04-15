@@ -38,26 +38,56 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
 
         return Scaffold(
           backgroundColor: AppColors.pageBg,
-          appBar: AppBar(
-            title: Text(_tabs[_index].label),
-            centerTitle: true,
-            backgroundColor: AppColors.headerBottom,
-          ),
+          appBar: null,
           body: pages[_index],
-          bottomNavigationBar: NavigationBar(
-            selectedIndex: _index,
-            onDestinationSelected: (i) => setState(() => _index = i),
-            backgroundColor: Colors.white,
-            indicatorColor: AppColors.primarySoft.withOpacity(0.25),
-            destinations:
-                _tabs
-                    .map(
-                      (t) => NavigationDestination(
-                        icon: Icon(t.icon),
+          bottomNavigationBar: Container(
+            margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.06),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: NavigationBar(
+                selectedIndex: _index,
+                onDestinationSelected: (i) => setState(() => _index = i),
+                backgroundColor: Colors.white,
+                indicatorColor: AppColors.primarySoft.withOpacity(0.25),
+                labelTextStyle: MaterialStateProperty.resolveWith<TextStyle>((
+                  states,
+                ) {
+                  final isSelected = states.contains(MaterialState.selected);
+                  return TextStyle(
+                    fontSize: 12,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                    color:
+                        isSelected
+                            ? AppColors.headerBottom
+                            : AppColors.headerBottom.withOpacity(0.6),
+                  );
+                }),
+                destinations:
+                    _tabs.map((t) {
+                      return NavigationDestination(
+                        icon: Icon(
+                          t.icon,
+                          color: AppColors.headerBottom.withOpacity(0.6),
+                        ),
+                        selectedIcon: Icon(
+                          t.icon,
+                          color: AppColors.headerBottom,
+                        ),
                         label: t.label,
-                      ),
-                    )
-                    .toList(),
+                      );
+                    }).toList(),
+              ),
+            ),
           ),
         );
       },

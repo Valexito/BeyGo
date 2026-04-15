@@ -4,6 +4,7 @@ import 'package:mapbox_api/common/utils/components/ui/app_styles.dart';
 import 'package:mapbox_api/common/utils/components/ui/my_button.dart';
 import 'package:mapbox_api/common/utils/components/ui/my_text.dart';
 import 'package:mapbox_api/features/core/pages/ownerv/providers/owners_providers.dart';
+import 'package:mapbox_api/features/core/pages/ownerv/widgets/app_header.dart';
 import 'package:mapbox_api/features/core/roles/role_utils.dart';
 import 'package:mapbox_api/features/reservations/models/reservation.dart';
 import 'package:mapbox_api/features/reservations/providers/reservations_providers.dart'
@@ -38,7 +39,16 @@ class _OwnerReservationsPageState extends ConsumerState<OwnerReservationsPage>
       builder: (_) {
         return Column(
           children: [
-            const SizedBox(height: 14),
+            const AppHeader(
+              title: 'Reservaciones',
+              subtitle: 'Gestiona tus reservas y solicitudes',
+              showBack: true,
+            ),
+
+            Transform.translate(
+              offset: const Offset(0, -24),
+              child: const SizedBox(height: 14),
+            ),
 
             /// TABS
             Padding(

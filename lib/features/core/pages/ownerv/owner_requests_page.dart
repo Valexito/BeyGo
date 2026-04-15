@@ -3,9 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mapbox_api/common/utils/components/ui/app_styles.dart';
 import 'package:mapbox_api/common/utils/components/ui/my_button.dart';
 import 'package:mapbox_api/common/utils/components/ui/my_text.dart';
+import 'package:mapbox_api/features/core/pages/ownerv/widgets/app_header.dart';
 import 'package:mapbox_api/features/core/roles/role_utils.dart';
+import 'package:mapbox_api/features/core/pages/ownerv/owner_home_page.dart';
 import 'package:mapbox_api/features/reservations/models/reservation.dart';
 import 'package:mapbox_api/features/reservations/providers/reservations_providers.dart';
+import 'package:mapbox_api/features/core/pages/ownerv/widgets/owner_dialogs.dart';
 
 class OwnerRequestsPage extends ConsumerStatefulWidget {
   const OwnerRequestsPage({super.key});
@@ -73,101 +76,124 @@ class _OwnerRequestsPageState extends ConsumerState<OwnerRequestsPage>
 
     return OwnerOnly(
       builder: (_) {
-        return Column(
-          children: [
-            const SizedBox(height: 14),
+        return MediaQuery.removePadding(
+          context: context,
+          removeTop: true,
+          child: Column(
+            children: [
+              const AppHeader(
+                title: 'Solicitudes',
+                subtitle: 'Gestiona salidas y cancelaciones',
+                showBack: true,
+              ),
 
-            /// TABS
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Material(
-                elevation: 6,
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                child: Container(
-                  height: 54,
-                  padding: const EdgeInsets.all(6),
-                  child: TabBar(
-                    controller: _tabController,
-                    indicator: BoxDecoration(
-                      color: const Color(0xFFEAF0F7),
-                      borderRadius: BorderRadius.circular(18),
+              Transform.translate(
+                offset: const Offset(0, -24),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 18),
+                  child: Material(
+                    elevation: 8,
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(24),
+                    child: Container(
+                      height: 56,
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      child: TabBar(
+                        controller: _tabController,
+                        labelPadding: EdgeInsets.zero,
+                        indicator: BoxDecoration(
+                          color: const Color(0xFFEAF0F7),
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        indicatorSize: TabBarIndicatorSize.tab,
+                        dividerColor: Colors.transparent,
+                        labelColor: AppColors.headerBottom,
+                        unselectedLabelColor: Colors.black54,
+                        labelStyle: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                        ),
+                        tabs: const [
+                          Tab(text: 'Salidas'),
+                          Tab(text: 'Cancelaciones'),
+                        ],
+                      ),
                     ),
-                    labelColor: AppColors.headerBottom,
-                    unselectedLabelColor: Colors.black54,
-                    tabs: const [
-                      Tab(text: 'Salidas'),
-                      Tab(text: 'Cancelaciones'),
-                    ],
                   ),
                 ),
               ),
-            ),
 
-            const SizedBox(height: 12),
+              /// CONTENT
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    /// EXIT
+                    exitAsync.when(
+                      loading:
+                          () =>
+                              const Center(child: CircularProgressIndicator()),
+                      error: (e, _) => Center(child: Text('$e')),
+                      data: (items) {
+                        if (items.isEmpty) {
+                          return const _OwnerEmptyState(
+                            icon: Icons.logout,
+                            title: 'Sin salidas',
+                            subtitle: 'No hay solicitudes de salida',
+                          );
+                        }
 
-            /// CONTENT
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  /// EXIT
-                  exitAsync.when(
-                    loading:
-                        () => const Center(child: CircularProgressIndicator()),
-                    error: (e, _) => Center(child: Text('$e')),
-                    data: (items) {
-                      if (items.isEmpty) {
-                        return const _OwnerEmptyState(
-                          icon: Icons.logout,
-                          title: 'Sin salidas',
-                          subtitle: 'No hay solicitudes de salida',
+                        return ListView.separated(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: items.length,
+                          separatorBuilder:
+                              (_, __) => const SizedBox(height: 14),
+                          itemBuilder:
+                              (_, i) => _RequestCard(
+                                reservation: items[i],
+                                isExit: true,
+                              ),
                         );
-                      }
+                      },
+                    ),
 
-                      return ListView.separated(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: items.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 14),
-                        itemBuilder:
-                            (_, i) => _RequestCard(
-                              reservation: items[i],
-                              isExit: true,
-                            ),
-                      );
-                    },
-                  ),
+                    /// CANCEL
+                    cancelAsync.when(
+                      loading:
+                          () =>
+                              const Center(child: CircularProgressIndicator()),
+                      error: (e, _) => Center(child: Text('$e')),
+                      data: (items) {
+                        if (items.isEmpty) {
+                          return const _OwnerEmptyState(
+                            icon: Icons.cancel,
+                            title: 'Sin cancelaciones',
+                            subtitle: 'No hay solicitudes',
+                          );
+                        }
 
-                  /// CANCEL
-                  cancelAsync.when(
-                    loading:
-                        () => const Center(child: CircularProgressIndicator()),
-                    error: (e, _) => Center(child: Text('$e')),
-                    data: (items) {
-                      if (items.isEmpty) {
-                        return const _OwnerEmptyState(
-                          icon: Icons.cancel,
-                          title: 'Sin cancelaciones',
-                          subtitle: 'No hay solicitudes',
+                        return ListView.separated(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: items.length,
+                          separatorBuilder:
+                              (_, __) => const SizedBox(height: 14),
+                          itemBuilder:
+                              (_, i) => _RequestCard(
+                                reservation: items[i],
+                                isExit: false,
+                              ),
                         );
-                      }
-
-                      return ListView.separated(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: items.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 14),
-                        itemBuilder:
-                            (_, i) => _RequestCard(
-                              reservation: items[i],
-                              isExit: false,
-                            ),
-                      );
-                    },
-                  ),
-                ],
+                      },
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         );
       },
     );
@@ -314,35 +340,12 @@ class _RequestCardState extends ConsumerState<_RequestCard> {
           MyButton(
             text: _processing ? 'Procesando...' : 'Confirmar',
             onTap: () async {
-              final confirm = await showDialog<bool>(
-                context: context,
-                builder: (ctx) {
-                  return AlertDialog(
-                    title: Text(
-                      widget.isExit
-                          ? 'Confirmar salida'
-                          : 'Confirmar cancelación',
-                    ),
-                    content: Text(
-                      widget.isExit
-                          ? '¿Seguro que deseas aprobar esta salida?'
-                          : '¿Seguro que deseas aprobar esta cancelación?',
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(ctx, false),
-                        child: const Text('Cancelar'),
-                      ),
-                      ElevatedButton(
-                        onPressed: () => Navigator.pop(ctx, true),
-                        child: const Text('Confirmar'),
-                      ),
-                    ],
-                  );
-                },
+              final confirm = await OwnerDialogs.showConfirmationDialog(
+                context,
+                isExit: widget.isExit,
               );
 
-              if (confirm != true) return;
+              if (confirm != true || !mounted) return;
 
               setState(() => _processing = true);
               try {
@@ -351,6 +354,11 @@ class _RequestCardState extends ConsumerState<_RequestCard> {
                 } else {
                   await confirmCancel(reservation: widget.reservation);
                 }
+              } catch (e) {
+                if (!mounted) return;
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text(e.toString())));
               } finally {
                 if (mounted) {
                   setState(() => _processing = false);
