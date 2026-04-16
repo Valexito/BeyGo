@@ -741,8 +741,8 @@ final ownerApproveReservationProvider =
             'state': 'active',
             'providerApprovalStatus': 'approved',
             'reservationNumber': number,
+            'ownerId': reservation.ownerId, // 🔥
           }, SetOptions(merge: true));
-
           tx.set(spaceRef, {
             'status': 'occupied',
             'currentReservationId': reservation.id,
@@ -751,6 +751,70 @@ final ownerApproveReservationProvider =
         });
       };
     });
+
+/// Force-completes an active reservation as the owner.
+/// Cancels the reservation, frees the space, and stores the reason as evidence.
+/// NOTE: User strike must be applied via Cloud Function (future).
+final ownerForceCancelProvider = Provider<
+  Future<void> Function({
+    required Reservation reservation,
+    required String reason,
+  })
+>((ref) {
+  final db = ref.watch(_dbProvider);
+
+  return ({required Reservation reservation, required String reason}) async {
+    final reservationRef = _reservationDoc(db, reservation.id);
+    final spaceRef = _spaceDoc(
+      db,
+      reservation.parkingId,
+      reservation.spaceNumber,
+    );
+
+    final now = DateTime.now();
+
+    await db.runTransaction((tx) async {
+      final reservationSnap = await tx.get(reservationRef);
+      final spaceSnap = await tx.get(spaceRef);
+
+      if (!reservationSnap.exists) {
+        throw StateError('La reservación ya no existe.');
+      }
+
+      final latest = Reservation.fromDoc(
+        reservationSnap as DocumentSnapshot<Map<String, dynamic>>,
+      );
+
+      if (latest.state != 'active' && latest.state != 'pending') {
+        throw StateError('La reservación no puede ser cancelada.');
+      }
+
+      tx.update(reservationRef, {
+        'state': 'cancelled',
+        'endedAt': Timestamp.fromDate(now),
+        'cancellationReason':
+            reason.trim().isEmpty
+                ? 'Cancelado por el propietario'
+                : reason.trim(),
+        'cancellationPenaltyApplied': true,
+        'providerApprovalStatus': 'approved',
+      });
+
+      final spaceData = spaceSnap.data() as Map<String, dynamic>? ?? {};
+      final currentStatus =
+          (spaceData['status'] ?? 'free').toString().toLowerCase().trim();
+
+      if ((currentStatus == 'occupied' || currentStatus == 'requested') &&
+          spaceData['currentReservationId'] == reservation.id) {
+        tx.set(spaceRef, {
+          'status': 'free',
+          'currentReservationId': null,
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+      }
+    });
+  };
+});
 
 String _generateReservationNumber() {
   final now = DateTime.now();

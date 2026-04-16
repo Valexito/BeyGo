@@ -92,7 +92,7 @@ class _OwnerRequestsPageState extends ConsumerState<OwnerRequestsPage>
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 18),
                   child: Material(
-                    elevation: 8,
+                    elevation: 12,
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(24),
                     child: Container(
@@ -129,67 +129,71 @@ class _OwnerRequestsPageState extends ConsumerState<OwnerRequestsPage>
 
               /// CONTENT
               Expanded(
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    /// EXIT
-                    exitAsync.when(
-                      loading:
-                          () =>
-                              const Center(child: CircularProgressIndicator()),
-                      error: (e, _) => Center(child: Text('$e')),
-                      data: (items) {
-                        if (items.isEmpty) {
-                          return const _OwnerEmptyState(
-                            icon: Icons.logout,
-                            title: 'Sin salidas',
-                            subtitle: 'No hay solicitudes de salida',
+                child: ClipRect(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      /// EXIT
+                      exitAsync.when(
+                        loading:
+                            () => const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                        error: (e, _) => Center(child: Text('$e')),
+                        data: (items) {
+                          if (items.isEmpty) {
+                            return const _OwnerEmptyState(
+                              icon: Icons.logout,
+                              title: 'Sin salidas',
+                              subtitle: 'No hay solicitudes de salida',
+                            );
+                          }
+
+                          return ListView.separated(
+                            padding: const EdgeInsets.all(16),
+                            itemCount: items.length,
+                            separatorBuilder:
+                                (_, __) => const SizedBox(height: 14),
+                            itemBuilder:
+                                (_, i) => _RequestCard(
+                                  reservation: items[i],
+                                  isExit: true,
+                                ),
                           );
-                        }
+                        },
+                      ),
 
-                        return ListView.separated(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: items.length,
-                          separatorBuilder:
-                              (_, __) => const SizedBox(height: 14),
-                          itemBuilder:
-                              (_, i) => _RequestCard(
-                                reservation: items[i],
-                                isExit: true,
-                              ),
-                        );
-                      },
-                    ),
+                      /// CANCEL
+                      cancelAsync.when(
+                        loading:
+                            () => const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                        error: (e, _) => Center(child: Text('$e')),
+                        data: (items) {
+                          if (items.isEmpty) {
+                            return const _OwnerEmptyState(
+                              icon: Icons.cancel,
+                              title: 'Sin cancelaciones',
+                              subtitle: 'No hay solicitudes',
+                            );
+                          }
 
-                    /// CANCEL
-                    cancelAsync.when(
-                      loading:
-                          () =>
-                              const Center(child: CircularProgressIndicator()),
-                      error: (e, _) => Center(child: Text('$e')),
-                      data: (items) {
-                        if (items.isEmpty) {
-                          return const _OwnerEmptyState(
-                            icon: Icons.cancel,
-                            title: 'Sin cancelaciones',
-                            subtitle: 'No hay solicitudes',
+                          return ListView.separated(
+                            padding: const EdgeInsets.all(16),
+                            itemCount: items.length,
+                            separatorBuilder:
+                                (_, __) => const SizedBox(height: 14),
+                            itemBuilder:
+                                (_, i) => _RequestCard(
+                                  reservation: items[i],
+                                  isExit: false,
+                                ),
                           );
-                        }
-
-                        return ListView.separated(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: items.length,
-                          separatorBuilder:
-                              (_, __) => const SizedBox(height: 14),
-                          itemBuilder:
-                              (_, i) => _RequestCard(
-                                reservation: items[i],
-                                isExit: false,
-                              ),
-                        );
-                      },
-                    ),
-                  ],
+                        },
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -219,152 +223,158 @@ class _RequestCardState extends ConsumerState<_RequestCard> {
     final confirmExit = ref.read(ownerConfirmExitProvider);
     final confirmCancel = ref.read(ownerConfirmCancellationProvider);
 
-    final accent =
-        widget.isExit ? const Color(0xFF0EA5E9) : const Color(0xFFF59E0B);
+    // ── Duration calculation ──
+    final start = widget.reservation.reservedAt;
+    final end = widget.reservation.exitLockedAt ?? DateTime.now();
+    final totalMinutes = end.difference(start).inMinutes.clamp(0, 9999);
+    final hours = totalMinutes ~/ 60;
+    final minutes = totalMinutes % 60;
+    final durationText = hours > 0 ? '${hours}h ${minutes}m' : '${minutes}m';
 
     return Container(
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: AppColors.borderSoft),
       ),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: accent.withOpacity(0.12),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  widget.isExit ? Icons.logout : Icons.cancel,
-                  color: accent,
-                ),
+          // ── Gradient header ──
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [AppColors.headerTop, AppColors.headerBottom],
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    MyText(
-                      text: widget.reservation.parkingName,
-                      variant: MyTextVariant.bodyBold,
-                    ),
-                    const SizedBox(height: 4),
-                    MyText(
-                      text:
-                          widget.isExit
-                              ? 'Solicitud de salida'
-                              : 'Solicitud de cancelación',
-                      variant: MyTextVariant.bodyMuted,
-                      fontSize: 12,
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: accent.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  'PENDIENTE',
-                  style: TextStyle(
-                    color: accent,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: MyText(
+                    text:
+                        'No. ${widget.reservation.reservationNumber ?? 'N/A'}',
+                    variant: MyTextVariant.bodyBold,
+                    customColor: Colors.white,
+                    fontSize: 14,
                   ),
                 ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 14),
-
-          _InfoRow(
-            icon: Icons.person_outline,
-            label: 'Usuario',
-            value: widget.reservation.userName ?? 'N/A',
-          ),
-          const SizedBox(height: 10),
-
-          _InfoRow(
-            icon: Icons.directions_car_outlined,
-            label: 'Placa',
-            value: widget.reservation.plate ?? 'N/A',
-          ),
-          const SizedBox(height: 10),
-
-          _InfoRow(
-            icon: Icons.local_parking_outlined,
-            label: 'Espacio',
-            value: '${widget.reservation.spaceNumber}',
-          ),
-          const SizedBox(height: 10),
-
-          _InfoRow(
-            icon: Icons.payments_outlined,
-            label: 'Precio',
-            value:
-                widget.reservation.pricePerHour != null
-                    ? 'Q ${widget.reservation.pricePerHour}'
-                    : 'Pendiente',
-          ),
-          const SizedBox(height: 10),
-
-          _InfoRow(
-            icon: Icons.login,
-            label: 'Entrada',
-            value: _format(widget.reservation.reservedAt),
-          ),
-          if (widget.isExit && widget.reservation.estimatedAmount != null) ...[
-            const SizedBox(height: 10),
-            _InfoRow(
-              icon: Icons.receipt_long_outlined,
-              label: 'Monto a cobrar',
-              value: 'Q ${widget.reservation.estimatedAmount}',
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.20),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: MyText(
+                    text: widget.isExit ? 'SALIDA' : 'CANCELACIÓN',
+                    variant: MyTextVariant.bodyBold,
+                    customColor: Colors.white,
+                    fontSize: 10,
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
 
-          const SizedBox(height: 16),
+          // ── Info rows ──
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _InfoRow(
+                  icon: Icons.person_outline,
+                  label: 'Usuario',
+                  value: widget.reservation.userName ?? 'N/A',
+                ),
+                const SizedBox(height: 10),
+                _InfoRow(
+                  icon: Icons.directions_car_outlined,
+                  label: 'Placa',
+                  value: widget.reservation.plate ?? 'N/A',
+                ),
+                const SizedBox(height: 10),
+                _InfoRow(
+                  icon: Icons.local_parking_outlined,
+                  label: 'Espacio',
+                  value: '${widget.reservation.spaceNumber}',
+                ),
+                const SizedBox(height: 10),
+                _InfoRow(
+                  icon: Icons.login,
+                  label: 'Entrada',
+                  value: _format(widget.reservation.reservedAt),
+                ),
+                const SizedBox(height: 10),
+                _InfoRow(
+                  icon: Icons.timelapse_rounded,
+                  label: 'Duración',
+                  value: durationText,
+                ),
+                if (widget.isExit &&
+                    widget.reservation.estimatedAmount != null) ...[
+                  const SizedBox(height: 10),
+                  _InfoRow(
+                    icon: Icons.receipt_long_outlined,
+                    label: 'Monto a cobrar',
+                    value:
+                        'Q ${widget.reservation.estimatedAmount!.toDouble().toStringAsFixed(2)}',
+                  ),
+                ],
+                const SizedBox(height: 16),
+                Center(
+                  child: SizedBox(
+                    width: 180,
+                    child: MyButton(
+                      text: _processing ? 'Procesando...' : 'Confirmar',
+                      height: 42,
+                      margin: EdgeInsets.zero,
+                      onTap:
+                          _processing
+                              ? null
+                              : () async {
+                                final confirm =
+                                    await OwnerDialogs.showConfirmationDialog(
+                                      context,
+                                      isExit: widget.isExit,
+                                    );
 
-          MyButton(
-            text: _processing ? 'Procesando...' : 'Confirmar',
-            onTap: () async {
-              final confirm = await OwnerDialogs.showConfirmationDialog(
-                context,
-                isExit: widget.isExit,
-              );
+                                if (confirm != true || !mounted) return;
 
-              if (confirm != true || !mounted) return;
-
-              setState(() => _processing = true);
-              try {
-                if (widget.isExit) {
-                  await confirmExit(reservation: widget.reservation);
-                } else {
-                  await confirmCancel(reservation: widget.reservation);
-                }
-              } catch (e) {
-                if (!mounted) return;
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(SnackBar(content: Text(e.toString())));
-              } finally {
-                if (mounted) {
-                  setState(() => _processing = false);
-                }
-              }
-            },
+                                setState(() => _processing = true);
+                                try {
+                                  if (widget.isExit) {
+                                    await confirmExit(
+                                      reservation: widget.reservation,
+                                    );
+                                  } else {
+                                    await confirmCancel(
+                                      reservation: widget.reservation,
+                                    );
+                                  }
+                                } catch (e) {
+                                  if (!mounted) return;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(e.toString())),
+                                  );
+                                } finally {
+                                  if (mounted) {
+                                    setState(() => _processing = false);
+                                  }
+                                }
+                              },
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -380,6 +390,7 @@ class _RequestCardState extends ConsumerState<_RequestCard> {
   }
 }
 
+/// ================ REUSABLE INFO ROW ================
 class _InfoRow extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -410,9 +421,15 @@ class _InfoRow extends StatelessWidget {
             text: label,
             variant: MyTextVariant.bodyMuted,
             fontSize: 12,
+            customColor: AppColors.headerBottom,
           ),
         ),
-        MyText(text: value, variant: MyTextVariant.bodyBold, fontSize: 13),
+        MyText(
+          text: value,
+          variant: MyTextVariant.bodyBold,
+          fontSize: 13,
+          customColor: const Color(0xFF6B7280),
+        ),
       ],
     );
   }
