@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:mapbox_api/common/utils/components/ui/my_text.dart';
 import 'package:mapbox_api/features/core/roles/role_utils.dart';
+import 'package:mapbox_api/features/core/pages/ownerv/widgets/app_header.dart';
 
 // Auth
 import 'package:mapbox_api/features/auth/providers/auth_providers.dart'
@@ -26,118 +27,130 @@ class _OwnerSettingsPageState extends ConsumerState<OwnerSettingsPage> {
     final isDark = theme.brightness == Brightness.dark;
 
     return OwnerOnly(
-      builder:
-          (_) => Scaffold(
-            backgroundColor: theme.colorScheme.surface,
-            appBar: AppBar(
-              elevation: 0,
-              backgroundColor: theme.colorScheme.surface,
-              leading: IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new_rounded),
-                onPressed: () => Navigator.of(context).maybePop(),
-              ),
-              title: const MyText(
-                text: 'Settings',
-                variant: MyTextVariant.bodyBold,
+      builder: (_) {
+        return Column(
+          children: [
+            const AppHeader(
+              title: 'Settings',
+              subtitle: 'Preferences and account',
+              showBack: true,
+            ),
+
+            Transform.translate(
+              offset: const Offset(0, -24),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Material(
+                  elevation: 8,
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  child: Container(
+                    height: 54,
+                    alignment: Alignment.center,
+                    child: MyText(
+                      text: 'Settings',
+                      variant: MyTextVariant.bodyBold,
+                    ),
+                  ),
+                ),
               ),
             ),
-            body: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-              children: [
-                // -------- Preferencias --------
-                const _GroupHeader(title: 'Preferences'),
-                _SwitchTile(
-                  icon: Icons.notifications_none_rounded,
-                  label: 'Notification',
-                  value: notifications,
-                  onChanged: (v) => setState(() => notifications = v),
-                  isDark: isDark,
-                ),
-                const SizedBox(height: 8),
-                _SwitchTile(
-                  icon: Icons.dark_mode_outlined,
-                  label: 'Dark Mode',
-                  value: darkMode,
-                  onChanged: (v) {
-                    setState(() => darkMode = v);
-                    // TODO: reemplazar por tu toggle real de tema (e.g., ref.read(themeProvider.notifier).toggle())
-                  },
-                  isDark: isDark,
-                ),
 
-                const SizedBox(height: 24),
+            const SizedBox(height: 12),
 
-                // -------- App --------
-                const _GroupHeader(title: 'App'),
-                _NavTile(
-                  icon: Icons.star_border_rounded,
-                  label: 'Rate App',
-                  onTap: _rateApp,
-                  isDark: isDark,
-                ),
-                const SizedBox(height: 8),
-                _NavTile(
-                  icon: Icons.share_outlined,
-                  label: 'Share App',
-                  onTap: _shareApp,
-                  isDark: isDark,
-                ),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                children: [
+                  const _GroupHeader(title: 'Preferences'),
+                  _SwitchTile(
+                    icon: Icons.notifications_none_rounded,
+                    label: 'Notification',
+                    value: notifications,
+                    onChanged: (v) => setState(() => notifications = v),
+                    isDark: isDark,
+                  ),
+                  const SizedBox(height: 8),
+                  _SwitchTile(
+                    icon: Icons.dark_mode_outlined,
+                    label: 'Dark Mode',
+                    value: darkMode,
+                    onChanged: (v) => setState(() => darkMode = v),
+                    isDark: isDark,
+                  ),
 
-                const SizedBox(height: 24),
+                  const SizedBox(height: 24),
 
-                // -------- Policies --------
-                const _GroupHeader(title: 'Policies'),
-                _NavTile(
-                  icon: Icons.lock_outline_rounded,
-                  label: 'Privacy Policy',
-                  onTap: () => _openPolicy(context, 'privacy'),
-                  isDark: isDark,
-                ),
-                const SizedBox(height: 8),
-                _NavTile(
-                  icon: Icons.description_outlined,
-                  label: 'Terms and Conditions',
-                  onTap: () => _openPolicy(context, 'terms'),
-                  isDark: isDark,
-                ),
-                const SizedBox(height: 8),
-                _NavTile(
-                  icon: Icons.cookie_outlined,
-                  label: 'Cookies Policy',
-                  onTap: () => _openPolicy(context, 'cookies'),
-                  isDark: isDark,
-                ),
+                  const _GroupHeader(title: 'App'),
+                  _NavTile(
+                    icon: Icons.star_border_rounded,
+                    label: 'Rate App',
+                    onTap: _rateApp,
+                    isDark: isDark,
+                  ),
+                  const SizedBox(height: 8),
+                  _NavTile(
+                    icon: Icons.share_outlined,
+                    label: 'Share App',
+                    onTap: _shareApp,
+                    isDark: isDark,
+                  ),
 
-                const SizedBox(height: 24),
+                  const SizedBox(height: 24),
 
-                // -------- Support --------
-                const _GroupHeader(title: 'Support'),
-                _NavTile(
-                  icon: Icons.email_outlined,
-                  label: 'Contact',
-                  onTap: () => _openSupport(context, 'contact'),
-                  isDark: isDark,
-                ),
-                const SizedBox(height: 8),
-                _NavTile(
-                  icon: Icons.chat_bubble_outline_rounded,
-                  label: 'Feedback',
-                  onTap: () => _openSupport(context, 'feedback'),
-                  isDark: isDark,
-                ),
+                  const _GroupHeader(title: 'Policies'),
+                  _NavTile(
+                    icon: Icons.lock_outline_rounded,
+                    label: 'Privacy Policy',
+                    onTap: () => _openPolicy(context, 'privacy'),
+                    isDark: isDark,
+                  ),
+                  const SizedBox(height: 8),
+                  _NavTile(
+                    icon: Icons.description_outlined,
+                    label: 'Terms and Conditions',
+                    onTap: () => _openPolicy(context, 'terms'),
+                    isDark: isDark,
+                  ),
+                  const SizedBox(height: 8),
+                  _NavTile(
+                    icon: Icons.cookie_outlined,
+                    label: 'Cookies Policy',
+                    onTap: () => _openPolicy(context, 'cookies'),
+                    isDark: isDark,
+                  ),
 
-                const SizedBox(height: 24),
+                  const SizedBox(height: 24),
 
-                // -------- Logout --------
-                _DangerTile(
-                  icon: Icons.logout_rounded,
-                  label: 'Logout',
-                  onTap: () => _logout(context),
-                  isDark: isDark,
-                ),
-              ],
+                  const _GroupHeader(title: 'Support'),
+                  _NavTile(
+                    icon: Icons.email_outlined,
+                    label: 'Contact',
+                    onTap: () => _openSupport(context, 'contact'),
+                    isDark: isDark,
+                  ),
+                  const SizedBox(height: 8),
+                  _NavTile(
+                    icon: Icons.chat_bubble_outline_rounded,
+                    label: 'Feedback',
+                    onTap: () => _openSupport(context, 'feedback'),
+                    isDark: isDark,
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  _DangerTile(
+                    icon: Icons.logout_rounded,
+                    label: 'Logout',
+                    onTap: () => _logout(context),
+                    isDark: isDark,
+                  ),
+                ],
+              ),
             ),
-          ),
+          ],
+        );
+      },
     );
   }
 

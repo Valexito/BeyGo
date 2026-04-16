@@ -47,31 +47,28 @@ class _OwnerReservationsPageState extends ConsumerState<OwnerReservationsPage>
 
             Transform.translate(
               offset: const Offset(0, -24),
-              child: const SizedBox(height: 14),
-            ),
-
-            /// TABS
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Material(
-                elevation: 6,
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                child: Container(
-                  height: 54,
-                  padding: const EdgeInsets.all(6),
-                  child: TabBar(
-                    controller: _tabController,
-                    indicator: BoxDecoration(
-                      color: const Color(0xFFEAF0F7),
-                      borderRadius: BorderRadius.circular(18),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Material(
+                  elevation: 8,
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  child: Container(
+                    height: 54,
+                    padding: const EdgeInsets.all(6),
+                    child: TabBar(
+                      controller: _tabController,
+                      indicator: BoxDecoration(
+                        color: const Color(0xFFEAF0F7),
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      labelColor: AppColors.headerBottom,
+                      unselectedLabelColor: Colors.black54,
+                      tabs: const [
+                        Tab(text: 'Activas'),
+                        Tab(text: 'Solicitadas'),
+                      ],
                     ),
-                    labelColor: AppColors.headerBottom,
-                    unselectedLabelColor: Colors.black54,
-                    tabs: const [
-                      Tab(text: 'Activas'),
-                      Tab(text: 'Solicitadas'),
-                    ],
                   ),
                 ),
               ),

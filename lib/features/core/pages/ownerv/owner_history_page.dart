@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mapbox_api/common/utils/components/ui/app_styles.dart';
 import 'package:mapbox_api/common/utils/components/ui/my_text.dart';
+import 'package:mapbox_api/features/core/pages/ownerv/widgets/app_header.dart';
 import 'package:mapbox_api/features/core/roles/role_utils.dart';
 import 'package:mapbox_api/features/reservations/models/reservation.dart';
 import 'package:mapbox_api/features/reservations/providers/reservations_providers.dart';
@@ -15,32 +16,67 @@ class OwnerHistoryPage extends ConsumerWidget {
 
     return OwnerOnly(
       builder: (_) {
-        return reservationsAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(child: Text('Error: $e')),
-          data: (items) {
-            final history =
-                items.where((r) {
-                  return r.state == 'completed' ||
-                      r.state == 'cancelled' ||
-                      r.state == 'cancellation_requested';
-                }).toList();
+        return Column(
+          children: [
+            const AppHeader(
+              title: 'Historial',
+              subtitle: 'Reservas completadas y canceladas',
+              showBack: true,
+            ),
 
-            if (history.isEmpty) {
-              return const _OwnerEmptyState(
-                icon: Icons.receipt_long_outlined,
-                title: 'No hay historial',
-                subtitle: 'Las reservas completadas aparecerán aquí',
-              );
-            }
+            Transform.translate(
+              offset: const Offset(0, -24),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Material(
+                  elevation: 8,
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  child: Container(
+                    height: 54,
+                    alignment: Alignment.center,
+                    child: MyText(
+                      text: 'Historial',
+                      variant: MyTextVariant.bodyBold,
+                    ),
+                  ),
+                ),
+              ),
+            ),
 
-            return ListView.separated(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-              itemCount: history.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 14),
-              itemBuilder: (_, i) => _OwnerHistoryCard(reservation: history[i]),
-            );
-          },
+            const SizedBox(height: 12),
+
+            Expanded(
+              child: reservationsAsync.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (e, _) => Center(child: Text('Error: $e')),
+                data: (items) {
+                  final history =
+                      items.where((r) {
+                        return r.state == 'completed' ||
+                            r.state == 'cancelled' ||
+                            r.state == 'cancellation_requested';
+                      }).toList();
+
+                  if (history.isEmpty) {
+                    return const _OwnerEmptyState(
+                      icon: Icons.receipt_long_outlined,
+                      title: 'No hay historial',
+                      subtitle: 'Las reservas completadas aparecerán aquí',
+                    );
+                  }
+
+                  return ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                    itemCount: history.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 14),
+                    itemBuilder:
+                        (_, i) => _OwnerHistoryCard(reservation: history[i]),
+                  );
+                },
+              ),
+            ),
+          ],
         );
       },
     );
