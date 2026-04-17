@@ -1,9 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mapbox_api/common/utils/components/ui/app_styles.dart';
-import 'package:mapbox_api/common/utils/components/ui/my_text.dart';
-import 'package:mapbox_api/common/utils/components/ui/navy_header.dart';
+import 'package:mapbox_api/common/components/ui/app_styles.dart';
+import 'package:mapbox_api/common/components/ui/my_text.dart';
+import 'package:mapbox_api/common/components/ui/navy_header.dart';
 import 'package:mapbox_api/features/core/pages/userv/report_problem_page.dart';
 import 'package:mapbox_api/features/users/widgets/delete_account_dialog.dart';
 import 'package:mapbox_api/features/users/widgets/profile_security_dialogs.dart';

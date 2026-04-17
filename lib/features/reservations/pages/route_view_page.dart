@@ -5,9 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 
 import 'package:mapbox_api/common/env/env.dart';
-import 'package:mapbox_api/common/utils/components/ui/app_styles.dart';
-import 'package:mapbox_api/common/utils/components/ui/my_button.dart';
-import 'package:mapbox_api/common/utils/components/ui/my_text.dart';
+import 'package:mapbox_api/common/components/ui/app_styles.dart';
+import 'package:mapbox_api/common/components/ui/my_button.dart';
+import 'package:mapbox_api/common/components/ui/my_text.dart';
 import 'package:mapbox_api/features/reservations/components/route_bottom_info_card.dart';
 import 'package:mapbox_api/features/reservations/providers/directions_providers.dart';
 import 'package:mapbox_api/features/reservations/providers/location_providers.dart';

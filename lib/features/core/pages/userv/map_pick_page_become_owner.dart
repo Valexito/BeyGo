@@ -6,8 +6,8 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:mapbox_api/common/env/env.dart';
 import 'package:mapbox_api/features/reservations/services/geolocator.dart';
-import 'package:mapbox_api/common/utils/components/ui/app_styles.dart';
-import 'package:mapbox_api/common/utils/components/ui/my_text.dart';
+import 'package:mapbox_api/common/components/ui/app_styles.dart';
+import 'package:mapbox_api/common/components/ui/my_text.dart';
 
 class MapPickPage extends StatefulWidget {
   const MapPickPage({super.key});

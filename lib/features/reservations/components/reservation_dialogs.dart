@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:mapbox_api/common/utils/components/ui/app_styles.dart';
-import 'package:mapbox_api/common/utils/components/ui/my_button.dart';
-import 'package:mapbox_api/common/utils/components/ui/my_text.dart';
+import 'package:mapbox_api/common/components/ui/app_styles.dart';
+import 'package:mapbox_api/common/components/ui/my_button.dart';
+import 'package:mapbox_api/common/components/ui/my_text.dart';
 import 'package:mapbox_api/features/reservations/models/reservation.dart';
 
 class ReservationDialogs {

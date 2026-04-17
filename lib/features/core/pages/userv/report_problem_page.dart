@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mapbox_api/common/utils/components/ui/app_styles.dart';
-import 'package:mapbox_api/common/utils/components/ui/my_button.dart';
-import 'package:mapbox_api/common/utils/components/ui/my_text.dart';
-import 'package:mapbox_api/common/utils/components/ui/my_textfield.dart';
-import 'package:mapbox_api/common/utils/components/ui/navy_header.dart';
+import 'package:mapbox_api/common/components/ui/app_styles.dart';
+import 'package:mapbox_api/common/components/ui/my_button.dart';
+import 'package:mapbox_api/common/components/ui/my_text.dart';
+import 'package:mapbox_api/common/components/ui/my_textfield.dart';
+import 'package:mapbox_api/common/components/ui/navy_header.dart';
 import 'package:mapbox_api/features/core/providers/report_provider.dart';
 
 class ReportProblemPage extends ConsumerStatefulWidget {

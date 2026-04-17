@@ -1,11 +1,10 @@
-// ==============================
-// lib/features/auth/pages/verify_email_page.dart
-// ==============================
+// lib/features/auth/components/verify_email_page.dart
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:mapbox_api/common/utils/components/ui/app_styles.dart';
-import 'package:mapbox_api/common/utils/components/ui/my_button.dart';
-import 'package:mapbox_api/common/utils/components/ui/my_text.dart';
+
+import 'package:mapbox_api/common/components/ui/app_styles.dart';
+import 'package:mapbox_api/common/components/ui/my_button.dart';
+import 'package:mapbox_api/common/widgets/app_loading_screen.dart';
 import 'package:mapbox_api/features/users/pages/complete_profile_page.dart';
 
 class VerifyEmailPage extends StatefulWidget {
@@ -16,23 +15,47 @@ class VerifyEmailPage extends StatefulWidget {
   State<VerifyEmailPage> createState() => _VerifyEmailPageState();
 }
 
-class _VerifyEmailPageState extends State<VerifyEmailPage> {
+class _VerifyEmailPageState extends State<VerifyEmailPage>
+    with SingleTickerProviderStateMixin {
   bool _checking = false;
   bool _resending = false;
-  String? _message;
+  bool _resent = false;
+  String? _errorMsg;
 
-  Future<void> _reloadAndContinue() async {
+  late final AnimationController _slideCtrl;
+  late final Animation<Offset> _slideAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _slideCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    _slideAnim = Tween<Offset>(
+      begin: const Offset(0, 0.05),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _slideCtrl, curve: Curves.easeOut));
+    _slideCtrl.forward();
+  }
+
+  @override
+  void dispose() {
+    _slideCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _checkVerification() async {
     setState(() {
       _checking = true;
-      _message = null;
+      _errorMsg = null;
     });
-
     try {
       await widget.user.reload();
       final current = FirebaseAuth.instance.currentUser;
+      if (!mounted) return;
 
       if (current != null && current.emailVerified) {
-        if (!mounted) return;
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(
@@ -44,14 +67,13 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
       }
 
       setState(() {
-        _message =
+        _errorMsg =
             'Tu correo aún no está verificado. Revisa tu bandeja de entrada o spam.';
       });
     } catch (_) {
-      setState(() {
-        _message =
-            'No se pudo verificar el estado del correo. Intenta de nuevo.';
-      });
+      setState(
+        () => _errorMsg = 'No se pudo verificar el estado. Intenta de nuevo.',
+      );
     } finally {
       if (mounted) setState(() => _checking = false);
     }
@@ -60,18 +82,14 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
   Future<void> _resendEmail() async {
     setState(() {
       _resending = true;
-      _message = null;
+      _errorMsg = null;
+      _resent = false;
     });
-
     try {
       await FirebaseAuth.instance.currentUser?.sendEmailVerification();
-      setState(() {
-        _message = 'Correo de verificación reenviado.';
-      });
+      setState(() => _resent = true);
     } catch (_) {
-      setState(() {
-        _message = 'No se pudo reenviar el correo. Intenta de nuevo.';
-      });
+      setState(() => _errorMsg = 'No se pudo reenviar. Intenta de nuevo.');
     } finally {
       if (mounted) setState(() => _resending = false);
     }
@@ -85,20 +103,28 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (_checking) {
+      return const AppLoadingScreen(
+        message: 'Verificando tu correo...',
+        variant: LoadingVariant.profile,
+      );
+    }
+
     final screen = MediaQuery.of(context).size;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFD8F3EE),
+      backgroundColor: const Color(0xFFF0F4F8),
       body: SafeArea(
         top: false,
         child: SizedBox(
           height: screen.height,
           child: Stack(
             children: [
+              // Gradient
               Container(
                 height: screen.height * 0.42,
                 width: double.infinity,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
@@ -106,32 +132,22 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
                   ),
                 ),
               ),
+
+              // Blobs
               Positioned(
                 top: 40,
                 left: -20,
-                child: Container(
-                  width: 90,
-                  height: 90,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.12),
-                    shape: BoxShape.circle,
-                  ),
-                ),
+                child: _Blob(size: 90, opacity: 0.12),
               ),
               Positioned(
                 top: -10,
                 right: -10,
-                child: Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.10),
-                    shape: BoxShape.circle,
-                  ),
-                ),
+                child: _Blob(size: 120, opacity: 0.10),
               ),
+
+              // Hero
               Positioned(
-                top: 95,
+                top: screen.height * 0.09,
                 left: 28,
                 right: 28,
                 child: Column(
@@ -153,136 +169,231 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
                         color: Colors.white,
                       ),
                     ),
-                    const SizedBox(height: 18),
-                    const MyText(
-                      text: "Veriicar correo electrónico",
-                      variant: MyTextVariant.title,
-                      customColor: Colors.white,
-                      textAlign: TextAlign.center,
+                    const SizedBox(height: 14),
+                    const Text(
+                      'Verifica tu correo',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                        letterSpacing: -0.4,
+                      ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: MyText(
-                        text:
-                            "Te enviamos un correo a ${widget.user.email ?? ''}. Verifícalo para continuar.",
-                        variant: MyTextVariant.subtitle,
-                        customColor: Colors.white70,
+                      child: Text(
+                        'Te enviamos un correo a\n${widget.user.email ?? ''}',
                         textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Colors.white70,
+                          fontWeight: FontWeight.w400,
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
+
+              // Sheet
               Positioned(
-                top: screen.height * 0.31,
+                top: screen.height * 0.30,
                 left: 0,
                 right: 0,
                 bottom: 0,
-                child: Container(
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(34),
-                      topRight: Radius.circular(34),
+                child: SlideTransition(
+                  position: _slideAnim,
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(34),
+                        topRight: Radius.circular(34),
+                      ),
                     ),
-                  ),
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(24, 28, 24, 30),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Center(
-                          child: Container(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(24, 28, 24, 32),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const Text(
+                            'Confirma tu correo electrónico',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.headerBottom,
+                              letterSpacing: -0.4,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          const Text(
+                            'Revisa tu bandeja principal, spam o promociones. Luego toca el botón de abajo.',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Color(0xFF8A94A6),
+                            ),
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          // Email card
+                          Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 8,
+                              horizontal: 16,
+                              vertical: 14,
                             ),
-                            child: const MyText(
-                              text: "Confirma tu correo electrónico",
-                              variant: MyTextVariant.normalBold,
-                              fontSize: 18,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        const MyText(
-                          text:
-                              "Revisa tu bandeja principal, promociones o spam. Después toca el botón de abajo.",
-                          variant: MyTextVariant.subtitle,
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 20),
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(
-                              AppDims.radiusLg,
-                            ),
-                            border: Border.all(
-                              color: AppColors.headerBottom.withOpacity(0.15),
-                            ),
-                          ),
-                          child: Column(
-                            children: [
-                              const MyText(
-                                text: "Correo registrado",
-                                variant: MyTextVariant.bodyMuted,
-                                fontSize: 12,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: AppColors.headerBottom.withOpacity(0.15),
                               ),
-                              const SizedBox(height: 6),
-                              MyText(
-                                text: widget.user.email ?? '',
-                                variant: MyTextVariant.bodyBold,
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.headerBottom.withOpacity(
+                                    0.05,
+                                  ),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 36,
+                                  height: 36,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.headerBottom.withOpacity(
+                                      0.08,
+                                    ),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.mail_outline_rounded,
+                                    size: 18,
+                                    color: AppColors.headerBottom,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        'Correo registrado',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: Color(0xFF8A94A6),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        widget.user.email ?? '',
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w700,
+                                          color: Color(0xFF1E293B),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                        if (_message != null) ...[
-                          const SizedBox(height: 14),
-                          MyText(
-                            text: _message!,
-                            variant: MyTextVariant.bodyMuted,
-                            textAlign: TextAlign.center,
-                            fontSize: 12,
+
+                          // Feedback messages
+                          if (_resent) ...[
+                            const SizedBox(height: 12),
+                            _FeedbackBanner(
+                              message: 'Correo reenviado. Revisa tu bandeja.',
+                              isSuccess: true,
+                            ),
+                          ],
+                          if (_errorMsg != null) ...[
+                            const SizedBox(height: 12),
+                            _FeedbackBanner(
+                              message: _errorMsg!,
+                              isSuccess: false,
+                            ),
+                          ],
+
+                          const SizedBox(height: 24),
+
+                          // Primary action
+                          MyButton(
+                            text: 'Ya verifiqué mi correo',
+                            onTap: _checking ? null : _checkVerification,
+                            loading: _checking,
+                            margin: EdgeInsets.zero,
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          // Resend
+                          SizedBox(
+                            height: 50,
+                            child: OutlinedButton.icon(
+                              onPressed: _resending ? null : _resendEmail,
+                              icon:
+                                  _resending
+                                      ? const SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: AppColors.headerBottom,
+                                        ),
+                                      )
+                                      : const Icon(
+                                        Icons.send_outlined,
+                                        size: 16,
+                                        color: AppColors.headerBottom,
+                                      ),
+                              label: Text(
+                                _resending
+                                    ? 'Reenviando...'
+                                    : 'Reenviar correo de verificación',
+                                style: const TextStyle(
+                                  color: AppColors.headerBottom,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                side: BorderSide(
+                                  color: AppColors.headerBottom.withOpacity(
+                                    0.28,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          // Back to login
+                          TextButton(
+                            onPressed: _backToLogin,
+                            style: TextButton.styleFrom(
+                              foregroundColor: AppColors.textSecondary,
+                            ),
+                            child: const Text(
+                              'Regresar a inicio de sesión',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
                           ),
                         ],
-                        const SizedBox(height: 24),
-                        MyButton(
-                          text:
-                              _checking
-                                  ? "Revisando..."
-                                  : "Ya verifiqué mi correo",
-                          loading: _checking,
-                          onTap: _checking ? null : _reloadAndContinue,
-                          margin: EdgeInsets.zero,
-                        ),
-                        const SizedBox(height: 12),
-                        OutlinedButton(
-                          onPressed: _resending ? null : _resendEmail,
-                          style: OutlinedButton.styleFrom(
-                            minimumSize: const Size.fromHeight(52),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                AppDims.radiusLg,
-                              ),
-                            ),
-                            side: BorderSide(
-                              color: AppColors.headerBottom.withOpacity(0.35),
-                            ),
-                          ),
-                          child: Text(
-                            _resending ? "Reenviando..." : "Reenviar correo",
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        TextButton(
-                          onPressed: _backToLogin,
-                          child: const Text("Regresar a inicio de sesión"),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
@@ -293,4 +404,62 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
       ),
     );
   }
+}
+
+class _FeedbackBanner extends StatelessWidget {
+  final String message;
+  final bool isSuccess;
+
+  const _FeedbackBanner({required this.message, required this.isSuccess});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isSuccess ? const Color(0xFF16A34A) : const Color(0xFFDC2626);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.07),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.22)),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            isSuccess
+                ? Icons.check_circle_outline_rounded
+                : Icons.info_outline_rounded,
+            size: 16,
+            color: color,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                fontSize: 12,
+                color: color,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Blob extends StatelessWidget {
+  final double size;
+  final double opacity;
+  const _Blob({required this.size, required this.opacity});
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: size,
+    height: size,
+    decoration: BoxDecoration(
+      color: Colors.white.withOpacity(opacity),
+      shape: BoxShape.circle,
+    ),
+  );
 }

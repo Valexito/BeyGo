@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:mapbox_api/common/utils/components/ui/my_text.dart';
-import 'package:mapbox_api/common/utils/components/ui/navy_header.dart';
+import 'package:mapbox_api/common/components/ui/my_text.dart';
+import 'package:mapbox_api/common/components/ui/navy_header.dart';
 import 'package:mapbox_api/features/core/pages/userv/report_problem_page.dart';
 import 'package:mapbox_api/features/core/providers/firebase_providers.dart';
 import 'package:mapbox_api/features/reservations/components/reservation_card.dart';

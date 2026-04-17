@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
-import 'package:mapbox_api/common/utils/components/app_drawer.dart';
-import 'package:mapbox_api/common/utils/components/home_bottom_panel.dart';
+import 'package:mapbox_api/common/components/app_drawer.dart';
+import 'package:mapbox_api/common/components/home_bottom_panel.dart';
 import 'package:mapbox_api/features/core/components/map_widget.dart';
 
 // Providers (Riverpod)

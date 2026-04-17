@@ -1,15 +1,16 @@
 // lib/common/utils/components/ui/app_loading_screen.dart
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:mapbox_api/common/utils/components/ui/app_styles.dart';
+import 'package:mapbox_api/common/components/ui/app_styles.dart';
 
 /// Reusable animated loading screen.
 ///
 /// Usage:
 /// ```dart
 /// AppLoadingScreen(message: 'Buscando rutas...')
-/// AppLoadingScreen(message: 'Creando perfil...', variant: LoadingVariant.profile)
+/// AppLoadingScreen(message: 'Cargando perfil...', variant: LoadingVariant.profile)
 /// AppLoadingScreen(message: 'Cargando mapa...', variant: LoadingVariant.map)
+/// AppLoadingScreen.profileData()   // shortcut for profile data loading
 /// ```
 enum LoadingVariant { route, map, profile, general }
 
@@ -24,6 +25,24 @@ class AppLoadingScreen extends StatefulWidget {
     this.submessage,
     this.variant = LoadingVariant.general,
   });
+
+  /// Shortcut for loading profile data
+  const AppLoadingScreen.profileData({super.key})
+    : message = 'Cargando tu perfil',
+      submessage = 'Obteniendo tus datos, por favor espera...',
+      variant = LoadingVariant.profile;
+
+  /// Shortcut for saving profile
+  const AppLoadingScreen.savingProfile({super.key})
+    : message = 'Guardando cambios',
+      submessage = 'Actualizando tu información...',
+      variant = LoadingVariant.profile;
+
+  /// Shortcut for route loading
+  const AppLoadingScreen.findingRoute({super.key})
+    : message = 'Calculando ruta',
+      submessage = 'Buscando el mejor camino...',
+      variant = LoadingVariant.route;
 
   @override
   State<AppLoadingScreen> createState() => _AppLoadingScreenState();
@@ -146,54 +165,69 @@ class _AppLoadingScreenState extends State<AppLoadingScreen>
                     ),
                   ),
 
-                  const SizedBox(height: 36),
+                  const SizedBox(height: 32),
 
-                  // ── Message ──
+                  // ── Main message ──
                   Text(
                     widget.message,
                     textAlign: TextAlign.center,
                     style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
                       color: Color(0xFF1E293B),
-                      letterSpacing: -0.3,
+                      letterSpacing: -0.4,
                     ),
                   ),
 
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
 
-                  // ── Animated dots ──
+                  // ── Cycling step message ──
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 400),
+                    transitionBuilder:
+                        (child, anim) => FadeTransition(
+                          opacity: anim,
+                          child: SlideTransition(
+                            position: Tween<Offset>(
+                              begin: const Offset(0, 0.25),
+                              end: Offset.zero,
+                            ).animate(anim),
+                            child: child,
+                          ),
+                        ),
+                    child: Text(
+                      widget.submessage ?? _currentStep,
+                      key: ValueKey(widget.submessage ?? _currentStep),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF8A94A6),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // ── Animated progress dots ──
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(3, (i) {
                       return AnimatedContainer(
                         duration: const Duration(milliseconds: 300),
                         margin: const EdgeInsets.symmetric(horizontal: 3),
-                        width: i == _dotIndex ? 20 : 7,
+                        width: i == _dotIndex ? 24 : 7,
                         height: 7,
                         decoration: BoxDecoration(
                           color:
                               i == _dotIndex
                                   ? AppColors.headerBottom
-                                  : AppColors.headerBottom.withOpacity(0.25),
+                                  : AppColors.headerBottom.withOpacity(0.20),
                           borderRadius: BorderRadius.circular(99),
                         ),
                       );
                     }),
                   ),
-
-                  if (widget.submessage != null) ...[
-                    const SizedBox(height: 14),
-                    Text(
-                      widget.submessage!,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF8A94A6),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
                 ],
               ),
             ),
@@ -201,6 +235,37 @@ class _AppLoadingScreenState extends State<AppLoadingScreen>
         ),
       ),
     );
+  }
+
+  String get _currentStep {
+    final steps = _stepsForVariant(widget.variant);
+    return steps[_dotIndex % steps.length];
+  }
+
+  List<String> _stepsForVariant(LoadingVariant v) {
+    switch (v) {
+      case LoadingVariant.profile:
+        return [
+          'Obteniendo tus datos...',
+          'Cargando tu información...',
+          'Casi listo...',
+        ];
+      case LoadingVariant.route:
+        return [
+          'Calculando la mejor ruta...',
+          'Verificando condiciones...',
+          'Preparando navegación...',
+        ];
+      case LoadingVariant.map:
+        return [
+          'Cargando el mapa...',
+          'Buscando parqueos cercanos...',
+          'Obteniendo disponibilidad...',
+        ];
+      case LoadingVariant.general:
+      default:
+        return ['Cargando...', 'Por favor espera...', 'Casi listo...'];
+    }
   }
 }
 

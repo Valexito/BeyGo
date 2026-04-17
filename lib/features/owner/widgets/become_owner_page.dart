@@ -1,16 +1,40 @@
+// lib/features/core/pages/userv/become_owner_page.dart
 import 'dart:typed_data';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:mapbox_api/common/utils/components/ui/app_styles.dart';
-import 'package:mapbox_api/common/utils/components/ui/my_button.dart';
-import 'package:mapbox_api/common/utils/components/ui/my_text.dart';
-import 'package:mapbox_api/common/utils/components/ui/my_textfield.dart';
+import 'package:mapbox_api/common/components/ui/app_styles.dart';
+import 'package:mapbox_api/common/components/ui/my_button.dart';
+import 'package:mapbox_api/common/widgets/app_widgets.dart';
+import 'package:mapbox_api/common/widgets/conection_issues.dart';
 import 'package:mapbox_api/features/owner/providers/provider_request_submit_provider.dart';
 import 'package:mapbox_api/features/core/pages/userv/map_pick_page_become_owner.dart';
 import 'package:mapbox_api/features/core/providers/firebase_providers.dart';
+
+// ─── Country code (same as configure_profile_page) ───────────────────────────
+class _CountryCode {
+  final String flag;
+  final String name;
+  final String code;
+  const _CountryCode(this.flag, this.name, this.code);
+}
+
+const _kCountryCodes = [
+  _CountryCode('🇬🇹', 'Guatemala', '+502'),
+  _CountryCode('🇲🇽', 'México', '+52'),
+  _CountryCode('🇺🇸', 'Estados Unidos', '+1'),
+  _CountryCode('🇸🇻', 'El Salvador', '+503'),
+  _CountryCode('🇭🇳', 'Honduras', '+504'),
+  _CountryCode('🇳🇮', 'Nicaragua', '+505'),
+  _CountryCode('🇨🇷', 'Costa Rica', '+506'),
+  _CountryCode('🇵🇦', 'Panamá', '+507'),
+  _CountryCode('🇨🇴', 'Colombia', '+57'),
+  _CountryCode('🇪🇸', 'España', '+34'),
+  _CountryCode('🇦🇷', 'Argentina', '+54'),
+];
 
 class BecomeOwnerPage extends ConsumerStatefulWidget {
   final VoidCallback? onBack;
@@ -20,21 +44,23 @@ class BecomeOwnerPage extends ConsumerStatefulWidget {
   ConsumerState<BecomeOwnerPage> createState() => _BecomeOwnerPageState();
 }
 
-class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage> {
+class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
+    with SingleTickerProviderStateMixin {
+  // Controllers
   final _companyName = TextEditingController();
   final _parkingName = TextEditingController();
   final _email = TextEditingController();
-  final _phone = TextEditingController();
+  final _phoneNumber = TextEditingController();
   final _address = TextEditingController();
   final _capacity = TextEditingController();
   final _description = TextEditingController();
   final _pricePerHour = TextEditingController();
   final _nit = TextEditingController();
-  final _cancellationWindow = TextEditingController();
 
   final _formKey = GlobalKey<FormState>();
   final _picker = ImagePicker();
 
+  // State
   final List<Uint8List> _parkingImages = [];
   Uint8List? _dpiFront;
   Uint8List? _dpiBack;
@@ -45,16 +71,31 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage> {
   LatLng? _picked;
   TimeOfDay _openingHour = const TimeOfDay(hour: 8, minute: 0);
   TimeOfDay _closingHour = const TimeOfDay(hour: 18, minute: 0);
+  int _cancellationMinutes = 5;
+
+  _CountryCode _selectedCountry = _kCountryCodes.first;
+
+  late final AnimationController _slideCtrl;
+  late final Animation<Offset> _slideAnim;
 
   FirebaseAuth get _auth => ref.read(firebaseAuthProvider);
 
   @override
   void initState() {
     super.initState();
+    _slideCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 420),
+    );
+    _slideAnim = Tween<Offset>(
+      begin: const Offset(0, 0.06),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _slideCtrl, curve: Curves.easeOut));
+    _slideCtrl.forward();
+
     final user = _auth.currentUser;
     if (user != null) {
       _email.text = user.email ?? '';
-      _phone.text = '';
     }
   }
 
@@ -63,47 +104,174 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage> {
     _companyName.dispose();
     _parkingName.dispose();
     _email.dispose();
-    _phone.dispose();
+    _phoneNumber.dispose();
     _address.dispose();
     _capacity.dispose();
     _description.dispose();
     _pricePerHour.dispose();
     _nit.dispose();
-    _cancellationWindow.dispose();
+    _slideCtrl.dispose();
     super.dispose();
   }
 
-  Future<void> _pickOnMap() async {
-    final result = await Navigator.push<LatLng>(
-      context,
-      MaterialPageRoute(builder: (_) => const MapPickPage()),
+  // ── Country picker ──────────────────────────────────────────────────────────
+  void _showCountryPicker() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder:
+          (ctx) => DraggableScrollableSheet(
+            initialChildSize: 0.55,
+            minChildSize: 0.4,
+            maxChildSize: 0.75,
+            expand: false,
+            builder:
+                (_, scrollCtrl) => Container(
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(28),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                        child: Column(
+                          children: [
+                            Center(
+                              child: Container(
+                                width: 40,
+                                height: 4,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade300,
+                                  borderRadius: BorderRadius.circular(99),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 14),
+                            const Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                'Código de país',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF1E293B),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Divider(color: Colors.grey.shade100, height: 1),
+                          ],
+                        ),
+                      ),
+                      Expanded(
+                        child: ListView.builder(
+                          controller: scrollCtrl,
+                          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                          itemCount: _kCountryCodes.length,
+                          itemBuilder: (_, i) {
+                            final c = _kCountryCodes[i];
+                            final selected = c.code == _selectedCountry.code;
+                            return InkWell(
+                              onTap: () {
+                                setState(() => _selectedCountry = c);
+                                Navigator.pop(ctx);
+                              },
+                              borderRadius: BorderRadius.circular(12),
+                              child: Container(
+                                margin: const EdgeInsets.only(bottom: 4),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 12,
+                                ),
+                                decoration: BoxDecoration(
+                                  color:
+                                      selected
+                                          ? AppColors.headerBottom.withOpacity(
+                                            0.07,
+                                          )
+                                          : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color:
+                                        selected
+                                            ? AppColors.headerBottom
+                                                .withOpacity(0.25)
+                                            : Colors.transparent,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Text(
+                                      c.flag,
+                                      style: const TextStyle(fontSize: 22),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        c.name,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color:
+                                              selected
+                                                  ? AppColors.headerBottom
+                                                  : const Color(0xFF3D4554),
+                                        ),
+                                      ),
+                                    ),
+                                    Text(
+                                      c.code,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w700,
+                                        color:
+                                            selected
+                                                ? AppColors.headerBottom
+                                                : const Color(0xFF6B7280),
+                                      ),
+                                    ),
+                                    if (selected) ...[
+                                      const SizedBox(width: 8),
+                                      Icon(
+                                        Icons.check_rounded,
+                                        color: AppColors.headerBottom,
+                                        size: 18,
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+          ),
     );
-    if (result != null) {
-      setState(() => _picked = result);
-    }
   }
 
+  // ── Image pickers ───────────────────────────────────────────────────────────
   Future<void> _pickParkingImages() async {
     final picked = await _picker.pickMultiImage(
       imageQuality: 85,
       maxWidth: 1920,
     );
     if (picked.isNotEmpty) {
-      const maxTotal = 10;
-      final remaining = maxTotal - _parkingImages.length;
-      final selected = picked.take(remaining);
-
-      final bytesList = await Future.wait(
-        selected.map((img) => img.readAsBytes()),
+      final remaining = 10 - _parkingImages.length;
+      final bytes = await Future.wait(
+        picked.take(remaining).map((i) => i.readAsBytes()),
       );
-
-      setState(() {
-        _parkingImages.addAll(bytesList);
-      });
+      setState(() => _parkingImages.addAll(bytes));
     }
   }
 
-  Future<void> _pickDpiFront() async {
+  Future<void> _pickSingle(void Function(Uint8List) onPicked) async {
     final img = await _picker.pickImage(
       source: ImageSource.gallery,
       imageQuality: 85,
@@ -111,143 +279,70 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage> {
     );
     if (img != null) {
       final bytes = await img.readAsBytes();
-      setState(() => _dpiFront = bytes);
+      setState(() => onPicked(bytes));
     }
   }
 
-  Future<void> _pickDpiBack() async {
-    final img = await _picker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 85,
-      maxWidth: 1920,
+  // ── Map picker ──────────────────────────────────────────────────────────────
+  Future<void> _pickOnMap() async {
+    final result = await Navigator.push<LatLng>(
+      context,
+      MaterialPageRoute(builder: (_) => const MapPickPage()),
     );
-    if (img != null) {
-      final bytes = await img.readAsBytes();
-      setState(() => _dpiBack = bytes);
-    }
+    if (result != null) setState(() => _picked = result);
   }
 
-  Future<void> _pickPatent() async {
-    final img = await _picker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 85,
-      maxWidth: 1920,
-    );
-    if (img != null) {
-      final bytes = await img.readAsBytes();
-      setState(() => _patent = bytes);
-    }
-  }
-
-  void _removeParkingImage(Uint8List img) {
-    setState(() => _parkingImages.remove(img));
-  }
-
-  void _removeDpiFront() {
-    setState(() => _dpiFront = null);
-  }
-
-  void _removeDpiBack() {
-    setState(() => _dpiBack = null);
-  }
-
-  void _removePatent() {
-    setState(() => _patent = null);
-  }
-
-  void _showError(String msg) {
-    showDialog(
-      context: context,
-      builder:
-          (_) => AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppDims.radiusLg),
-            ),
-            content: MyText(text: msg, variant: MyTextVariant.body),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('OK'),
-              ),
-            ],
-          ),
-    );
-  }
-
-  String? _requiredValidator(String? value, String label) {
-    if ((value ?? '').trim().isEmpty) return '$label es obligatorio.';
-    return null;
-  }
-
-  String? _emailValidator(String? value) {
-    final email = (value ?? '').trim();
-    if (email.isEmpty) return 'Correo obligatorio.';
-    final ok = RegExp(r'^[\w\.\-]+@([\w\-]+\.)+[a-zA-Z]{2,}$').hasMatch(email);
-    if (!ok) return 'Correo inválido.';
-    return null;
-  }
-
+  // ── Submit ──────────────────────────────────────────────────────────────────
   Future<void> _submit() async {
     final ok = _formKey.currentState?.validate() ?? false;
     if (!ok) return;
 
     if (!_accept) {
-      return _showError('Debes aceptar los términos para continuar.');
+      _showSnack('Debes aceptar los términos para continuar.');
+      return;
     }
-
-    final cap = int.tryParse(_capacity.text.trim());
-    if (cap == null || cap <= 0) {
-      return _showError('Capacidad debe ser un número mayor a 0.');
-    }
-
-    final price = int.tryParse(_pricePerHour.text.trim());
-    if (price == null || price < 0) {
-      return _showError('Precio por hora inválido.');
-    }
-
     if (_picked == null) {
-      return _showError('Selecciona la ubicación del parqueo en el mapa.');
+      _showSnack('Selecciona la ubicación del parqueo en el mapa.');
+      return;
     }
-
     if (_parkingImages.length < 3) {
-      return _showError('Sube al menos 3 fotos del parqueo.');
+      _showSnack('Sube al menos 3 fotos del parqueo.');
+      return;
     }
-
     if (_dpiFront == null) {
-      return _showError('Debes subir la foto del DPI frente.');
+      _showSnack('Debes subir la foto del DPI frente.');
+      return;
     }
-
     if (_dpiBack == null) {
-      return _showError('Debes subir la foto del DPI reverso.');
+      _showSnack('Debes subir la foto del DPI reverso.');
+      return;
     }
-
     if (_patent == null) {
-      return _showError('Debes subir la patente de comercio.');
+      _showSnack('Debes subir la patente de comercio.');
+      return;
     }
 
-    final cancelWindow = int.tryParse(_cancellationWindow.text.trim());
-    if (cancelWindow == null || cancelWindow < 3) {
-      return _showError('La ventana mínima es de 3 minutos.');
-    }
     setState(() => _sending = true);
 
     try {
       final uid = _auth.currentUser?.uid;
       if (uid == null) {
-        return _showError('Debes iniciar sesión.');
+        _showSnack('Debes iniciar sesión.');
+        return;
       }
 
       final submit = ref.read(submitProviderRequestProvider);
+      final fullPhone = '${_selectedCountry.code} ${_phoneNumber.text.trim()}';
 
       await submit(
         uid: uid,
         companyName: _companyName.text.trim(),
         parkingName: _parkingName.text.trim(),
         email: _email.text.trim(),
-        phone: _phone.text.trim(),
-        nit: _nit.text.trim(), // ✅ ADD THIS
+        phone: fullPhone,
+        nit: _nit.text.trim(),
         address: _address.text.trim(),
-        capacity: cap,
+        capacity: int.parse(_capacity.text.trim()),
         description: _description.text.trim(),
         lat: _picked!.latitude,
         lng: _picked!.longitude,
@@ -255,195 +350,98 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage> {
         dpiFront: _dpiFront!,
         dpiBack: _dpiBack!,
         patent: _patent!,
-        price: price,
-
-        // ✅ THESE 3 WERE MISSING
-        freeCancellationMinutes: cancelWindow,
+        price: int.parse(_pricePerHour.text.trim()),
+        freeCancellationMinutes: _cancellationMinutes,
         openTime: _openingHour.format(context),
         closeTime: _closingHour.format(context),
       );
 
       if (!mounted) return;
 
-      showDialog(
-        context: context,
-        builder:
-            (_) => AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              title: const MyText(
-                text: 'Solicitud enviada',
-                variant: MyTextVariant.title,
-              ),
-              content: const MyText(
-                text:
-                    'Tu solicitud fue enviada correctamente. El equipo la revisará antes de aprobarte como proveedor.',
-                variant: MyTextVariant.body,
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    Navigator.pop(context);
-                  },
-                  child: const Text('Aceptar'),
-                ),
-              ],
-            ),
+      await AppDialog.show(
+        context,
+        icon: Icons.check_circle_outline_rounded,
+        title: '¡Solicitud enviada!',
+        message:
+            'Tu solicitud fue enviada correctamente. El equipo la revisará antes de aprobarte como proveedor.',
+        showCancel: false,
+        confirmText: 'Entendido',
       );
+
+      if (!mounted) return;
+      Navigator.pop(context);
     } catch (e) {
-      _showError('No se pudo enviar la solicitud. $e');
-    } finally {
-      if (mounted) {
-        setState(() => _sending = false);
+      if (!mounted) return;
+      final msg = e.toString().toLowerCase();
+      if (msg.contains('network') ||
+          msg.contains('socket') ||
+          msg.contains('timeout')) {
+        AppNoConnection.snack(context, onRetry: _submit);
+      } else {
+        _showSnack('No se pudo enviar la solicitud: $e');
       }
+    } finally {
+      if (mounted) setState(() => _sending = false);
     }
   }
 
-  Widget _buildSinglePreview({
-    required Uint8List? file,
-    required VoidCallback onPick,
-    required VoidCallback onRemove,
-    required String emptyLabel,
-    required IconData icon,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (file == null)
-          GestureDetector(
-            onTap: onPick,
-            child: Container(
-              height: 110,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFD7E0EA)),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(icon, color: AppColors.headerBottom, size: 28),
-                  const SizedBox(height: 8),
-                  MyText(
-                    text: emptyLabel,
-                    variant: MyTextVariant.bodyMuted,
-                    textAlign: TextAlign.center,
-                    fontSize: 13,
-                  ),
-                ],
-              ),
-            ),
-          )
-        else
-          Stack(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: SizedBox(
-                  height: 140,
-                  width: double.infinity,
-                  child: Image.memory(file, fit: BoxFit.cover),
-                ),
-              ),
-              Positioned(
-                right: 6,
-                top: 6,
-                child: InkWell(
-                  onTap: onRemove,
-                  child: Container(
-                    decoration: const BoxDecoration(
-                      color: Colors.black54,
-                      shape: BoxShape.circle,
-                    ),
-                    padding: const EdgeInsets.all(6),
-                    child: const Icon(
-                      Icons.close,
-                      size: 18,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-      ],
-    );
-  }
-
-  Widget _buildParkingImagesGrid() {
-    return Wrap(
-      spacing: 10,
-      runSpacing: 10,
-      children: [
-        for (final img in _parkingImages)
-          Stack(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(14),
-                child: SizedBox(
-                  width: 92,
-                  height: 92,
-                  child: Image.memory(img, fit: BoxFit.cover),
-                ),
-              ),
-              Positioned(
-                right: 4,
-                top: 4,
-                child: InkWell(
-                  onTap: () => _removeParkingImage(img),
-                  child: Container(
-                    decoration: const BoxDecoration(
-                      color: Colors.black54,
-                      shape: BoxShape.circle,
-                    ),
-                    padding: const EdgeInsets.all(4),
-                    child: const Icon(
-                      Icons.close,
-                      size: 16,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        GestureDetector(
-          onTap: _pickParkingImages,
-          child: Container(
-            width: 92,
-            height: 92,
-            decoration: BoxDecoration(
+  void _showSnack(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(
+              Icons.error_outline_rounded,
               color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFFD7E0EA)),
+              size: 18,
             ),
-            child: const Icon(
-              Icons.add_a_photo_outlined,
-              color: AppColors.headerBottom,
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                msg,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
             ),
-          ),
+          ],
         ),
-      ],
+        backgroundColor: const Color(0xFFDC2626),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      ),
     );
   }
 
+  // ── Validators ──────────────────────────────────────────────────────────────
+  String? _required(String? v, String label) =>
+      (v?.trim().isEmpty ?? true) ? '$label es obligatorio.' : null;
+
+  String? _emailValidator(String? v) {
+    final email = (v ?? '').trim();
+    if (email.isEmpty) return 'Correo obligatorio.';
+    if (!RegExp(r'^[\w\.\-]+@([\w\-]+\.)+[a-zA-Z]{2,}$').hasMatch(email)) {
+      return 'Correo inválido.';
+    }
+    return null;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  BUILD
+  // ═══════════════════════════════════════════════════════════════════════════
   @override
   Widget build(BuildContext context) {
     final screen = MediaQuery.of(context).size;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFD8F3EE),
+      backgroundColor: const Color(0xFFF0F4F8),
       body: SafeArea(
         top: false,
         child: SizedBox(
           height: screen.height,
           child: Stack(
             children: [
+              // Gradient background
               Container(
-                height: screen.height * 0.42,
+                height: screen.height * 0.38,
                 width: double.infinity,
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
@@ -453,30 +451,20 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage> {
                   ),
                 ),
               ),
+
+              // Blobs
               Positioned(
                 top: 40,
                 left: -20,
-                child: Container(
-                  width: 90,
-                  height: 90,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.12),
-                    shape: BoxShape.circle,
-                  ),
-                ),
+                child: _Blob(size: 90, opacity: 0.12),
               ),
               Positioned(
                 top: -10,
                 right: -10,
-                child: Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.10),
-                    shape: BoxShape.circle,
-                  ),
-                ),
+                child: _Blob(size: 120, opacity: 0.10),
               ),
+
+              // Back button
               Positioned(
                 top: 15,
                 left: 18,
@@ -507,424 +495,514 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage> {
                   ),
                 ),
               ),
+
+              // Hero icon
               Positioned(
-                top: screen.height * 0.12,
+                top: screen.height * 0.10,
                 left: 28,
                 right: 28,
-                child: Column(
-                  children: [
-                    Container(
-                      width: 84,
-                      height: 84,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.16),
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.22),
-                          width: 1.4,
-                        ),
-                      ),
-                      child: const Icon(
-                        Icons.store_mall_directory_rounded,
-                        size: 38,
-                        color: Colors.white,
+                child: Center(
+                  child: Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.16),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.22),
+                        width: 1.4,
                       ),
                     ),
-                  ],
+                    child: const Icon(
+                      Icons.store_mall_directory_rounded,
+                      size: 36,
+                      color: Colors.white,
+                    ),
+                  ),
                 ),
               ),
+
+              // ── Content sheet ──
               Positioned(
-                top: screen.height * 0.26,
+                top: screen.height * 0.24,
                 left: 0,
                 right: 0,
                 bottom: 0,
-                child: Container(
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(34),
-                      topRight: Radius.circular(34),
+                child: SlideTransition(
+                  position: _slideAnim,
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(34),
+                        topRight: Radius.circular(34),
+                      ),
                     ),
-                  ),
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(28, 28, 28, 34),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          const Align(
-                            alignment: Alignment.centerLeft,
-                            child: MyText(
-                              text: 'Solicitud de proveedor',
-                              variant: MyTextVariant.title,
-                              customColor: AppColors.headerBottom,
-                              fontSize: 22,
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(24, 28, 24, 40),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const Text(
+                              'Solicitud de proveedor',
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.headerBottom,
+                                letterSpacing: -0.5,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 8),
-                          const MyText(
-                            text:
-                                'Completa tu información, sube tus documentos y envía tu solicitud para revisión.',
-                            variant: MyTextVariant.subtitle,
-                            fontSize: 13,
-                          ),
-                          const SizedBox(height: 24),
-
-                          MyTextField(
-                            controller: _companyName,
-                            hintText: 'Nombre de empresa o encargado',
-                            textInputAction: TextInputAction.next,
-                            prefixIcon: Icons.business_outlined,
-                            margin: EdgeInsets.zero,
-                            validator:
-                                (v) => _requiredValidator(v, 'Company name'),
-                          ),
-                          const SizedBox(height: 14),
-
-                          MyTextField(
-                            controller: _parkingName,
-                            hintText: 'Nombre del parqueo',
-                            textInputAction: TextInputAction.next,
-                            prefixIcon: Icons.local_parking_outlined,
-                            margin: EdgeInsets.zero,
-                            validator:
-                                (v) => _requiredValidator(v, 'Parking name'),
-                          ),
-                          const SizedBox(height: 14),
-
-                          MyTextField(
-                            controller: _email,
-                            hintText: 'Correo electrónico',
-                            keyboardType: TextInputType.emailAddress,
-                            textInputAction: TextInputAction.next,
-                            prefixIcon: Icons.mail_outline,
-                            margin: EdgeInsets.zero,
-                            validator: _emailValidator,
-                          ),
-                          const SizedBox(height: 14),
-
-                          MyTextField(
-                            controller: _phone,
-                            hintText: 'Número de teléfono',
-                            keyboardType: TextInputType.phone,
-                            textInputAction: TextInputAction.next,
-                            prefixIcon: Icons.phone_outlined,
-                            margin: EdgeInsets.zero,
-                            validator: (v) => _requiredValidator(v, 'Teléfono'),
-                          ),
-                          const SizedBox(height: 14),
-
-                          MyTextField(
-                            controller: _address,
-                            hintText: 'Dirección',
-                            textInputAction: TextInputAction.next,
-                            prefixIcon: Icons.place_outlined,
-                            margin: EdgeInsets.zero,
-                            validator:
-                                (v) => _requiredValidator(v, 'Dirección'),
-                          ),
-                          const SizedBox(height: 14),
-
-                          MyTextField(
-                            controller: _capacity,
-                            hintText: 'Capacidad de espacios',
-                            keyboardType: TextInputType.number,
-                            textInputAction: TextInputAction.next,
-                            prefixIcon: Icons.format_list_numbered_outlined,
-                            margin: EdgeInsets.zero,
-                            validator: (v) {
-                              final n = int.tryParse((v ?? '').trim());
-                              if (n == null || n <= 0)
-                                return 'Capacidad inválida.';
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 14),
-
-                          MyTextField(
-                            controller: _pricePerHour,
-                            hintText: 'Precio por hora (Q)',
-                            keyboardType: TextInputType.number,
-                            textInputAction: TextInputAction.next,
-                            prefixIcon: Icons.attach_money_outlined,
-                            margin: EdgeInsets.zero,
-                            validator: (v) {
-                              final n = int.tryParse((v ?? '').trim());
-                              if (n == null || n < 0) return 'Precio inválido.';
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 14),
-
-                          MyTextField(
-                            controller: _description,
-                            hintText: 'Descripción breve',
-                            textInputAction: TextInputAction.done,
-                            prefixIcon: Icons.notes_outlined,
-                            margin: EdgeInsets.zero,
-                          ),
-
-                          const SizedBox(height: 14),
-
-                          const MyText(
-                            text: 'NIT',
-                            variant: MyTextVariant.normalBold,
-                            fontSize: 13,
-                          ),
-                          const SizedBox(height: 6),
-                          MyTextField(
-                            controller: _nit,
-                            hintText: 'Ej. 112615953',
-                            prefixIcon: Icons.badge_outlined,
-                            margin: EdgeInsets.zero,
-                            validator: (v) => _requiredValidator(v, 'NIT'),
-                          ),
-
-                          const SizedBox(height: 14),
-
-                          Row(
-                            children: [
-                              const MyText(
-                                text: 'Tiempo de cancelación gratis (min)',
-                                variant: MyTextVariant.normalBold,
+                            const SizedBox(height: 4),
+                            const Text(
+                              'Completa tu información, sube tus documentos y envía tu solicitud para revisión.',
+                              style: TextStyle(
                                 fontSize: 13,
+                                color: Color(0xFF8A94A6),
                               ),
-                              const SizedBox(width: 6),
-                              GestureDetector(
-                                onTap: () {
-                                  showDialog(
-                                    context: context,
-                                    builder:
-                                        (_) => AlertDialog(
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              16,
-                                            ),
-                                          ),
-                                          title: const MyText(
-                                            text: '¿Cómo funciona?',
-                                            variant: MyTextVariant.title,
-                                          ),
-                                          content: const MyText(
-                                            text:
-                                                'Este tiempo define cuántos minutos tiene el usuario para cancelar una reservación sin costo. '
-                                                'Si cancela después de este tiempo, se le aplicarán cargos automáticamente.',
-                                            variant: MyTextVariant.body,
-                                          ),
-                                          actions: [
-                                            TextButton(
-                                              onPressed:
-                                                  () => Navigator.pop(context),
-                                              child: const Text('Entendido'),
-                                            ),
-                                          ],
-                                        ),
-                                  );
-                                },
-                                child: const Icon(
-                                  Icons.info_outline,
-                                  size: 18,
-                                  color: AppColors.headerBottom,
+                            ),
+
+                            const SizedBox(height: 24),
+
+                            // ── Sección 1: Empresa ──
+                            _SectionHeader(
+                              icon: Icons.business_outlined,
+                              title: 'Datos de la empresa',
+                            ),
+                            const SizedBox(height: 14),
+
+                            _FieldLabel(
+                              label: 'Empresa o encargado',
+                              hint: 'Nombre legal o nombre del propietario',
+                            ),
+                            const SizedBox(height: 6),
+                            _FormField(
+                              controller: _companyName,
+                              hint: 'Ej: Parqueos del Centro S.A.',
+                              icon: Icons.business_outlined,
+                              validator: (v) => _required(v, 'Empresa'),
+                            ),
+
+                            const SizedBox(height: 14),
+                            _FieldLabel(
+                              label: 'Nombre del parqueo',
+                              hint: 'Como aparecerá en la app',
+                            ),
+                            const SizedBox(height: 6),
+                            _FormField(
+                              controller: _parkingName,
+                              hint: 'Ej: Parqueo Central Xela',
+                              icon: Icons.local_parking_outlined,
+                              validator:
+                                  (v) => _required(v, 'Nombre del parqueo'),
+                            ),
+
+                            const SizedBox(height: 14),
+                            _FieldLabel(
+                              label: 'NIT',
+                              hint: 'Número de identificación tributaria',
+                            ),
+                            const SizedBox(height: 6),
+                            _FormField(
+                              controller: _nit,
+                              hint: 'Ej: 112615953',
+                              icon: Icons.badge_outlined,
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                              ],
+                              validator: (v) => _required(v, 'NIT'),
+                            ),
+
+                            const SizedBox(height: 28),
+
+                            // ── Sección 2: Contacto ──
+                            _SectionHeader(
+                              icon: Icons.contact_phone_outlined,
+                              title: 'Información de contacto',
+                            ),
+                            const SizedBox(height: 14),
+
+                            _FieldLabel(
+                              label: 'Correo electrónico',
+                              hint: 'Para recibir notificaciones',
+                            ),
+                            const SizedBox(height: 6),
+                            _FormField(
+                              controller: _email,
+                              hint: 'ejemplo@correo.com',
+                              icon: Icons.mail_outline_rounded,
+                              keyboardType: TextInputType.emailAddress,
+                              validator: _emailValidator,
+                            ),
+
+                            const SizedBox(height: 14),
+                            _FieldLabel(
+                              label: 'Teléfono de contacto',
+                              hint: 'Número con código de país',
+                            ),
+                            const SizedBox(height: 6),
+                            _PhoneField(
+                              numberCtrl: _phoneNumber,
+                              selectedCountry: _selectedCountry,
+                              onPickCountry: _showCountryPicker,
+                            ),
+
+                            const SizedBox(height: 28),
+
+                            // ── Sección 3: Parqueo ──
+                            _SectionHeader(
+                              icon: Icons.local_parking_outlined,
+                              title: 'Detalles del parqueo',
+                            ),
+                            const SizedBox(height: 14),
+
+                            _FieldLabel(
+                              label: 'Dirección',
+                              hint: 'Dirección exacta del parqueo',
+                            ),
+                            const SizedBox(height: 6),
+                            _FormField(
+                              controller: _address,
+                              hint: 'Ej: 4a Calle 14-50 Zona 1',
+                              icon: Icons.place_outlined,
+                              validator: (v) => _required(v, 'Dirección'),
+                            ),
+
+                            const SizedBox(height: 14),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      _FieldLabel(
+                                        label: 'Capacidad',
+                                        hint: 'Espacios totales',
+                                      ),
+                                      const SizedBox(height: 6),
+                                      _FormField(
+                                        controller: _capacity,
+                                        hint: 'Ej: 20',
+                                        icon:
+                                            Icons.format_list_numbered_outlined,
+                                        keyboardType: TextInputType.number,
+                                        inputFormatters: [
+                                          FilteringTextInputFormatter
+                                              .digitsOnly,
+                                        ],
+                                        validator: (v) {
+                                          final n = int.tryParse(
+                                            v?.trim() ?? '',
+                                          );
+                                          if (n == null || n <= 0)
+                                            return 'Inválida';
+                                          return null;
+                                        },
+                                      ),
+                                    ],
+                                  ),
                                 ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      _FieldLabel(
+                                        label: 'Precio / hora (Q)',
+                                        hint: 'En quetzales',
+                                      ),
+                                      const SizedBox(height: 6),
+                                      _FormField(
+                                        controller: _pricePerHour,
+                                        hint: 'Ej: 10',
+                                        icon: Icons.attach_money_outlined,
+                                        keyboardType: TextInputType.number,
+                                        inputFormatters: [
+                                          FilteringTextInputFormatter
+                                              .digitsOnly,
+                                        ],
+                                        validator: (v) {
+                                          final n = int.tryParse(
+                                            v?.trim() ?? '',
+                                          );
+                                          if (n == null || n < 0)
+                                            return 'Inválido';
+                                          return null;
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 14),
+                            _FieldLabel(
+                              label: 'Descripción breve',
+                              hint: 'Características del parqueo (opcional)',
+                            ),
+                            const SizedBox(height: 6),
+                            TextFormField(
+                              controller: _description,
+                              maxLines: 3,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Color(0xFF1E293B),
                               ),
-                            ],
-                          ),
-                          const SizedBox(height: 6),
-                          DropdownButtonFormField<int>(
-                            value:
-                                _cancellationWindow.text.isEmpty
-                                    ? null
-                                    : int.tryParse(_cancellationWindow.text),
-                            decoration: InputDecoration(
-                              prefixIcon: const Icon(Icons.timer_outlined),
-                              hintText: 'Selecciona (mín. 3 min)',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(14),
-                                borderSide: const BorderSide(
-                                  color: Color(0xFFD7E0EA),
+                              decoration: InputDecoration(
+                                hintText:
+                                    'Ej: Parqueo techado, seguridad 24h...',
+                                hintStyle: const TextStyle(
+                                  fontSize: 13,
+                                  color: Color(0xFF8A94A6),
+                                ),
+                                prefixIcon: const Padding(
+                                  padding: EdgeInsets.only(bottom: 40),
+                                  child: Icon(
+                                    Icons.notes_outlined,
+                                    size: 18,
+                                    color: AppColors.headerBottom,
+                                  ),
+                                ),
+                                filled: true,
+                                fillColor: Colors.white,
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 14,
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                  borderSide: BorderSide(
+                                    color: AppColors.borderSoft,
+                                  ),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                  borderSide: BorderSide(
+                                    color: AppColors.borderSoft,
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                  borderSide: BorderSide(
+                                    color: AppColors.headerBottom,
+                                    width: 1.5,
+                                  ),
                                 ),
                               ),
                             ),
-                            items:
-                                List.generate(10, (i) => i + 1).map((min) {
-                                  return DropdownMenuItem(
-                                    value: min,
-                                    child: Text('$min minutos'),
-                                  );
-                                }).toList(),
-                            onChanged: (value) {
-                              if (value != null) {
-                                _cancellationWindow.text = value.toString();
-                              }
-                            },
-                            validator: (value) {
-                              if (value == null || value < 3) {
-                                return 'Mínimo 3 minutos';
-                              }
-                              return null;
-                            },
-                          ),
 
-                          const SizedBox(height: 18),
+                            const SizedBox(height: 28),
 
-                          const MyText(
-                            text: 'Horario de atención',
-                            variant: MyTextVariant.normalBold,
-                            fontSize: 13,
-                          ),
-                          const SizedBox(height: 8),
+                            // ── Sección 4: Horario ──
+                            _SectionHeader(
+                              icon: Icons.schedule_outlined,
+                              title: 'Horario de atención',
+                            ),
+                            const SizedBox(height: 12),
 
-                          Row(
-                            children: [
-                              Expanded(
-                                child: OutlinedButton.icon(
-                                  onPressed: () async {
-                                    final picked = await showTimePicker(
-                                      context: context,
-                                      initialTime: _openingHour,
-                                    );
-                                    if (picked != null) {
-                                      setState(() => _openingHour = picked);
-                                    }
-                                  },
-                                  icon: const Icon(Icons.access_time),
-                                  label: Text(
-                                    'Desde: ${_openingHour.format(context)}',
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _TimeButton(
+                                    label: 'Apertura',
+                                    time: _openingHour.format(context),
+                                    icon: Icons.wb_sunny_outlined,
+                                    onTap: () async {
+                                      final p = await showTimePicker(
+                                        context: context,
+                                        initialTime: _openingHour,
+                                      );
+                                      if (p != null)
+                                        setState(() => _openingHour = p);
+                                    },
                                   ),
                                 ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: OutlinedButton.icon(
-                                  onPressed: () async {
-                                    final picked = await showTimePicker(
-                                      context: context,
-                                      initialTime: _closingHour,
-                                    );
-                                    if (picked != null) {
-                                      setState(() => _closingHour = picked);
-                                    }
-                                  },
-                                  icon: const Icon(Icons.access_time_filled),
-                                  label: Text(
-                                    'Hasta: ${_closingHour.format(context)}',
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: _TimeButton(
+                                    label: 'Cierre',
+                                    time: _closingHour.format(context),
+                                    icon: Icons.nights_stay_outlined,
+                                    onTap: () async {
+                                      final p = await showTimePicker(
+                                        context: context,
+                                        initialTime: _closingHour,
+                                      );
+                                      if (p != null)
+                                        setState(() => _closingHour = p);
+                                    },
                                   ),
                                 ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 20),
+
+                            // Cancellation window
+                            _FieldLabel(
+                              label: 'Ventana de cancelación gratuita',
+                              hint:
+                                  'Minutos que tiene el usuario para cancelar sin costo',
+                            ),
+                            const SizedBox(height: 8),
+                            _CancellationSelector(
+                              value: _cancellationMinutes,
+                              onChanged:
+                                  (v) =>
+                                      setState(() => _cancellationMinutes = v),
+                            ),
+
+                            const SizedBox(height: 28),
+
+                            // ── Sección 5: Ubicación ──
+                            _SectionHeader(
+                              icon: Icons.map_outlined,
+                              title: 'Ubicación en mapa',
+                            ),
+                            const SizedBox(height: 12),
+
+                            _picked == null
+                                ? _MapPickButton(onTap: _pickOnMap)
+                                : _MapPickedCard(
+                                  lat: _picked!.latitude,
+                                  lng: _picked!.longitude,
+                                  onEdit: _pickOnMap,
+                                ),
+
+                            const SizedBox(height: 28),
+
+                            // ── Sección 6: Fotos ──
+                            _SectionHeader(
+                              icon: Icons.photo_library_outlined,
+                              title: 'Fotos del parqueo',
+                            ),
+                            const SizedBox(height: 4),
+                            const Text(
+                              'Mínimo 3 fotos — muestra el interior, exterior y acceso.',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFF8A94A6),
                               ),
-                            ],
-                          ),
+                            ),
+                            const SizedBox(height: 12),
+                            _ParkingImagesGrid(
+                              images: _parkingImages,
+                              onAdd: _pickParkingImages,
+                              onRemove:
+                                  (img) => setState(
+                                    () => _parkingImages.remove(img),
+                                  ),
+                            ),
 
-                          const SizedBox(height: 22),
-                          const MyText(
-                            text: 'Ubicación del parqueo',
-                            variant: MyTextVariant.normal,
-                            fontSize: 13,
-                          ),
-                          const SizedBox(height: 8),
+                            const SizedBox(height: 28),
 
-                          OutlinedButton.icon(
-                            onPressed: _sending ? null : _pickOnMap,
-                            icon: const Icon(Icons.map_outlined),
-                            label: const Text('Elegir en el mapa'),
-                          ),
-                          const SizedBox(height: 8),
-
-                          MyText(
-                            text:
-                                _picked == null
-                                    ? 'Sin ubicación seleccionada'
-                                    : 'Lat: ${_picked!.latitude.toStringAsFixed(6)}, Lng: ${_picked!.longitude.toStringAsFixed(6)}',
-                            variant: MyTextVariant.bodyMuted,
-                            fontSize: 13,
-                          ),
-
-                          const SizedBox(height: 22),
-                          const MyText(
-                            text: 'Fotos del parqueo (mínimo 3)',
-                            variant: MyTextVariant.normal,
-                            fontSize: 13,
-                          ),
-                          const SizedBox(height: 10),
-                          _buildParkingImagesGrid(),
-
-                          const SizedBox(height: 22),
-                          const MyText(
-                            text: 'DPI frente',
-                            variant: MyTextVariant.normal,
-                            fontSize: 13,
-                          ),
-                          const SizedBox(height: 8),
-                          _buildSinglePreview(
-                            file: _dpiFront,
-                            onPick: _pickDpiFront,
-                            onRemove: _removeDpiFront,
-                            emptyLabel: 'Subir DPI frente',
-                            icon: Icons.badge_outlined,
-                          ),
-
-                          const SizedBox(height: 18),
-                          const MyText(
-                            text: 'DPI reverso',
-                            variant: MyTextVariant.normal,
-                            fontSize: 13,
-                          ),
-                          const SizedBox(height: 8),
-                          _buildSinglePreview(
-                            file: _dpiBack,
-                            onPick: _pickDpiBack,
-                            onRemove: _removeDpiBack,
-                            emptyLabel: 'Subir DPI reverso',
-                            icon: Icons.credit_card_outlined,
-                          ),
-
-                          const SizedBox(height: 18),
-                          const MyText(
-                            text: 'Patente de comercio',
-                            variant: MyTextVariant.normal,
-                            fontSize: 13,
-                          ),
-                          const SizedBox(height: 8),
-                          _buildSinglePreview(
-                            file: _patent,
-                            onPick: _pickPatent,
-                            onRemove: _removePatent,
-                            emptyLabel: 'Subir patente',
-                            icon: Icons.description_outlined,
-                          ),
-
-                          const SizedBox(height: 20),
-                          Row(
-                            children: [
-                              Checkbox(
-                                value: _accept,
-                                onChanged:
-                                    _sending
-                                        ? null
-                                        : (v) => setState(
-                                          () => _accept = v ?? false,
-                                        ),
-                                activeColor: AppColors.headerBottom,
+                            // ── Sección 7: Documentos ──
+                            _SectionHeader(
+                              icon: Icons.description_outlined,
+                              title: 'Documentos requeridos',
+                            ),
+                            const SizedBox(height: 4),
+                            const Text(
+                              'Sube fotos claras de cada documento.',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFF8A94A6),
                               ),
-                              const Expanded(
-                                child: MyText(
-                                  text:
-                                      'Acepto enviar mis datos para revisión del equipo.',
-                                  variant: MyTextVariant.normal,
-                                  fontSize: 13,
+                            ),
+                            const SizedBox(height: 14),
+
+                            _DocUploadCard(
+                              label: 'DPI Frente',
+                              icon: Icons.badge_outlined,
+                              file: _dpiFront,
+                              onPick: () => _pickSingle((b) => _dpiFront = b),
+                              onRemove: () => setState(() => _dpiFront = null),
+                            ),
+                            const SizedBox(height: 10),
+                            _DocUploadCard(
+                              label: 'DPI Reverso',
+                              icon: Icons.credit_card_outlined,
+                              file: _dpiBack,
+                              onPick: () => _pickSingle((b) => _dpiBack = b),
+                              onRemove: () => setState(() => _dpiBack = null),
+                            ),
+                            const SizedBox(height: 10),
+                            _DocUploadCard(
+                              label: 'Patente de comercio',
+                              icon: Icons.article_outlined,
+                              file: _patent,
+                              onPick: () => _pickSingle((b) => _patent = b),
+                              onRemove: () => setState(() => _patent = null),
+                            ),
+
+                            const SizedBox(height: 28),
+
+                            // ── Accept terms ──
+                            Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color:
+                                    _accept
+                                        ? AppColors.headerBottom.withOpacity(
+                                          0.06,
+                                        )
+                                        : Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color:
+                                      _accept
+                                          ? AppColors.headerBottom.withOpacity(
+                                            0.25,
+                                          )
+                                          : AppColors.borderSoft,
                                 ),
                               ),
-                            ],
-                          ),
+                              child: Row(
+                                children: [
+                                  Checkbox(
+                                    value: _accept,
+                                    onChanged:
+                                        _sending
+                                            ? null
+                                            : (v) => setState(
+                                              () => _accept = v ?? false,
+                                            ),
+                                    activeColor: AppColors.headerBottom,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(5),
+                                    ),
+                                  ),
+                                  const Expanded(
+                                    child: Text(
+                                      'Acepto enviar mis datos para revisión del equipo de Parking App.',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: Color(0xFF3D4554),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
 
-                          const SizedBox(height: 18),
-                          MyButton(
-                            text: _sending ? 'Enviando...' : 'Enviar solicitud',
-                            loading: _sending,
-                            onTap: _sending ? null : _submit,
-                            margin: EdgeInsets.zero,
-                          ),
-                        ],
+                            const SizedBox(height: 24),
+
+                            MyButton(
+                              text:
+                                  _sending
+                                      ? 'Enviando solicitud...'
+                                      : 'Enviar solicitud',
+                              loading: _sending,
+                              onTap: _sending ? null : _submit,
+                              margin: EdgeInsets.zero,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -936,4 +1014,671 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage> {
       ),
     );
   }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+//  Local helper widgets
+// ═════════════════════════════════════════════════════════════════════════════
+
+class _SectionHeader extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  const _SectionHeader({required this.icon, required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 30,
+          height: 30,
+          decoration: BoxDecoration(
+            color: AppColors.headerBottom.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(9),
+          ),
+          child: Icon(icon, size: 16, color: AppColors.headerBottom),
+        ),
+        const SizedBox(width: 9),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF1E293B),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _FieldLabel extends StatelessWidget {
+  final String label;
+  final String hint;
+  const _FieldLabel({required this.label, required this.hint});
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        label,
+        style: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+          color: Color(0xFF1E293B),
+        ),
+      ),
+      const SizedBox(height: 2),
+      Text(
+        hint,
+        style: const TextStyle(fontSize: 11, color: Color(0xFF8A94A6)),
+      ),
+    ],
+  );
+}
+
+class _FormField extends StatelessWidget {
+  final TextEditingController controller;
+  final String hint;
+  final IconData icon;
+  final bool obscure;
+  final TextInputType? keyboardType;
+  final String? Function(String?)? validator;
+  final List<TextInputFormatter>? inputFormatters;
+
+  const _FormField({
+    required this.controller,
+    required this.hint,
+    required this.icon,
+    this.obscure = false,
+    this.keyboardType,
+    this.validator,
+    this.inputFormatters,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      controller: controller,
+      obscureText: obscure,
+      keyboardType: keyboardType,
+      validator: validator,
+      inputFormatters: inputFormatters,
+      style: const TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: Color(0xFF1E293B),
+      ),
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF8A94A6)),
+        prefixIcon: Icon(icon, size: 18, color: AppColors.headerBottom),
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: AppColors.borderSoft),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: AppColors.borderSoft),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: AppColors.headerBottom, width: 1.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Color(0xFFDC2626), width: 1.2),
+        ),
+      ),
+    );
+  }
+}
+
+class _PhoneField extends StatelessWidget {
+  final TextEditingController numberCtrl;
+  final _CountryCode selectedCountry;
+  final VoidCallback onPickCountry;
+
+  const _PhoneField({
+    required this.numberCtrl,
+    required this.selectedCountry,
+    required this.onPickCountry,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.borderSoft),
+      ),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: onPickCountry,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+              decoration: BoxDecoration(
+                border: Border(right: BorderSide(color: AppColors.borderSoft)),
+              ),
+              child: Row(
+                children: [
+                  Text(
+                    selectedCountry.flag,
+                    style: const TextStyle(fontSize: 20),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    selectedCountry.code,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.headerBottom,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    size: 16,
+                    color: AppColors.headerBottom.withOpacity(0.6),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Expanded(
+            child: TextField(
+              controller: numberCtrl,
+              keyboardType: TextInputType.phone,
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'[0-9\s\-]')),
+              ],
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF1E293B),
+              ),
+              decoration: const InputDecoration(
+                hintText: '5555 1234',
+                hintStyle: TextStyle(fontSize: 13, color: Color(0xFF8A94A6)),
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 14,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TimeButton extends StatelessWidget {
+  final String label;
+  final String time;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _TimeButton({
+    required this.label,
+    required this.time,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.borderSoft),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 18, color: AppColors.headerBottom),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: Color(0xFF8A94A6),
+                    ),
+                  ),
+                  Text(
+                    time,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1E293B),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.edit_outlined,
+              size: 14,
+              color: AppColors.headerBottom.withOpacity(0.5),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CancellationSelector extends StatelessWidget {
+  final int value;
+  final ValueChanged<int> onChanged;
+
+  const _CancellationSelector({required this.value, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    final options = [3, 5, 10, 15, 20, 30];
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children:
+          options.map((min) {
+            final selected = value == min;
+            return GestureDetector(
+              onTap: () => onChanged(min),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: selected ? AppColors.headerBottom : Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color:
+                        selected
+                            ? AppColors.headerBottom
+                            : AppColors.borderSoft,
+                  ),
+                ),
+                child: Text(
+                  '$min min',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: selected ? Colors.white : const Color(0xFF6B7280),
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+    );
+  }
+}
+
+class _MapPickButton extends StatelessWidget {
+  final VoidCallback onTap;
+  const _MapPickButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 18),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: AppColors.headerBottom.withOpacity(0.25),
+            width: 1.4,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: AppColors.headerBottom.withOpacity(0.10),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.map_outlined,
+                size: 18,
+                color: AppColors.headerBottom,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              'Seleccionar en el mapa',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: AppColors.headerBottom,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MapPickedCard extends StatelessWidget {
+  final double lat;
+  final double lng;
+  final VoidCallback onEdit;
+
+  const _MapPickedCard({
+    required this.lat,
+    required this.lng,
+    required this.onEdit,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: AppColors.headerBottom.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.headerBottom.withOpacity(0.20)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: AppColors.headerBottom.withOpacity(0.12),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.place_rounded,
+              size: 18,
+              color: AppColors.headerBottom,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Ubicación seleccionada',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.headerBottom,
+                  ),
+                ),
+                Text(
+                  '${lat.toStringAsFixed(5)}, ${lng.toStringAsFixed(5)}',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF5A6478),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(
+              Icons.edit_outlined,
+              size: 18,
+              color: AppColors.headerBottom,
+            ),
+            onPressed: onEdit,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ParkingImagesGrid extends StatelessWidget {
+  final List<Uint8List> images;
+  final VoidCallback onAdd;
+  final void Function(Uint8List) onRemove;
+
+  const _ParkingImagesGrid({
+    required this.images,
+    required this.onAdd,
+    required this.onRemove,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 10,
+      runSpacing: 10,
+      children: [
+        ...images.map(
+          (img) => Stack(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: SizedBox(
+                  width: 90,
+                  height: 90,
+                  child: Image.memory(img, fit: BoxFit.cover),
+                ),
+              ),
+              Positioned(
+                right: 4,
+                top: 4,
+                child: GestureDetector(
+                  onTap: () => onRemove(img),
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      color: Colors.black54,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.close,
+                      size: 14,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (images.length < 10)
+          GestureDetector(
+            onTap: onAdd,
+            child: Container(
+              width: 90,
+              height: 90,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: AppColors.headerBottom.withOpacity(0.25),
+                  width: 1.4,
+                ),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.add_a_photo_outlined,
+                    color: AppColors.headerBottom,
+                    size: 22,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${images.length}/10',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: AppColors.headerBottom.withOpacity(0.7),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _DocUploadCard extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Uint8List? file;
+  final VoidCallback onPick;
+  final VoidCallback onRemove;
+
+  const _DocUploadCard({
+    required this.label,
+    required this.icon,
+    required this.file,
+    required this.onPick,
+    required this.onRemove,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (file == null) {
+      return GestureDetector(
+        onTap: onPick,
+        child: Container(
+          height: 100,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: AppColors.borderSoft,
+              style: BorderStyle.solid,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.headerBottom.withOpacity(0.08),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, size: 20, color: AppColors.headerBottom),
+              ),
+              const SizedBox(width: 12),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1E293B),
+                    ),
+                  ),
+                  const Text(
+                    'Toca para subir foto',
+                    style: TextStyle(fontSize: 11, color: Color(0xFF8A94A6)),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Stack(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: SizedBox(
+            height: 120,
+            width: double.infinity,
+            child: Image.memory(file!, fit: BoxFit.cover),
+          ),
+        ),
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
+              ),
+              color: Colors.black.withOpacity(0.35),
+            ),
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ),
+        Positioned(
+          right: 8,
+          top: 8,
+          child: GestureDetector(
+            onTap: onRemove,
+            child: Container(
+              padding: const EdgeInsets.all(5),
+              decoration: const BoxDecoration(
+                color: Colors.black54,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.close, size: 15, color: Colors.white),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _Blob extends StatelessWidget {
+  final double size;
+  final double opacity;
+  const _Blob({required this.size, required this.opacity});
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: size,
+    height: size,
+    decoration: BoxDecoration(
+      color: Colors.white.withOpacity(opacity),
+      shape: BoxShape.circle,
+    ),
+  );
 }

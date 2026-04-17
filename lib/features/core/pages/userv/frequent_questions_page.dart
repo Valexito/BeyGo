@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:mapbox_api/common/utils/components/ui/app_styles.dart';
-import 'package:mapbox_api/common/utils/components/ui/my_text.dart';
-import 'package:mapbox_api/common/utils/components/ui/navy_header.dart';
+import 'package:mapbox_api/common/components/ui/app_styles.dart';
+import 'package:mapbox_api/common/components/ui/my_text.dart';
+import 'package:mapbox_api/common/components/ui/navy_header.dart';
 
 class FrequentQuestionsPage extends StatelessWidget {
   const FrequentQuestionsPage({super.key});

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mapbox_api/common/utils/components/ui/app_styles.dart';
-import 'package:mapbox_api/common/utils/components/ui/my_text.dart';
+import 'package:mapbox_api/common/components/ui/app_styles.dart';
+import 'package:mapbox_api/common/components/ui/my_text.dart';
 import 'package:mapbox_api/features/owner/owner_reservations_page.dart';
 import 'package:mapbox_api/features/owner/owner_requests_page.dart';
 import 'package:mapbox_api/features/owner/owner_settings_page.dart';
