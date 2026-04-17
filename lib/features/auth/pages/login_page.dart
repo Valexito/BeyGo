@@ -90,6 +90,25 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       final user = (cred as UserCredential).user;
       if (!mounted || user == null) return;
       await _routeAfterAuth(user);
+    } catch (e) {
+      // Silently ignore if user just closed/cancelled the Google dialog
+      final msg = e.toString().toLowerCase();
+      final isCancelled =
+          msg.contains('cancel') ||
+          msg.contains('cancelled') ||
+          msg.contains('cancelado');
+      if (!isCancelled && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al iniciar sesión con Google: $e'),
+            backgroundColor: const Color(0xFFDC2626),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -234,7 +253,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           ),
                         ),
                         const SizedBox(height: 10),
-
                         const SizedBox(height: 22),
                         MyTextField(
                           controller: emailController,

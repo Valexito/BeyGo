@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:mapbox_api/common/widgets/app_loading_screen.dart';
 import '../../core/providers/firebase_providers.dart';
 import '../../users/pages/complete_profile_page.dart';
 import '../../users/providers/user_providers.dart';
@@ -22,42 +23,37 @@ class AuthGate extends ConsumerWidget {
     final authAsync = ref.watch(authStateChangesProvider);
 
     return authAsync.when(
-      loading: () => const _CenterWait(),
+      loading:
+          () => const AppLoadingScreen(
+            message: 'Iniciando...',
+            variant: LoadingVariant.general,
+          ),
       error: (_, __) => const AuthFlowPage(),
       data: (user) {
-        if (user == null) {
-          return const AuthFlowPage();
-        }
+        // No user — show login/register
+        if (user == null) return const AuthFlowPage();
 
-        final isPasswordUser = _isPasswordUser(user);
-
-        if (isPasswordUser && !user.emailVerified) {
+        // Password user with unverified email
+        if (_isPasswordUser(user) && !user.emailVerified) {
           return VerifyEmailPage(user: user);
         }
 
+        // Check if profile is complete
         final canEnterAsync = ref.watch(canEnterAppProvider(user.uid));
 
         return canEnterAsync.when(
-          loading: () => const _CenterWait(),
+          loading:
+              () => const AppLoadingScreen(
+                message: 'Verificando perfil...',
+                variant: LoadingVariant.profile,
+              ),
           error: (_, __) => CompleteProfilePage(user: user, isNewUser: false),
           data: (canEnter) {
-            if (canEnter) {
-              return const HomeSwitch();
-            }
-
+            if (canEnter) return const HomeSwitch();
             return CompleteProfilePage(user: user, isNewUser: false);
           },
         );
       },
     );
-  }
-}
-
-class _CenterWait extends StatelessWidget {
-  const _CenterWait();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(body: Center(child: CircularProgressIndicator()));
   }
 }

@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mapbox_api/common/utils/components/ui/app_styles.dart';
 import 'package:mapbox_api/common/utils/components/ui/my_text.dart';
-import 'package:mapbox_api/features/core/pages/ownerv/owner_reservations_page.dart';
-import 'package:mapbox_api/features/core/pages/ownerv/owner_requests_page.dart';
-import 'package:mapbox_api/features/core/pages/ownerv/owner_settings_page.dart';
-import 'package:mapbox_api/features/core/pages/ownerv/owner_history_page.dart';
-import 'package:mapbox_api/features/core/pages/ownerv/providers/dashboard_providers.dart';
+import 'package:mapbox_api/features/owner/owner_reservations_page.dart';
+import 'package:mapbox_api/features/owner/owner_requests_page.dart';
+import 'package:mapbox_api/features/owner/owner_settings_page.dart';
+import 'package:mapbox_api/features/owner/owner_history_page.dart';
+import 'package:mapbox_api/features/owner/providers/dashboard_providers.dart';
 import 'package:mapbox_api/features/core/roles/role_utils.dart';
 import 'package:mapbox_api/features/reservations/models/reservation.dart';
 

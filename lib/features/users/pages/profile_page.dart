@@ -9,7 +9,7 @@ import 'package:mapbox_api/features/users/widgets/delete_account_dialog.dart';
 import 'package:mapbox_api/features/users/widgets/profile_security_dialogs.dart';
 import 'package:mapbox_api/features/users/pages/configure_profile_page.dart';
 import 'package:mapbox_api/features/reservations/pages/reservations_page.dart';
-import 'package:mapbox_api/features/core/pages/ownerv/widgets/become_owner_page.dart';
+import 'package:mapbox_api/features/owner/widgets/become_owner_page.dart';
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});

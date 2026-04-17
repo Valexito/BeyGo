@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mapbox_api/common/utils/components/ui/app_styles.dart';
 import 'package:mapbox_api/common/utils/components/ui/my_button.dart';
 import 'package:mapbox_api/common/utils/components/ui/my_text.dart';
-import 'package:mapbox_api/features/core/pages/ownerv/widgets/app_header.dart';
+import 'package:mapbox_api/features/owner/widgets/app_header.dart';
 import 'package:mapbox_api/features/core/roles/role_utils.dart';
 import 'package:mapbox_api/features/reservations/models/reservation.dart';
 import 'package:mapbox_api/features/reservations/providers/reservations_providers.dart'
