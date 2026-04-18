@@ -216,3 +216,26 @@ class ParkingService {
 final parkingServiceProvider = Provider<ParkingService>(
   (ref) => ParkingService(),
 );
+
+/// Stream en tiempo real de todos los parqueos activos para el mapa.
+/// Solo incluye parkings con lat/lng válidos (distinto de 0).
+///
+/// Úsalo en MapWidget:
+///   final parkingsAsync = ref.watch(allParkingsStreamProvider);
+///
+/// Si agregas un campo 'isApproved' o 'status' en Firestore,
+/// descomenta el .where() correspondiente.
+final allParkingsStreamProvider = StreamProvider<List<Parking>>((ref) {
+  return FirebaseFirestore.instance
+      .collection('parkings')
+      // .where('isApproved', isEqualTo: true)  // ← descomenta si lo necesitas
+      // .where('status', isEqualTo: 'active')   // ← o este
+      .snapshots()
+      .map(
+        (snap) =>
+            snap.docs
+                .map((d) => Parking.fromDoc(d))
+                .where((p) => p.lat != 0 && p.lng != 0)
+                .toList(),
+      );
+});

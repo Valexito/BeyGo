@@ -1,9 +1,14 @@
+// lib/features/reservations/pages/reserve_space_page.dart
+//
+// ✅ google_maps_flutter.LatLng (no latlong2)
+// ✅ Import paths match project structure (common/utils/components/ui/)
+//
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:mapbox_api/common/ui/components/app_styles.dart';
 import 'package:mapbox_api/common/ui/components/my_button.dart';
-import 'package:mapbox_api/common/ui/components/my_text.dart';
+
 import 'package:mapbox_api/features/reservations/components/reservation_dialogs.dart';
 import 'package:mapbox_api/features/reservations/models/parking.dart';
 import 'package:mapbox_api/features/reservations/pages/reserve_space_content.dart';
@@ -22,10 +27,8 @@ class _ReserveSpacePageState extends ConsumerState<ReserveSpacePage> {
   int? selectedSpace;
   bool _isSubmitting = false;
 
-  /// 🔥 Gallery EXACTA (NO CAMBIAR)
   List<String> get gallery {
     final g = <String>[];
-
     if (widget.parking.photos.isNotEmpty) {
       g.addAll(
         widget.parking.photos
@@ -33,17 +36,13 @@ class _ReserveSpacePageState extends ConsumerState<ReserveSpacePage> {
             .map((e) => e.trim()),
       );
     }
-
     final cover = (widget.parking.coverUrl ?? '').trim();
     final image = (widget.parking.imageUrl ?? '').trim();
-
     if (g.isEmpty && cover.isNotEmpty) g.add(cover);
     if (g.isEmpty && image.isNotEmpty) g.add(image);
-
     if (g.isEmpty) {
       g.add('https://via.placeholder.com/800x400?text=Parking');
     }
-
     return g.toSet().toList();
   }
 
@@ -66,12 +65,10 @@ class _ReserveSpacePageState extends ConsumerState<ReserveSpacePage> {
     );
 
     if (ok != true || !mounted) return;
-
     setState(() => _isSubmitting = true);
 
     try {
       final reserve = ref.read(reserveSpaceProvider);
-
       final reservationId = await reserve(
         parkingId: widget.parking.id,
         parkingName: widget.parking.name,
@@ -104,7 +101,6 @@ class _ReserveSpacePageState extends ConsumerState<ReserveSpacePage> {
   }
 
   void _showErrorDialog(String rawError) {
-    // Detect specific error types and show tailored messages
     final isRestricted =
         rawError.contains('temporalmente') ||
         rawError.contains('reservar temporalmente');
@@ -138,11 +134,11 @@ class _ReserveSpacePageState extends ConsumerState<ReserveSpacePage> {
 
     final message =
         isRestricted
-            ? 'Tu cuenta tiene una restricción temporal debido a cancelaciones previas. Por favor espera o contacta soporte si crees que es un error.'
+            ? 'Tu cuenta tiene una restricción temporal. Espera o contacta soporte.'
             : isSpaceTaken
-            ? 'Alguien más tomó este espacio justo antes que tú. Por favor selecciona otro espacio disponible.'
+            ? 'Alguien más tomó este espacio. Por favor selecciona otro.'
             : isNotLoggedIn
-            ? 'Debes iniciar sesión para realizar una reservación.'
+            ? 'Debes iniciar sesión para reservar.'
             : rawError.replaceAll('Bad state: ', '');
 
     showDialog(
@@ -167,7 +163,6 @@ class _ReserveSpacePageState extends ConsumerState<ReserveSpacePage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // ── Header ──
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
@@ -206,8 +201,6 @@ class _ReserveSpacePageState extends ConsumerState<ReserveSpacePage> {
                       ],
                     ),
                   ),
-
-                  // ── Body ──
                   Padding(
                     padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
                     child: Column(
@@ -221,46 +214,7 @@ class _ReserveSpacePageState extends ConsumerState<ReserveSpacePage> {
                             height: 1.5,
                           ),
                         ),
-
-                        // Extra tip for restriction
-                        if (isRestricted) ...[
-                          const SizedBox(height: 14),
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFEF2F2),
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(
-                                color: const Color(
-                                  0xFFDC2626,
-                                ).withOpacity(0.18),
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.info_outline_rounded,
-                                  size: 16,
-                                  color: color,
-                                ),
-                                const SizedBox(width: 8),
-                                const Expanded(
-                                  child: Text(
-                                    'Si crees que esto es un error, contacta soporte desde Mis Reservaciones.',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Color(0xFFDC2626),
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-
                         const SizedBox(height: 20),
-
                         SizedBox(
                           width: double.infinity,
                           child: MyButton(

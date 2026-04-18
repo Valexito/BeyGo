@@ -1,6 +1,10 @@
+// lib/features/reservations/components/reservation_card.dart
+//
+// ✅ FIXED: latlong2.LatLng → google_maps_flutter.LatLng
+//
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:mapbox_api/common/ui/components/app_styles.dart';
 import 'package:mapbox_api/common/ui/components/my_text.dart';
 import 'package:mapbox_api/features/reservations/components/reservations_details_sheet.dart';
@@ -62,22 +66,15 @@ class _ReservationCardShell extends StatelessWidget {
     final priceText = _priceText(parking, reservation);
     final startText = _formatDateTime(reservation.reservedAt);
     final durationText = _durationText(reservation);
-    final isPendingApproval =
-        reservation.state == 'pending' ||
-        reservation.providerApprovalStatus == 'pending';
-    final isRejected =
-        reservation.state == 'rejected' ||
-        reservation.providerApprovalStatus == 'rejected';
-    final isApprovedActive =
-        reservation.state == 'active' &&
-        reservation.providerApprovalStatus == 'approved';
 
     final showNavigate =
         reservation.state == 'active' ||
         reservation.state == 'pending' ||
         reservation.providerApprovalStatus == 'pending';
 
-    final isActive = isApprovedActive;
+    final isApprovedActive =
+        reservation.state == 'active' &&
+        reservation.providerApprovalStatus == 'approved';
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -202,8 +199,9 @@ class _ReservationCardShell extends StatelessWidget {
                               onPressed:
                                   parking == null
                                       ? null
-                                      : () => _openNavigationChooser(
+                                      : () => _openNavigation(
                                         context,
+                                        // ✅ google_maps_flutter.LatLng
                                         LatLng(parking!.lat, parking!.lng),
                                         reservation,
                                       ),
@@ -249,7 +247,7 @@ class _ReservationCardShell extends StatelessWidget {
                               ),
                             ),
                           ),
-                          if (isActive) ...[
+                          if (isApprovedActive) ...[
                             const SizedBox(height: 8),
                             SizedBox(
                               width: double.infinity,
@@ -258,13 +256,9 @@ class _ReservationCardShell extends StatelessWidget {
                                 onPressed: () {
                                   final phone = (parking?.phone ?? '')
                                       .replaceAll('+', '');
-
-                                  print('PHONE DEBUG: $phone');
                                   if (phone.isEmpty) return;
-
-                                  final uri = Uri.parse('https://wa.me/$phone');
                                   launchUrl(
-                                    uri,
+                                    Uri.parse('https://wa.me/$phone'),
                                     mode: LaunchMode.externalApplication,
                                   );
                                 },
@@ -297,31 +291,22 @@ class _ReservationCardShell extends StatelessWidget {
 
   static String? _resolveImage(Parking? parking) {
     if (parking == null) return null;
-
     if (parking.photos.isNotEmpty) {
       final first = parking.photos.first.trim();
       if (first.isNotEmpty) return first;
     }
-
-    if (parking.coverUrl != null && parking.coverUrl!.trim().isNotEmpty) {
+    if (parking.coverUrl?.trim().isNotEmpty == true) {
       return parking.coverUrl!.trim();
     }
-
-    if (parking.imageUrl != null && parking.imageUrl!.trim().isNotEmpty) {
+    if (parking.imageUrl?.trim().isNotEmpty == true) {
       return parking.imageUrl!.trim();
     }
-
     return null;
   }
 
   static String _priceText(Parking? parking, Reservation reservation) {
     final pricePerHour = parking?.pricePerHour ?? 0;
-
-    if (pricePerHour > 0) {
-      return 'Q $pricePerHour por hora';
-    }
-
-    return 'Tarifa no disponible';
+    return pricePerHour > 0 ? 'Q $pricePerHour por hora' : 'Tarifa no disp.';
   }
 
   static String _formatDateTime(DateTime value) {
@@ -341,7 +326,6 @@ class _ReservationCardShell extends StatelessWidget {
       final m = mins % 60;
       return m == 0 ? '$h h' : '$h h $m min';
     }
-
     final mins = DateTime.now().difference(reservation.reservedAt).inMinutes;
     if (mins <= 0) return '0 min';
     if (mins < 60) return '$mins min';
@@ -351,9 +335,7 @@ class _ReservationCardShell extends StatelessWidget {
   }
 
   static String _statusLabel(Reservation r) {
-    // PRIORITY: provider approval pending should always be PENDIENTE
     if (r.providerApprovalStatus == 'pending') return 'PENDIENTE';
-
     if (r.state == 'pending') return 'PENDIENTE';
     if (r.state == 'completed') return 'COMPLETADA';
     if (r.state == 'cancelled') return 'CANCELADA';
@@ -361,42 +343,36 @@ class _ReservationCardShell extends StatelessWidget {
       return 'DENEGADA';
     }
     if (r.state == 'active' && r.exitStatus == 'approved') return 'SALIDA OK';
-    if (r.state == 'active' && r.exitStatus == 'requested')
+    if (r.state == 'active' && r.exitStatus == 'requested') {
       return 'SALIDA SOL.';
-
+    }
     return 'ACTIVA';
   }
 
   static Color _statusColor(Reservation r) {
-    // PRIORITY: provider approval pending should always be orange
     if (r.providerApprovalStatus == 'pending') {
       return const Color(0xFFF59E0B);
     }
-
     if (r.state == 'pending') return const Color(0xFFF59E0B);
     if (r.state == 'completed') return const Color(0xFF2563EB);
     if (r.state == 'cancelled') return const Color(0xFFDC2626);
-
     if (r.state == 'rejected' || r.providerApprovalStatus == 'rejected') {
       return const Color(0xFFDC2626);
     }
-
     if (r.state == 'active' && r.exitStatus == 'approved') {
       return const Color(0xFF0EA5E9);
     }
-
     if (r.state == 'active' && r.exitStatus == 'requested') {
       return const Color(0xFFF59E0B);
     }
-
     return const Color(0xFF16A34A);
   }
 
-  static Future<void> _openNavigationChooser(
+  static void _openNavigation(
     BuildContext context,
-    LatLng destination,
+    LatLng destination, // ✅ google_maps_flutter.LatLng
     Reservation reservation,
-  ) async {
+  ) {
     Navigator.pushNamed(
       context,
       '/routeView',
@@ -408,41 +384,9 @@ class _ReservationCardShell extends StatelessWidget {
       },
     );
   }
-
-  static Future<void> _openGoogleMaps(LatLng destination) async {
-    final lat = destination.latitude;
-    final lng = destination.longitude;
-
-    final googleMapsApp = Uri.parse(
-      'comgooglemaps://?daddr=$lat,$lng&directionsmode=driving',
-    );
-    final googleMapsWeb = Uri.parse(
-      'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng&travelmode=driving',
-    );
-
-    if (await canLaunchUrl(googleMapsApp)) {
-      await launchUrl(googleMapsApp, mode: LaunchMode.externalApplication);
-      return;
-    }
-
-    await launchUrl(googleMapsWeb, mode: LaunchMode.externalApplication);
-  }
-
-  static Future<void> _openWaze(LatLng destination) async {
-    final lat = destination.latitude;
-    final lng = destination.longitude;
-
-    final wazeUri = Uri.parse('waze://?ll=$lat,$lng&navigate=yes');
-    final wazeWeb = Uri.parse('https://waze.com/ul?ll=$lat,$lng&navigate=yes');
-
-    if (await canLaunchUrl(wazeUri)) {
-      await launchUrl(wazeUri, mode: LaunchMode.externalApplication);
-      return;
-    }
-
-    await launchUrl(wazeWeb, mode: LaunchMode.externalApplication);
-  }
 }
+
+// ─── Sub-widgets (unchanged logic) ───────────────────────────────────────────
 
 class _InfoChipLine extends StatelessWidget {
   final IconData icon;
@@ -555,75 +499,6 @@ class _CardImageFallback extends StatelessWidget {
       ),
       child: const Center(
         child: Icon(Icons.local_parking_rounded, color: Colors.white, size: 28),
-      ),
-    );
-  }
-}
-
-class _NavAppTile extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  const _NavAppTile({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(18),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(18),
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: AppColors.borderSoft),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: const BoxDecoration(
-                  color: AppColors.iconCircle,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(icon, color: AppColors.headerBottom, size: 20),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    MyText(
-                      text: title,
-                      variant: MyTextVariant.bodyBold,
-                      fontSize: 14,
-                    ),
-                    const SizedBox(height: 2),
-                    MyText(
-                      text: subtitle,
-                      variant: MyTextVariant.bodyMuted,
-                      fontSize: 12,
-                    ),
-                  ],
-                ),
-              ),
-              const Icon(
-                Icons.chevron_right_rounded,
-                color: AppColors.textSecondary,
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

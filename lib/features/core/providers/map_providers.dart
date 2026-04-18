@@ -1,29 +1,28 @@
 // lib/features/core/providers/map_providers.dart
 //
-// Replaced flutter_map MapController → GoogleMapController (google_maps_flutter)
+// ✅ FIXED: Replaced flutter_map.MapController → GoogleMapController
 //
-// IMPORTANT: GoogleMapController cannot be created directly in a Provider because
-// it's handed to us by the GoogleMap widget via onMapCreated. So we store it in
-// a StateProvider that the widget writes to once the map is ready.
+// GoogleMapController cannot be created in a Provider directly — it's handed
+// to us by the GoogleMap widget via onMapCreated. We store it in a StateProvider
+// that the widget writes to once the map is ready.
 //
-// Usage in widget:
+// NOTE: If you only use MapWidget (which manages its own controller internally),
+// you may not need this provider at all. It's useful if you want to control
+// the map from outside MapWidget (e.g. from a Riverpod action).
 //
-//   final mapCtrlNotifier = ref.read(googleMapControllerProvider.notifier);
+// Usage:
+//   // In the widget that owns GoogleMap:
+//   final mapCtrl = ref.read(googleMapControllerProvider.notifier);
+//   GoogleMap(onMapCreated: (ctrl) => mapCtrl.state = ctrl, ...)
 //
-//   GoogleMap(
-//     onMapCreated: (ctrl) => mapCtrlNotifier.state = ctrl,
-//     ...
-//   )
-//
-// Usage anywhere:
-//
+//   // From anywhere else:
 //   final ctrl = ref.watch(googleMapControllerProvider);
 //   ctrl?.animateCamera(CameraUpdate.newLatLng(...));
-
+//
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-/// Stores the GoogleMapController once the GoogleMap widget hands it to us.
+/// Stores the GoogleMapController once the GoogleMap widget hands it over.
 /// Nullable because the map might not be ready yet.
 final googleMapControllerProvider = StateProvider<GoogleMapController?>(
   (ref) => null,

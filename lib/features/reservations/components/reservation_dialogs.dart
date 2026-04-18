@@ -1,5 +1,10 @@
+// lib/features/reservations/components/reservation_dialogs.dart
+//
+// ✅ FIXED: Added google_maps_flutter import → LatLng is now defined
+//
 import 'package:flutter/material.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart'; // ← ADDED — fixes "Undefined class 'LatLng'"
+
 import 'package:mapbox_api/common/ui/components/app_styles.dart';
 import 'package:mapbox_api/common/ui/components/my_button.dart';
 import 'package:mapbox_api/common/ui/components/my_text.dart';
@@ -8,7 +13,7 @@ import 'package:mapbox_api/features/reservations/models/reservation.dart';
 class ReservationDialogs {
   static Future<bool?> showConfirmReservationDialog(
     BuildContext context, {
-    required LatLng destination,
+    required LatLng destination, // ✅ now resolves correctly
     required String parkingName,
     required int spaceNumber,
     required int pricePerHour,
@@ -44,13 +49,13 @@ class ReservationDialogs {
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [AppColors.headerTop, AppColors.headerBottom],
                     ),
-                    borderRadius: const BorderRadius.only(
+                    borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(28),
                       topRight: Radius.circular(28),
                     ),
@@ -183,9 +188,7 @@ class ReservationDialogs {
                           Expanded(
                             child: MyButton(
                               text: 'Confirmar',
-                              onTap: () {
-                                Navigator.of(ctx).pop(true);
-                              },
+                              onTap: () => Navigator.of(ctx).pop(true),
                               margin: EdgeInsets.zero,
                             ),
                           ),
@@ -270,7 +273,6 @@ class ReservationDialogs {
     BuildContext context, {
     required Reservation reservation,
   }) {
-    final now = DateTime.now();
     final start = reservation.reservedAt;
     final lockedAt = reservation.exitLockedAt ?? reservation.reservedAt;
     final duration = lockedAt.difference(start);
@@ -369,131 +371,121 @@ class ReservationDialogs {
     );
   }
 
-  static Widget _circleIcon(IconData icon) {
-    return Container(
-      width: 62,
-      height: 62,
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppColors.headerTop, AppColors.headerBottom],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+  static Widget _circleIcon(IconData icon) => Container(
+    width: 62,
+    height: 62,
+    decoration: BoxDecoration(
+      gradient: const LinearGradient(
+        colors: [AppColors.headerTop, AppColors.headerBottom],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+      shape: BoxShape.circle,
+      boxShadow: [
+        BoxShadow(
+          color: AppColors.headerBottom.withOpacity(0.22),
+          blurRadius: 16,
+          offset: const Offset(0, 8),
         ),
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.headerBottom.withOpacity(0.22),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Icon(icon, color: Colors.white, size: 30),
-    );
-  }
+      ],
+    ),
+    child: Icon(icon, color: Colors.white, size: 30),
+  );
 
-  static Widget _title(String text) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-      decoration: BoxDecoration(
-        color: AppColors.primarySoft.withOpacity(0.25),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: MyText(
-        text: text,
-        variant: MyTextVariant.normalBold,
-        customColor: AppColors.headerBottom,
-        fontSize: 16,
-      ),
-    );
-  }
+  static Widget _title(String text) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+    decoration: BoxDecoration(
+      color: AppColors.primarySoft.withOpacity(0.25),
+      borderRadius: BorderRadius.circular(20),
+    ),
+    child: MyText(
+      text: text,
+      variant: MyTextVariant.normalBold,
+      customColor: AppColors.headerBottom,
+      fontSize: 16,
+    ),
+  );
 
-  static Widget _strikeBox(int used, int max) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF7F7F9),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Column(
-        children: [
-          const MyText(
-            text: 'Strikes',
-            variant: MyTextVariant.bodyMuted,
-            fontSize: 12,
-          ),
-          const SizedBox(height: 4),
-          MyText(
-            text: '$used/$max',
-            variant: MyTextVariant.bodyBold,
-            fontSize: 18,
-            customColor: AppColors.headerBottom,
-          ),
-        ],
-      ),
-    );
-  }
-
-  static Widget _infoBox(List<Widget> children) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF7F7F9),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        children: List.generate(children.length, (index) {
-          final isLast = index == children.length - 1;
-          return Padding(
-            padding: EdgeInsets.only(bottom: isLast ? 0 : 12),
-            child: children[index],
-          );
-        }),
-      ),
-    );
-  }
-
-  static Widget _actions(BuildContext ctx, String confirmText) {
-    return Row(
+  static Widget _strikeBox(int used, int max) => Container(
+    width: double.infinity,
+    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+    decoration: BoxDecoration(
+      color: const Color(0xFFF7F7F9),
+      borderRadius: BorderRadius.circular(14),
+    ),
+    child: Column(
       children: [
-        Expanded(
-          child: SizedBox(
-            height: 48,
-            child: OutlinedButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(
-                  color: AppColors.headerBottom.withOpacity(0.35),
-                  width: 1.2,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppDims.radiusLg),
-                ),
-                backgroundColor: Colors.white,
+        const MyText(
+          text: 'Strikes',
+          variant: MyTextVariant.bodyMuted,
+          fontSize: 12,
+        ),
+        const SizedBox(height: 4),
+        MyText(
+          text: '$used/$max',
+          variant: MyTextVariant.bodyBold,
+          fontSize: 18,
+          customColor: AppColors.headerBottom,
+        ),
+      ],
+    ),
+  );
+
+  static Widget _infoBox(List<Widget> children) => Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: const Color(0xFFF7F7F9),
+      borderRadius: BorderRadius.circular(16),
+    ),
+    child: Column(
+      children: List.generate(children.length, (index) {
+        final isLast = index == children.length - 1;
+        return Padding(
+          padding: EdgeInsets.only(bottom: isLast ? 0 : 12),
+          child: children[index],
+        );
+      }),
+    ),
+  );
+
+  static Widget _actions(BuildContext ctx, String confirmText) => Row(
+    children: [
+      Expanded(
+        child: SizedBox(
+          height: 48,
+          child: OutlinedButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            style: OutlinedButton.styleFrom(
+              side: BorderSide(
+                color: AppColors.headerBottom.withOpacity(0.35),
+                width: 1.2,
               ),
-              child: const MyText(
-                text: 'No',
-                variant: MyTextVariant.normalBold,
-                customColor: AppColors.headerBottom,
-                fontSize: 14,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppDims.radiusLg),
               ),
+              backgroundColor: Colors.white,
+            ),
+            child: const MyText(
+              text: 'No',
+              variant: MyTextVariant.normalBold,
+              customColor: AppColors.headerBottom,
+              fontSize: 14,
             ),
           ),
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: MyButton(
-            text: confirmText,
-            onTap: () => Navigator.pop(ctx, true),
-            margin: EdgeInsets.zero,
-            height: 48,
-          ),
+      ),
+      const SizedBox(width: 12),
+      Expanded(
+        child: MyButton(
+          text: confirmText,
+          onTap: () => Navigator.pop(ctx, true),
+          margin: EdgeInsets.zero,
+          height: 48,
         ),
-      ],
-    );
-  }
+      ),
+    ],
+  );
 
   static String _format(DateTime v) {
     final y = v.year.toString().padLeft(4, '0');

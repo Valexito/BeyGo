@@ -1,23 +1,23 @@
 // lib/features/core/components/map_widget.dart
 //
-// ✅ FULLY MIGRATED: flutter_map + Mapbox → google_maps_flutter
-//    • No flutter_map, no latlong2, no Mapbox token
-//    • currentPosition is google_maps_flutter.LatLng (not nullable mismatch)
-//    • Parking markers via Google Maps Markers
-//    • Favorites + parking detail sheet unchanged
+// ✅ MapWidgetState is PUBLIC — GlobalKey<MapWidgetState> works from home_page.dart
+// ✅ No rxdart, no flutter_map, no latlong2, no Mapbox
+// ✅ Real-time parking markers from allParkingsStreamProvider
+// ✅ Tap marker → HomeParkingDetailBottomSheet → full reservation flow
 //
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:mapbox_api/common/ui/components/app_styles.dart';
-import 'package:rxdart/rxdart.dart';
-import 'package:mapbox_api/common/services/geolocator.dart'; // ← returns google_maps_flutter.LatLng
-import 'package:mapbox_api/features/core/services/favorite_service.dart';
-import 'package:mapbox_api/features/core/components/home_bottom_parking_details.dart';
-import 'package:mapbox_api/features/reservations/providers/parking_service_provider.dart';
-import 'package:mapbox_api/features/reservations/models/parking.dart';
 
-class MapWidget extends StatefulWidget {
+import 'package:mapbox_api/common/services/geolocator.dart';
+import 'package:mapbox_api/common/ui/components/app_styles.dart';
+import 'package:mapbox_api/features/core/components/home_bottom_parking_details.dart';
+import 'package:mapbox_api/features/core/services/favorite_service.dart';
+import 'package:mapbox_api/features/reservations/models/parking.dart';
+import 'package:mapbox_api/features/reservations/providers/parking_service_provider.dart';
+
+class MapWidget extends ConsumerStatefulWidget {
   /// Called when the user taps the map background (not a marker).
   final VoidCallback? onMapTap;
 
@@ -27,25 +27,24 @@ class MapWidget extends StatefulWidget {
   const MapWidget({super.key, this.onMapTap, this.onMapCreated});
 
   @override
-  State<MapWidget> createState() => _MapWidgetState();
+  // ✅ PUBLIC state class — required so home_page.dart can do:
+  //    final _mapKey = GlobalKey<MapWidgetState>();
+  //    _mapKey.currentState?.centerOnUser();
+  MapWidgetState createState() => MapWidgetState();
 }
 
-class _MapWidgetState extends State<MapWidget> {
+/// Public state class — intentionally named without underscore so it can be
+/// referenced as a type argument in GlobalKey<MapWidgetState> from other files.
+class MapWidgetState extends ConsumerState<MapWidget> {
   GoogleMapController? _mapController;
-
-  // ✅ google_maps_flutter.LatLng — NOT latlong2.LatLng
-  // This was the source of Image 4 error: variable typed as latlong2.LatLng?
-  // but assigned a google_maps_flutter.LatLng value.
   LatLng? _currentPosition;
-
-  Set<Marker> _markers = {};
 
   static const LatLng _fallback = LatLng(14.834999, -91.518669); // Xela
 
   @override
   void initState() {
     super.initState();
-    _init();
+    _initLocation();
   }
 
   @override
@@ -54,60 +53,38 @@ class _MapWidgetState extends State<MapWidget> {
     super.dispose();
   }
 
-  Future<void> _init() async {
-    // getCurrentLocation() now returns google_maps_flutter.LatLng ✅
-    LatLng position;
+  Future<void> _initLocation() async {
     try {
-      position = await getCurrentLocation();
-    } catch (_) {
-      position = _fallback;
-    }
-    if (!mounted) return;
-    // Both `position` and `_currentPosition` are the same LatLng type ✅
-    setState(() => _currentPosition = position);
-    await _loadParkingMarkers(position);
-  }
-
-  Future<void> _loadParkingMarkers(LatLng userPosition) async {
-    final parkings = await ParkingService().getAllParkings();
-    if (!mounted) return;
-
-    final markers = <Marker>{};
-
-    // User location
-    markers.add(
-      Marker(
-        markerId: const MarkerId('user_location'),
-        position: userPosition,
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
-        infoWindow: const InfoWindow(title: 'Tu ubicación'),
-      ),
-    );
-
-    // Parking spots
-    for (final p in parkings) {
-      // Parking.lat and Parking.lng are doubles — wrap directly ✅
-      final pos = LatLng(p.lat, p.lng);
-      markers.add(
-        Marker(
-          markerId: MarkerId('parking_${p.id}'),
-          position: pos,
-          icon: BitmapDescriptor.defaultMarkerWithHue(
-            BitmapDescriptor.hueAzure,
-          ),
-          infoWindow: InfoWindow(
-            title: p.name,
-            snippet: 'Q${p.price}/hora · Toca para ver',
-          ),
-          onTap: () => _showParkingDetails(p),
-        ),
+      // getCurrentLocation() returns google_maps_flutter.LatLng ✅
+      final pos = await getCurrentLocation();
+      if (!mounted) return;
+      setState(() => _currentPosition = pos);
+      _mapController?.animateCamera(
+        CameraUpdate.newCameraPosition(CameraPosition(target: pos, zoom: 15)),
       );
+    } catch (_) {
+      if (mounted) setState(() => _currentPosition = _fallback);
     }
-
-    if (!mounted) return;
-    setState(() => _markers = markers);
   }
 
+  // ── Build markers ─────────────────────────────────────────────────────────
+  Set<Marker> _buildMarkers(List<Parking> parkings) {
+    return parkings.map((p) {
+      return Marker(
+        markerId: MarkerId('parking_${p.id}'),
+        position: LatLng(p.lat, p.lng),
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+        infoWindow: InfoWindow(
+          title: p.name,
+          snippet: 'Q${p.price}/hora · Toca para ver',
+        ),
+        onTap: () => _showParkingDetails(p),
+      );
+    }).toSet();
+  }
+
+  // ── Parking detail sheet ──────────────────────────────────────────────────
+  // Uses nested StreamBuilder instead of rxdart switchMap ✅
   void _showParkingDetails(Parking parking) {
     showModalBottomSheet(
       context: context,
@@ -120,46 +97,55 @@ class _MapWidgetState extends State<MapWidget> {
         bool? localFav;
         return StatefulBuilder(
           builder: (context, setSheetState) {
-            return StreamBuilder<bool>(
-              stream: FirebaseAuth.instance.authStateChanges().switchMap((
-                user,
-              ) {
-                if (user == null) return Stream.value(false);
-                return FavoriteService.instance.isFavoriteStream(
-                  user.uid,
-                  parking.id,
-                );
-              }),
-              builder: (context, snap) {
-                localFav ??= snap.data ?? false;
-                final uiFav = localFav!;
-                return HomeParkingDetailBottomSheet(
-                  parking: parking,
-                  isFavorite: uiFav,
-                  onToggleFavorite: () async {
-                    final next = !uiFav;
-                    setSheetState(() => localFav = next);
-                    try {
-                      final user = FirebaseAuth.instance.currentUser;
-                      if (user == null) return;
-                      if (next) {
-                        await FavoriteService.instance.add(user.uid, parking);
-                      } else {
-                        await FavoriteService.instance.removeByParkingId(
-                          user.uid,
-                          parking.id,
-                        );
-                      }
-                    } catch (_) {
-                      setSheetState(() => localFav = !next);
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('No se pudo actualizar favoritos'),
+            return StreamBuilder<User?>(
+              stream: FirebaseAuth.instance.authStateChanges(),
+              builder: (context, authSnap) {
+                final user = authSnap.data;
+                return StreamBuilder<bool>(
+                  stream:
+                      user == null
+                          ? Stream.value(false)
+                          : FavoriteService.instance.isFavoriteStream(
+                            user.uid,
+                            parking.id,
                           ),
-                        );
-                      }
-                    }
+                  builder: (context, favSnap) {
+                    localFav ??= favSnap.data ?? false;
+                    final uiFav = localFav!;
+                    return HomeParkingDetailBottomSheet(
+                      parking: parking,
+                      isFavorite: uiFav,
+                      onToggleFavorite: () async {
+                        final next = !uiFav;
+                        setSheetState(() => localFav = next);
+                        try {
+                          final currentUser = FirebaseAuth.instance.currentUser;
+                          if (currentUser == null) return;
+                          if (next) {
+                            await FavoriteService.instance.add(
+                              currentUser.uid,
+                              parking,
+                            );
+                          } else {
+                            await FavoriteService.instance.removeByParkingId(
+                              currentUser.uid,
+                              parking.id,
+                            );
+                          }
+                        } catch (_) {
+                          setSheetState(() => localFav = !next);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'No se pudo actualizar favoritos',
+                                ),
+                              ),
+                            );
+                          }
+                        }
+                      },
+                    );
                   },
                 );
               },
@@ -170,8 +156,9 @@ class _MapWidgetState extends State<MapWidget> {
     );
   }
 
-  // ── Public methods called by home_page.dart via GlobalKey ─────────────────
+  // ── Public API (called from home_page.dart via GlobalKey<MapWidgetState>) ─
 
+  /// Animates the camera to the user's current position.
   void centerOnUser() {
     if (_currentPosition == null || _mapController == null) return;
     _mapController!.animateCamera(
@@ -181,6 +168,7 @@ class _MapWidgetState extends State<MapWidget> {
     );
   }
 
+  /// Zooms the map in or out by [delta] levels.
   Future<void> zoomBy(double delta) async {
     if (_mapController == null) return;
     final zoom = await _mapController!.getZoomLevel();
@@ -191,68 +179,91 @@ class _MapWidgetState extends State<MapWidget> {
 
   @override
   Widget build(BuildContext context) {
+    // Real-time parking markers ✅
+    final parkingsAsync = ref.watch(allParkingsStreamProvider);
+
     if (_currentPosition == null) {
-      return Container(
-        color: const Color(0xFFF0F4F8),
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppColors.headerTop, AppColors.headerBottom],
-                  ),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.headerBottom.withOpacity(0.25),
-                      blurRadius: 16,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
-                ),
-                child: const Padding(
-                  padding: EdgeInsets.all(14),
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                    strokeWidth: 2.5,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 14),
-              const Text(
-                'Cargando mapa...',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.headerBottom,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
+      return _MapLoading();
     }
+
+    final markers = parkingsAsync.maybeWhen(
+      data: (parkings) => _buildMarkers(parkings),
+      orElse: () => <Marker>{},
+    );
 
     return GoogleMap(
       onMapCreated: (ctrl) {
         _mapController = ctrl;
         widget.onMapCreated?.call(ctrl);
+        if (_currentPosition != null) {
+          ctrl.animateCamera(
+            CameraUpdate.newCameraPosition(
+              CameraPosition(target: _currentPosition!, zoom: 15),
+            ),
+          );
+        }
       },
       initialCameraPosition: CameraPosition(
         target: _currentPosition!,
         zoom: 15,
       ),
-      markers: _markers,
+      markers: markers,
       myLocationEnabled: true,
       myLocationButtonEnabled: false,
       zoomControlsEnabled: false,
       mapToolbarEnabled: false,
       compassEnabled: false,
       onTap: (_) => widget.onMapTap?.call(),
+    );
+  }
+}
+
+// ─── Loading placeholder ──────────────────────────────────────────────────────
+class _MapLoading extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: const Color(0xFFF0F4F8),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 58,
+              height: 58,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [AppColors.headerTop, AppColors.headerBottom],
+                ),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.headerBottom.withOpacity(0.25),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: const Padding(
+                padding: EdgeInsets.all(14),
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2.5,
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            const Text(
+              'Cargando mapa...',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppColors.headerBottom,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

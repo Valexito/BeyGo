@@ -1,10 +1,15 @@
 // lib/common/utils/components/ui/app_drawer.dart
+//
+// ✅ FIXED: Name now reads from Firestore users/{uid} document
+//    Firebase Auth displayName is only set for Google/social sign-in.
+//    For email/password users, the name is stored in Firestore profile.
+//
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:mapbox_api/common/ui/components/app_styles.dart';
 
-// Páginas
 import 'package:mapbox_api/features/core/pages/userv/configurations_page.dart';
 import 'package:mapbox_api/features/core/pages/userv/frequent_questions_page.dart';
 import 'package:mapbox_api/features/core/pages/userv/legal_information_page.dart';
@@ -12,10 +17,24 @@ import 'package:mapbox_api/features/core/pages/userv/report_problem_page.dart';
 import 'package:mapbox_api/features/reservations/pages/reservations_page.dart';
 import 'package:mapbox_api/features/core/pages/userv/favorites_page.dart';
 import 'package:mapbox_api/features/users/pages/profile_page.dart';
-
-// Auth
 import 'package:mapbox_api/features/auth/providers/auth_providers.dart'
     show authUserStreamProvider, authActionsProvider;
+
+// ── Firestore profile stream — auto-disposes when drawer closes ────────────
+// Reads users/{uid} in real time so the name updates the moment the user
+// completes or edits their profile, without restarting the app.
+final _drawerProfileProvider =
+    StreamProvider.autoDispose<Map<String, dynamic>?>((ref) {
+      final authAsync = ref.watch(authUserStreamProvider);
+      final uid = authAsync.valueOrNull?.uid;
+      if (uid == null) return Stream.value(null);
+
+      return FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .snapshots()
+          .map((snap) => snap.data());
+    });
 
 class AppDrawer extends ConsumerWidget {
   const AppDrawer({super.key});
@@ -36,7 +55,12 @@ class AppDrawer extends ConsumerWidget {
     Navigator.pushNamedAndRemoveUntil(context, '/auth', (_) => false);
   }
 
-  String? _bestPhotoUrl(fb.User? u) {
+  String? _resolvePhoto(fb.User? u, Map<String, dynamic>? profile) {
+    // 1. Firestore profile photo
+    final fsPhoto = profile?['photoURL'] as String?;
+    if (fsPhoto != null && fsPhoto.isNotEmpty) return fsPhoto;
+
+    // 2. Firebase Auth photo (Google, etc.)
     if (u == null) return null;
     String? url = u.photoURL;
     if (url == null || url.isEmpty) {
@@ -49,15 +73,30 @@ class AppDrawer extends ConsumerWidget {
       }
     }
     if (url == null) return null;
-    if (url.contains('googleusercontent.com') && url.contains('/s')) {
+    if (url.contains('googleusercontent.com')) {
       url = url.replaceFirst(RegExp(r'/s\d+-'), '/s200-');
     }
     return url;
   }
 
+  String _resolveName(fb.User? user, Map<String, dynamic>? profile) {
+    // ✅ Priority: Firestore 'name' → Firestore 'displayName' → Auth displayName → fallback
+    final fsName = (profile?['name'] as String?)?.trim();
+    if (fsName != null && fsName.isNotEmpty) return fsName;
+
+    final fsDisplay = (profile?['displayName'] as String?)?.trim();
+    if (fsDisplay != null && fsDisplay.isNotEmpty) return fsDisplay;
+
+    final authName = user?.displayName?.trim();
+    if (authName != null && authName.isNotEmpty) return authName;
+
+    return 'Mi perfil';
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final userAsync = ref.watch(authUserStreamProvider);
+    final profileAsync = ref.watch(_drawerProfileProvider);
 
     return userAsync.when(
       loading:
@@ -65,22 +104,18 @@ class AppDrawer extends ConsumerWidget {
       error:
           (e, _) => Drawer(child: Center(child: Text('Error de sesión: $e'))),
       data: (user) {
-        final photoUrl = _bestPhotoUrl(user);
-        final displayName =
-            (user?.displayName?.trim().isNotEmpty ?? false)
-                ? user!.displayName!.trim()
-                : 'Mi perfil';
+        final profile = profileAsync.valueOrNull;
+        final displayName = _resolveName(user, profile);
         final email = user?.email ?? '';
+        final photoUrl = _resolvePhoto(user, profile);
 
         return Drawer(
           backgroundColor: Colors.white,
           surfaceTintColor: Colors.transparent,
           child: Column(
             children: [
-              // ── Header ──────────────────────────────────────────────────
               Stack(
                 children: [
-                  // Gradient background
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.only(top: 54, bottom: 28),
@@ -93,7 +128,6 @@ class AppDrawer extends ConsumerWidget {
                     ),
                     child: Column(
                       children: [
-                        // Avatar
                         Container(
                           width: 86,
                           height: 86,
@@ -115,20 +149,13 @@ class AppDrawer extends ConsumerWidget {
                                       photoUrl,
                                       key: ValueKey(user?.uid),
                                       fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (_, __, ___) => _DefaultAvatar(),
                                     )
-                                    : Container(
-                                      color: Colors.white.withOpacity(0.18),
-                                      child: const Icon(
-                                        Icons.person_rounded,
-                                        size: 48,
-                                        color: Colors.white,
-                                      ),
-                                    ),
+                                    : _DefaultAvatar(),
                           ),
                         ),
                         const SizedBox(height: 12),
-
-                        // Name
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 20),
                           child: Text(
@@ -144,7 +171,6 @@ class AppDrawer extends ConsumerWidget {
                             ),
                           ),
                         ),
-
                         if (email.isNotEmpty) ...[
                           const SizedBox(height: 4),
                           Padding(
@@ -165,8 +191,6 @@ class AppDrawer extends ConsumerWidget {
                       ],
                     ),
                   ),
-
-                  // Decorative circles
                   Positioned(
                     top: -20,
                     right: -20,
@@ -193,8 +217,6 @@ class AppDrawer extends ConsumerWidget {
                   ),
                 ],
               ),
-
-              // ── Nav items ────────────────────────────────────────────────
               Expanded(
                 child: ListView(
                   padding: const EdgeInsets.symmetric(
@@ -233,7 +255,6 @@ class AppDrawer extends ConsumerWidget {
                             const ConfigurationsPage(),
                           ),
                     ),
-
                     const SizedBox(height: 6),
                     _SectionLabel(label: 'Soporte'),
                     _DrawerItem(
@@ -263,11 +284,9 @@ class AppDrawer extends ConsumerWidget {
                             const ReportProblemPage(),
                           ),
                     ),
-
                     const SizedBox(height: 6),
                     Divider(color: AppColors.borderSoft, height: 1),
                     const SizedBox(height: 6),
-
                     _DrawerItem(
                       icon: Icons.logout_rounded,
                       label: 'Cerrar sesión',
@@ -286,29 +305,33 @@ class AppDrawer extends ConsumerWidget {
   }
 }
 
-// ─── Section label ─────────────────────────────────────────────────────────
+class _DefaultAvatar extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Container(
+    color: Colors.white.withOpacity(0.18),
+    child: const Icon(Icons.person_rounded, size: 48, color: Colors.white),
+  );
+}
+
 class _SectionLabel extends StatelessWidget {
   final String label;
   const _SectionLabel({required this.label});
 
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
-      child: Text(
-        label.toUpperCase(),
-        style: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w700,
-          color: AppColors.textSecondary.withOpacity(0.6),
-          letterSpacing: 1.2,
-        ),
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
+    child: Text(
+      label.toUpperCase(),
+      style: TextStyle(
+        fontSize: 10,
+        fontWeight: FontWeight.w700,
+        color: AppColors.textSecondary.withOpacity(0.6),
+        letterSpacing: 1.2,
       ),
-    );
-  }
+    ),
+  );
 }
 
-// ─── Drawer item ───────────────────────────────────────────────────────────
 class _DrawerItem extends StatefulWidget {
   final IconData icon;
   final String label;
@@ -333,14 +356,12 @@ class _DrawerItemState extends State<_DrawerItem> {
   Widget build(BuildContext context) {
     final Color activeColor =
         widget.danger ? const Color(0xFFDC2626) : AppColors.headerBottom;
-
     final Color bg =
         _pressed ? activeColor.withOpacity(0.08) : Colors.transparent;
     final Color textColor =
         _pressed
             ? activeColor
             : (widget.danger ? const Color(0xFFDC2626) : AppColors.textPrimary);
-    final Color iconColor = activeColor;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 2),
@@ -359,7 +380,6 @@ class _DrawerItemState extends State<_DrawerItem> {
             ),
             child: Row(
               children: [
-                // Icon circle
                 Container(
                   width: 36,
                   height: 36,
@@ -372,11 +392,9 @@ class _DrawerItemState extends State<_DrawerItem> {
                                 : AppColors.iconCircle),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(widget.icon, size: 18, color: iconColor),
+                  child: Icon(widget.icon, size: 18, color: activeColor),
                 ),
                 const SizedBox(width: 12),
-
-                // Label
                 Expanded(
                   child: Text(
                     widget.label,
@@ -387,8 +405,6 @@ class _DrawerItemState extends State<_DrawerItem> {
                     ),
                   ),
                 ),
-
-                // Chevron
                 Icon(
                   Icons.chevron_right_rounded,
                   size: 18,
