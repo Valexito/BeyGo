@@ -1,19 +1,21 @@
+// lib/features/reservations/pages/route_view_page.dart
+//
+// Migrated from flutter_map + Mapbox tiles → google_maps_flutter
+// Uses GoogleDirectionsService (via directions_providers.dart)
+// Uses google_maps_flutter.LatLng everywhere (no latlong2)
+//
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-import 'package:mapbox_api/common/env/env.dart';
-import 'package:mapbox_api/common/components/ui/app_styles.dart';
-import 'package:mapbox_api/common/components/ui/my_button.dart';
-import 'package:mapbox_api/common/components/ui/my_text.dart';
+import 'package:mapbox_api/common/ui/components/app_styles.dart';
+import 'package:mapbox_api/common/ui/components/my_button.dart';
 import 'package:mapbox_api/features/reservations/components/route_bottom_info_card.dart';
 import 'package:mapbox_api/features/reservations/providers/directions_providers.dart';
 import 'package:mapbox_api/features/reservations/providers/location_providers.dart';
-import 'package:mapbox_api/features/reservations/providers/map_providers.dart';
 
-class RouteViewPage extends ConsumerWidget {
+class RouteViewPage extends ConsumerStatefulWidget {
   final LatLng destination;
   final String parkingName;
   final int? spaceNumber;
@@ -30,48 +32,104 @@ class RouteViewPage extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final map = ref.watch(mapControllerProvider);
-    final originAsync = ref.watch(currentLocationProvider);
+  ConsumerState<RouteViewPage> createState() => _RouteViewPageState();
+}
 
-    // 🔥 FIX: ensure we correctly read arguments from Navigator
+class _RouteViewPageState extends ConsumerState<RouteViewPage> {
+  GoogleMapController? _mapController;
+  Set<Polyline> _polylines = {};
+  Set<Marker> _markers = {};
+
+  @override
+  void dispose() {
+    _mapController?.dispose();
+    super.dispose();
+  }
+
+  void _buildMapObjects(List<LatLng> points, LatLng origin, LatLng dest) {
+    _polylines = {
+      Polyline(
+        polylineId: const PolylineId('route'),
+        points: points,
+        width: 5,
+        color: AppColors.headerBottom,
+        startCap: Cap.roundCap,
+        endCap: Cap.roundCap,
+        jointType: JointType.round,
+      ),
+    };
+    _markers = {
+      _pin(
+        origin,
+        Icons.my_location_rounded,
+        const Color(0xFF16A34A),
+        const MarkerId('origin'),
+      ),
+      _pin(
+        dest,
+        Icons.location_on_rounded,
+        Colors.red,
+        const MarkerId('destination'),
+      ),
+    };
+  }
+
+  Marker _pin(LatLng pos, IconData icon, Color color, MarkerId id) {
+    return Marker(
+      markerId: id,
+      position: pos,
+      icon: BitmapDescriptor.defaultMarkerWithHue(
+        color == Colors.red
+            ? BitmapDescriptor.hueRed
+            : BitmapDescriptor.hueGreen,
+      ),
+    );
+  }
+
+  void _recenter(LatLng origin) {
+    _mapController?.animateCamera(CameraUpdate.newLatLng(origin));
+  }
+
+  Future<void> _zoom(double delta) async {
+    final zoom = await _mapController?.getZoomLevel() ?? 15;
+    _mapController?.animateCamera(CameraUpdate.zoomTo(zoom + delta));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Read args from Navigator if available (deep-link / named route)
     final routeArgs =
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-    final String? effectiveReservationId =
-        routeArgs?['reservationId'] ?? reservationId;
-    final LatLng effectiveDestination =
-        routeArgs?['destination'] ?? destination;
+    final effectiveReservationId =
+        routeArgs?['reservationId'] ?? widget.reservationId;
+    final LatLng effectiveDest =
+        routeArgs?['destination'] ?? widget.destination;
     final String effectiveParkingName =
-        routeArgs?['parkingName'] ?? parkingName;
+        routeArgs?['parkingName'] ?? widget.parkingName;
+    final int? effectiveSpaceNumber =
+        routeArgs?['spaceNumber'] ?? widget.spaceNumber;
 
-    final int? effectiveSpaceNumber = routeArgs?['spaceNumber'] ?? spaceNumber;
+    final originAsync = ref.watch(currentLocationProvider);
 
     return originAsync.when(
       loading: () => const _RouteLoaderPage(),
       error:
           (e, _) => _RouteErrorPage(
             message:
-                'No se pudo obtener tu ubicación.\n$e\n\nActiva GPS y permisos e inténtalo de nuevo.',
+                'No se pudo obtener tu ubicación.\n'
+                'Activa el GPS y los permisos e inténtalo de nuevo.',
             onRetry: () => ref.refresh(currentLocationProvider),
           ),
       data: (origin) {
-        print('[ROUTE VIEW] origin: ${origin.latitude}, ${origin.longitude}');
-        print(
-          '[ROUTE VIEW] destination: ${effectiveDestination.latitude}, ${effectiveDestination.longitude}',
-        );
-        print('[ROUTE VIEW] parkingName: $effectiveParkingName');
-        print('[ROUTE VIEW] spaceNumber: $effectiveSpaceNumber');
-
-        // Guard: destino inválido (0,0)
-        if (effectiveDestination.latitude == 0 &&
-            effectiveDestination.longitude == 0) {
+        // Guard: invalid destination
+        if (effectiveDest.latitude == 0 && effectiveDest.longitude == 0) {
           return _RouteErrorPage(
-            message: 'Destino inválido (0,0). No se puede calcular la ruta.',
+            message: 'Destino inválido. No se puede calcular la ruta.',
             onRetry: () => Navigator.pop(context),
           );
         }
 
-        final args = (origin: origin, destination: effectiveDestination);
+        final args = (origin: origin, destination: effectiveDest);
         final pointsAsync = ref.watch(routePointsProvider(args));
         final distanceAsync = ref.watch(routeDistanceProvider(args));
         final durationAsync = ref.watch(routeDurationProvider(args));
@@ -81,7 +139,8 @@ class RouteViewPage extends ConsumerWidget {
           error:
               (e, _) => _RouteErrorPage(
                 message:
-                    'No se pudo calcular la ruta.\n$e\n\nVerifica tu conexión o el token de Mapbox.',
+                    'No se pudo calcular la ruta.\n'
+                    'Verifica tu conexión a internet.',
                 onRetry: () {
                   ref.invalidate(routePointsProvider(args));
                   ref.invalidate(routeDistanceProvider(args));
@@ -89,16 +148,15 @@ class RouteViewPage extends ConsumerWidget {
                 },
               ),
           data: (points) {
-            print('[ROUTE VIEW] points received: ${points.length}');
             if (points.isEmpty) {
               return _RouteErrorPage(
-                message:
-                    'La ruta no contiene puntos. Posible fallo en Directions API.',
-                onRetry: () {
-                  ref.invalidate(routePointsProvider(args));
-                },
+                message: 'La ruta no tiene puntos. Intenta de nuevo.',
+                onRetry: () => ref.invalidate(routePointsProvider(args)),
               );
             }
+
+            _buildMapObjects(points, origin, effectiveDest);
+
             final distance = distanceAsync.maybeWhen(
               data: (v) => v,
               orElse: () => '—',
@@ -119,84 +177,81 @@ class RouteViewPage extends ConsumerWidget {
                 backgroundColor: AppColors.pageBg,
                 body: Stack(
                   children: [
-                    FlutterMap(
-                      mapController: map,
-                      options: MapOptions(
-                        initialCenter: origin,
-                        initialZoom: 15,
-                        interactionOptions: const InteractionOptions(
-                          flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
-                        ),
+                    // ── Map ─────────────────────────────────────────────────
+                    GoogleMap(
+                      onMapCreated: (ctrl) {
+                        _mapController = ctrl;
+                        // Fit both markers
+                        Future.delayed(
+                          const Duration(milliseconds: 300),
+                          () => ctrl.animateCamera(
+                            CameraUpdate.newLatLngBounds(
+                              LatLngBounds(
+                                southwest: LatLng(
+                                  origin.latitude < effectiveDest.latitude
+                                      ? origin.latitude
+                                      : effectiveDest.latitude,
+                                  origin.longitude < effectiveDest.longitude
+                                      ? origin.longitude
+                                      : effectiveDest.longitude,
+                                ),
+                                northeast: LatLng(
+                                  origin.latitude > effectiveDest.latitude
+                                      ? origin.latitude
+                                      : effectiveDest.latitude,
+                                  origin.longitude > effectiveDest.longitude
+                                      ? origin.longitude
+                                      : effectiveDest.longitude,
+                                ),
+                              ),
+                              120, // padding
+                            ),
+                          ),
+                        );
+                      },
+                      initialCameraPosition: CameraPosition(
+                        target: origin,
+                        zoom: 14,
                       ),
-                      children: [
-                        TileLayer(
-                          urlTemplate:
-                              'https://api.mapbox.com/styles/v1/{id}/tiles/512/{z}/{x}/{y}@2x?access_token={accessToken}',
-                          additionalOptions: {
-                            'accessToken': Env.mapboxToken,
-                            'id': 'mapbox/streets-v12',
-                          },
-                          tileProvider: NetworkTileProvider(),
-                        ),
-                        PolylineLayer(
-                          polylines: [
-                            Polyline(
-                              points: points,
-                              strokeWidth: 6,
-                              color: AppColors.headerBottom,
-                            ),
-                          ],
-                        ),
-                        MarkerLayer(
-                          markers: [
-                            _mapPin(
-                              origin,
-                              icon: Icons.my_location_rounded,
-                              iconColor: const Color(0xFF16A34A),
-                            ),
-                            _mapPin(
-                              effectiveDestination,
-                              icon: Icons.location_on_rounded,
-                              iconColor: Colors.red,
-                            ),
-                          ],
-                        ),
-                      ],
+                      polylines: _polylines,
+                      markers: _markers,
+                      myLocationEnabled: true,
+                      myLocationButtonEnabled: false,
+                      zoomControlsEnabled: false,
+                      mapToolbarEnabled: false,
+                      compassEnabled: false,
                     ),
+
+                    // ── Header ───────────────────────────────────────────────
                     _RouteHeader(
                       parkingName: effectiveParkingName,
                       onBack: () => Navigator.pop(context),
                     ),
+
+                    // ── Map controls ─────────────────────────────────────────
                     Positioned(
-                      right: 16,
-                      bottom: 260,
-                      child: _RecenterButton(
-                        onTap: () => map.move(origin, map.camera.zoom),
-                      ),
-                    ),
-                    Positioned(
-                      right: 16,
-                      bottom: 330,
+                      right: 14,
+                      bottom: 290,
                       child: Column(
                         children: [
-                          _ZoomButton(
-                            icon: Icons.add,
-                            onTap: () {
-                              map.move(map.camera.center, map.camera.zoom + 1);
-                            },
-                          ),
-                          const SizedBox(height: 10),
-                          _ZoomButton(
+                          _MapCtrlBtn(icon: Icons.add, onTap: () => _zoom(1)),
+                          const SizedBox(height: 8),
+                          _MapCtrlBtn(
                             icon: Icons.remove,
-                            onTap: () {
-                              map.move(map.camera.center, map.camera.zoom - 1);
-                            },
+                            onTap: () => _zoom(-1),
+                          ),
+                          const SizedBox(height: 8),
+                          _MapCtrlBtn(
+                            icon: Icons.my_location_rounded,
+                            onTap: () => _recenter(origin),
                           ),
                         ],
                       ),
                     ),
                   ],
                 ),
+
+                // ── Bottom sheet with route info ──────────────────────────
                 bottomSheet:
                     effectiveReservationId == null
                         ? RouteBottomInfoCard(
@@ -204,13 +259,12 @@ class RouteViewPage extends ConsumerWidget {
                           distance: distance,
                           duration: duration,
                           spaceNumber: effectiveSpaceNumber,
-                          destination: effectiveDestination,
-                          reservationStatus: reservationState,
-                          onGoToReservations: () {
-                            Navigator.of(
-                              context,
-                            ).pushNamed('/reservationsPage');
-                          },
+                          destination: effectiveDest,
+                          reservationStatus: widget.reservationState,
+                          onGoToReservations:
+                              () => Navigator.of(
+                                context,
+                              ).pushNamed('/reservationsPage'),
                         )
                         : StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
                           stream:
@@ -220,26 +274,17 @@ class RouteViewPage extends ConsumerWidget {
                                   .snapshots(),
                           builder: (context, snapshot) {
                             final data = snapshot.data?.data();
-                            print('[FIRESTORE RAW DATA] $data');
-                            print('[FIRESTORE state] ${data?['state']}');
-                            print(
-                              '[FIRESTORE providerApprovalStatus] ${data?['providerApprovalStatus']}',
-                            );
                             final rawState =
                                 (data?['state'] as String?) ?? 'unknown';
                             final providerApproval =
                                 (data?['providerApprovalStatus'] as String?) ??
                                 '';
 
-                            // 🔥 REAL STATE FROM FIRESTORE (priority logic)
                             String state;
-
                             if (providerApproval == 'pending') {
                               state = 'pending';
                             } else if (rawState == 'cancellation_requested') {
                               state = 'cancellation_requested';
-                            } else if (rawState == 'pending') {
-                              state = 'pending';
                             } else {
                               state = rawState;
                             }
@@ -249,13 +294,12 @@ class RouteViewPage extends ConsumerWidget {
                               distance: distance,
                               duration: duration,
                               spaceNumber: effectiveSpaceNumber,
-                              destination: effectiveDestination,
+                              destination: effectiveDest,
                               reservationStatus: state,
-                              onGoToReservations: () {
-                                Navigator.of(
-                                  context,
-                                ).pushNamed('/reservationsPage');
-                              },
+                              onGoToReservations:
+                                  () => Navigator.of(
+                                    context,
+                                  ).pushNamed('/reservationsPage'),
                             );
                           },
                         ),
@@ -266,51 +310,132 @@ class RouteViewPage extends ConsumerWidget {
       },
     );
   }
+}
 
-  Marker _mapPin(
-    LatLng point, {
-    required IconData icon,
-    required Color iconColor,
-  }) {
-    return Marker(
-      point: point,
-      width: 46,
-      height: 46,
-      child: Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black26,
-              blurRadius: 10,
-              offset: Offset(0, 4),
+// ─── Loading page ─────────────────────────────────────────────────────────
+class _RouteLoaderPage extends StatelessWidget {
+  const _RouteLoaderPage();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.pageBg,
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [AppColors.headerTop, AppColors.headerBottom],
+                ),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.headerBottom.withOpacity(0.25),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: const CircularProgressIndicator(
+                color: Colors.white,
+                strokeWidth: 3,
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Calculando ruta...',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: AppColors.headerBottom,
+              ),
             ),
           ],
         ),
-        child: Center(child: Icon(icon, color: iconColor, size: 23)),
       ),
     );
   }
 }
 
+// ─── Error page ────────────────────────────────────────────────────────────
+class _RouteErrorPage extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+  const _RouteErrorPage({required this.message, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.pageBg,
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFDC2626).withOpacity(0.10),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.wifi_off_rounded,
+                  size: 32,
+                  color: Color(0xFFDC2626),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'No se pudo obtener la ruta',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF1E293B),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 13, color: Color(0xFF8A94A6)),
+              ),
+              const SizedBox(height: 24),
+              MyButton(
+                text: 'Reintentar',
+                onTap: onRetry,
+                margin: EdgeInsets.zero,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Route Header ─────────────────────────────────────────────────────────
 class _RouteHeader extends StatelessWidget {
   final String parkingName;
   final VoidCallback onBack;
-
   const _RouteHeader({required this.parkingName, required this.onBack});
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 128,
+      height: 120,
       width: double.infinity,
       child: Stack(
         children: [
           Container(
-            height: 128,
-            width: double.infinity,
-            decoration: BoxDecoration(
+            height: 120,
+            decoration: const BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
@@ -319,7 +444,7 @@ class _RouteHeader extends StatelessWidget {
             ),
           ),
           Positioned(
-            top: 32,
+            top: 30,
             left: -20,
             child: Container(
               width: 90,
@@ -343,8 +468,8 @@ class _RouteHeader extends StatelessWidget {
             ),
           ),
           Positioned(
-            top: 15,
-            left: 10,
+            top: 10,
+            left: 8,
             child: SafeArea(
               bottom: false,
               child: TextButton.icon(
@@ -362,23 +487,18 @@ class _RouteHeader extends StatelessWidget {
             ),
           ),
           Positioned(
-            top: 80,
-            left: 10,
-            right: 0,
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text(
-                  'RUTA A $parkingName',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+            bottom: 14,
+            left: 20,
+            right: 20,
+            child: Text(
+              'RUTA A $parkingName',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.4,
               ),
             ),
           ),
@@ -388,345 +508,31 @@ class _RouteHeader extends StatelessWidget {
   }
 }
 
-class _RouteInfoCard extends StatelessWidget {
-  final String parkingName;
-  final String distance;
-  final String duration;
-
-  const _RouteInfoCard({
-    required this.parkingName,
-    required this.distance,
-    required this.duration,
-  });
+// ─── Map control button ────────────────────────────────────────────────────
+class _MapCtrlBtn extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  const _MapCtrlBtn({required this.icon, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
+    return GestureDetector(
+      onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+        width: 40,
+        height: 40,
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: AppColors.headerBottom.withOpacity(0.12),
-              blurRadius: 22,
-              offset: const Offset(0, 10),
+              color: Colors.black.withOpacity(0.10),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const MyText(
-              text: 'Ruta al parqueo',
-              variant: MyTextVariant.title,
-              customColor: AppColors.headerBottom,
-              fontSize: 21,
-            ),
-            const SizedBox(height: 6),
-            MyText(
-              text: parkingName,
-              variant: MyTextVariant.bodyMuted,
-              fontSize: 13,
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: _MiniInfoTile(
-                    icon: Icons.route_rounded,
-                    label: 'Distancia',
-                    value: distance,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _MiniInfoTile(
-                    icon: Icons.access_time_rounded,
-                    label: 'Tiempo',
-                    value: duration,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _MiniInfoTile extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-
-  const _MiniInfoTile({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-      decoration: BoxDecoration(
-        color: AppColors.formFieldBg,
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 34,
-            height: 34,
-            decoration: const BoxDecoration(
-              color: AppColors.iconCircle,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, size: 18, color: AppColors.headerBottom),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                MyText(
-                  text: label,
-                  variant: MyTextVariant.bodyMuted,
-                  fontSize: 11,
-                ),
-                const SizedBox(height: 2),
-                MyText(
-                  text: value,
-                  variant: MyTextVariant.bodyBold,
-                  fontSize: 13,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _RecenterButton extends StatelessWidget {
-  final VoidCallback onTap;
-
-  const _RecenterButton({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      elevation: 6,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: onTap,
-        child: const SizedBox(
-          width: 52,
-          height: 52,
-          child: Icon(
-            Icons.my_location_rounded,
-            color: AppColors.headerBottom,
-            size: 24,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _RouteLoaderPage extends StatelessWidget {
-  const _RouteLoaderPage();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.pageBg,
-      body: Column(
-        children: [
-          SizedBox(
-            height: 128,
-            width: double.infinity,
-            child: Stack(
-              children: [
-                Container(
-                  height: 128,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [AppColors.headerTop, AppColors.headerBottom],
-                    ),
-                  ),
-                ),
-                Positioned(
-                  top: 32,
-                  left: -20,
-                  child: Container(
-                    width: 90,
-                    height: 90,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.10),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-                Positioned(
-                  top: -14,
-                  right: -10,
-                  child: Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.08),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Expanded(child: Center(child: CircularProgressIndicator())),
-        ],
-      ),
-    );
-  }
-}
-
-class _RouteErrorPage extends StatelessWidget {
-  final String message;
-  final VoidCallback onRetry;
-
-  const _RouteErrorPage({required this.message, required this.onRetry});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.pageBg,
-      body: Column(
-        children: [
-          SizedBox(
-            height: 128,
-            width: double.infinity,
-            child: Stack(
-              children: [
-                Container(
-                  height: 128,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [AppColors.headerTop, AppColors.headerBottom],
-                    ),
-                  ),
-                ),
-                Positioned(
-                  top: 32,
-                  left: -20,
-                  child: Container(
-                    width: 90,
-                    height: 90,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.10),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-                Positioned(
-                  top: -14,
-                  right: -10,
-                  child: Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.08),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(22),
-                child: Container(
-                  padding: const EdgeInsets.all(22),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.headerBottom.withOpacity(0.10),
-                        blurRadius: 20,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.warning_amber_rounded,
-                        size: 42,
-                        color: Colors.orange,
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        message,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 14),
-                      ),
-                      const SizedBox(height: 18),
-                      SizedBox(
-                        width: double.infinity,
-                        child: MyButton(
-                          text: 'Reintentar',
-                          onTap: onRetry,
-                          margin: EdgeInsets.zero,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ZoomButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-
-  const _ZoomButton({required this.icon, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      elevation: 5,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(14),
-        onTap: onTap,
-        child: SizedBox(
-          width: 44,
-          height: 44,
-          child: Icon(icon, color: AppColors.headerBottom),
-        ),
+        child: Icon(icon, size: 20, color: AppColors.headerBottom),
       ),
     );
   }

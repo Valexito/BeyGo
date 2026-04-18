@@ -3,8 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:mapbox_api/common/components/ui/app_styles.dart';
-import 'package:mapbox_api/common/components/ui/my_button.dart';
+import 'package:mapbox_api/common/ui/components/app_styles.dart';
+import 'package:mapbox_api/common/ui/components/my_button.dart';
 import 'package:mapbox_api/features/users/models/vehicule.dart';
 
 class EditVehiclesPage extends StatefulWidget {

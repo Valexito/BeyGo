@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:mapbox_api/common/components/ui/my_text.dart';
-import 'package:mapbox_api/common/components/ui/my_textfield.dart';
+import 'package:mapbox_api/common/ui/components/my_text.dart';
+import 'package:mapbox_api/common/ui/components/my_textfield.dart';
 
 class ResetPasswordDialog extends StatefulWidget {
   final String? initialEmail; // usa el email logueado si no lo pasas

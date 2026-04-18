@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:mapbox_api/common/components/ui/my_text.dart';
-import 'package:mapbox_api/common/components/ui/navy_header.dart';
+import 'package:mapbox_api/common/ui/components/my_text.dart';
+import 'package:mapbox_api/common/ui/components/navy_header.dart';
 import 'package:mapbox_api/features/owner/owner_home_page.dart';
 
 class AppHeader extends StatelessWidget {

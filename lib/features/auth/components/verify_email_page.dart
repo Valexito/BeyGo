@@ -2,9 +2,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import 'package:mapbox_api/common/components/ui/app_styles.dart';
-import 'package:mapbox_api/common/components/ui/my_button.dart';
-import 'package:mapbox_api/common/widgets/app_loading_screen.dart';
+import 'package:mapbox_api/common/ui/components/app_styles.dart';
+import 'package:mapbox_api/common/ui/components/my_button.dart';
+import 'package:mapbox_api/common/ui/widgets/app_loading_screen.dart';
 import 'package:mapbox_api/features/users/pages/complete_profile_page.dart';
 
 class VerifyEmailPage extends StatefulWidget {

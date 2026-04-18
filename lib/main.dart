@@ -5,14 +5,14 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:mapbox_api/features/reservations/pages/route_view_page.dart';
 import 'firebase_options.dart';
-import 'common/components/ui/app_styles.dart';
+import 'common/ui/components/app_styles.dart';
 import 'features/auth/pages/auth_gate.dart';
 import 'features/core/pages/home_switch.dart';
 import 'features/core/pages/userv/home_page.dart' as userv;
 import 'features/owner/owner_home_page.dart';
 import 'features/owner/widgets/become_owner_page.dart';
 import 'features/reservations/pages/reservations_page.dart';
-import 'common/components/map_picker_page.dart';
+import 'common/ui/widgets/map_picker_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

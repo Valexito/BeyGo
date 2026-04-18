@@ -17,6 +17,11 @@
         android:label="mapbox_api"
         android:icon="@mipmap/ic_launcher">
 
+        //Google maps api
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyC7FJXBLr_cVkfx_nXXR80zBtk7JUFzBS0"/>
+
         <!-- 🔴 Desactiva la inicialización automática de Firebase -->
         <provider
             android:name="com.google.firebase.provider.FirebaseInitProvider"

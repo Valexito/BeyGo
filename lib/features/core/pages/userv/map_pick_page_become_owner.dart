@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:mapbox_api/common/env/env.dart';
-import 'package:mapbox_api/features/reservations/services/geolocator.dart';
-import 'package:mapbox_api/common/components/ui/app_styles.dart';
-import 'package:mapbox_api/common/components/ui/my_text.dart';
+import 'package:mapbox_api/common/services/geolocator.dart';
+import 'package:mapbox_api/common/ui/components/app_styles.dart';
+import 'package:mapbox_api/common/ui/components/my_text.dart';
 
 class MapPickPage extends StatefulWidget {
   const MapPickPage({super.key});
@@ -17,9 +16,10 @@ class MapPickPage extends StatefulWidget {
 }
 
 class _MapPickPageState extends State<MapPickPage> {
-  final _map = MapController();
+  GoogleMapController? _mapController;
   LatLng? _center;
   LatLng? _picked;
+  Set<Marker> _markers = {};
   final TextEditingController _searchController = TextEditingController();
   List<Map<String, dynamic>> _suggestions = [];
   Timer? _debounce;
@@ -31,16 +31,16 @@ class _MapPickPageState extends State<MapPickPage> {
     super.initState();
     _init();
     _focusNode.addListener(() {
-      if (_focusNode.hasFocus) {
-        setState(() => _isActive = true);
-      }
+      if (_focusNode.hasFocus) setState(() => _isActive = true);
     });
   }
 
   @override
   void dispose() {
+    _mapController?.dispose();
     _focusNode.dispose();
     _searchController.dispose();
+    _debounce?.cancel();
     super.dispose();
   }
 
@@ -49,8 +49,21 @@ class _MapPickPageState extends State<MapPickPage> {
       final here = await getCurrentLocation();
       setState(() => _center = here);
     } catch (_) {
-      setState(() => _center = LatLng(14.834999, -91.518669));
+      setState(() => _center = const LatLng(14.834999, -91.518669));
     }
+  }
+
+  void _setPickedLocation(LatLng latlng) {
+    setState(() {
+      _picked = latlng;
+      _markers = {
+        Marker(
+          markerId: const MarkerId('picked'),
+          position: latlng,
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+        ),
+      };
+    });
   }
 
   void _onSearchChanged(String value) {
@@ -62,36 +75,35 @@ class _MapPickPageState extends State<MapPickPage> {
 
   Future<void> _fetchSuggestions(String value) async {
     final q = value.trim();
-
     if (q.length < 3) {
       if (!mounted) return;
       setState(() => _suggestions = []);
       return;
     }
 
-    final token = Env.mapboxToken;
-    if (token.isEmpty) return;
+    final key = Env.googleMapsKey;
+    if (key.isEmpty) return;
 
     final uri = Uri.parse(
-      'https://api.mapbox.com/geocoding/v5/mapbox.places/${Uri.encodeComponent(q)}.json'
-      '?access_token=$token&autocomplete=true&limit=5',
+      'https://maps.googleapis.com/maps/api/place/autocomplete/json'
+      '?input=${Uri.encodeComponent(q)}&key=$key&language=es',
     );
 
     try {
       final res = await http.get(uri);
       if (!mounted) return;
-
       if (res.statusCode == 200) {
         final data = json.decode(res.body);
-        final features = data['features'] as List;
-
+        final predictions = data['predictions'] as List;
         setState(() {
           _suggestions =
-              features.map<Map<String, dynamic>>((f) {
+              predictions.map<Map<String, dynamic>>((p) {
                 return {
-                  'name': f['text'],
-                  'place': f['place_name'],
-                  'coords': f['center'],
+                  'name':
+                      (p['structured_formatting']?['main_text'] ??
+                          p['description']) as String,
+                  'place': p['description'] as String,
+                  'place_id': p['place_id'] as String,
                 };
               }).toList();
         });
@@ -102,21 +114,33 @@ class _MapPickPageState extends State<MapPickPage> {
     }
   }
 
-  void _selectSuggestion(Map<String, dynamic> s) {
-    final coords = s['coords'];
-    final target = LatLng(coords[1], coords[0]);
+  Future<void> _selectSuggestion(Map<String, dynamic> s) async {
+    final key = Env.googleMapsKey;
+    final placeId = s['place_id'] as String;
 
     setState(() {
-      _picked = target;
       _suggestions = [];
       _searchController.clear();
       FocusScope.of(context).unfocus();
       _isActive = false;
     });
 
-    // Move slightly up so marker is visible above bottom panel
-    final adjusted = LatLng(target.latitude + 0.0015, target.longitude);
-    _map.move(adjusted, 17);
+    try {
+      final uri = Uri.parse(
+        'https://maps.googleapis.com/maps/api/place/details/json'
+        '?place_id=${Uri.encodeComponent(placeId)}&fields=geometry&key=$key',
+      );
+      final res = await http.get(uri);
+      if (!mounted) return;
+      if (res.statusCode == 200) {
+        final data = json.decode(res.body);
+        final loc = data['result']['geometry']['location'];
+        final target = LatLng(loc['lat'] as double, loc['lng'] as double);
+        _setPickedLocation(target);
+        final adjusted = LatLng(target.latitude + 0.0015, target.longitude);
+        _mapController?.animateCamera(CameraUpdate.newLatLngZoom(adjusted, 17));
+      }
+    } catch (_) {}
   }
 
   void _collapseUI() {
@@ -138,44 +162,23 @@ class _MapPickPageState extends State<MapPickPage> {
       body: Stack(
         children: [
           Positioned.fill(
-            child: FlutterMap(
-              mapController: _map,
-              options: MapOptions(
-                initialCenter: _center!,
-                initialZoom: 16,
-                onTap: (tapPos, latlng) {
-                  _collapseUI();
-                  setState(() => _picked = latlng);
-                },
-              ),
-              children: [
-                TileLayer(
-                  urlTemplate:
-                      'https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/{z}/{x}/{y}?access_token=${Env.mapboxToken}',
-                  userAgentPackageName: 'com.example.mapbox_api',
-                  tileSize: 256,
-                  maxZoom: 19,
-                ),
-                if (_picked != null)
-                  MarkerLayer(
-                    markers: [
-                      Marker(
-                        point: _picked!,
-                        width: 40,
-                        height: 40,
-                        child: const Icon(
-                          Icons.location_on,
-                          color: Colors.red,
-                          size: 40,
-                        ),
-                      ),
-                    ],
-                  ),
-              ],
+            child: GoogleMap(
+              onMapCreated: (ctrl) => _mapController = ctrl,
+              initialCameraPosition: CameraPosition(target: _center!, zoom: 16),
+              onTap: (latlng) {
+                _collapseUI();
+                _setPickedLocation(latlng);
+              },
+              markers: _markers,
+              myLocationEnabled: true,
+              myLocationButtonEnabled: false,
+              zoomControlsEnabled: false,
+              mapToolbarEnabled: false,
+              compassEnabled: false,
             ),
           ),
 
-          // BUBBLES (decorative like other screens)
+          // Decorative bubbles
           Positioned(
             top: 40,
             left: -20,
@@ -183,7 +186,7 @@ class _MapPickPageState extends State<MapPickPage> {
               width: 90,
               height: 90,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.12),
+                color: Colors.white.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
             ),
@@ -195,13 +198,13 @@ class _MapPickPageState extends State<MapPickPage> {
               width: 120,
               height: 120,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.10),
+                color: Colors.white.withValues(alpha: 0.10),
                 shape: BoxShape.circle,
               ),
             ),
           ),
 
-          // HEADER (overlay, does NOT block map)
+          // Header
           Positioned(
             top: 0,
             left: 0,
@@ -213,7 +216,7 @@ class _MapPickPageState extends State<MapPickPage> {
                 16,
                 12,
               ),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
@@ -261,6 +264,7 @@ class _MapPickPageState extends State<MapPickPage> {
             ),
           ),
 
+          // Zoom / my-location buttons
           AnimatedPositioned(
             duration: const Duration(milliseconds: 250),
             right: 12,
@@ -271,24 +275,27 @@ class _MapPickPageState extends State<MapPickPage> {
             child: Column(
               children: [
                 _mapButton(Icons.add, () {
-                  _map.move(_map.camera.center, _map.camera.zoom + 1);
+                  _mapController?.animateCamera(CameraUpdate.zoomIn());
                 }),
                 const SizedBox(height: 10),
                 _mapButton(Icons.remove, () {
-                  _map.move(_map.camera.center, _map.camera.zoom - 1);
+                  _mapController?.animateCamera(CameraUpdate.zoomOut());
                 }),
                 const SizedBox(height: 10),
                 _mapButton(Icons.my_location, () async {
                   try {
                     final here = await getCurrentLocation();
-                    _map.move(here, 17);
-                    setState(() => _picked = here);
+                    _mapController?.animateCamera(
+                      CameraUpdate.newLatLngZoom(here, 17),
+                    );
+                    _setPickedLocation(here);
                   } catch (_) {}
                 }),
               ],
             ),
           ),
 
+          // Bottom search panel
           AnimatedPositioned(
             duration: const Duration(milliseconds: 250),
             left: 0,
@@ -300,9 +307,7 @@ class _MapPickPageState extends State<MapPickPage> {
                   child: GestureDetector(
                     behavior: HitTestBehavior.translucent,
                     onTap: () {
-                      if (!_isActive) {
-                        setState(() => _isActive = true);
-                      }
+                      if (!_isActive) setState(() => _isActive = true);
                     },
                   ),
                 ),
@@ -320,7 +325,7 @@ class _MapPickPageState extends State<MapPickPage> {
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
+                        color: Colors.black.withValues(alpha: 0.08),
                         blurRadius: 12,
                         offset: const Offset(0, -4),
                       ),
@@ -332,9 +337,7 @@ class _MapPickPageState extends State<MapPickPage> {
                       GestureDetector(
                         behavior: HitTestBehavior.opaque,
                         onTap: () {
-                          if (!_isActive) {
-                            setState(() => _isActive = true);
-                          }
+                          if (!_isActive) setState(() => _isActive = true);
                           _focusNode.requestFocus();
                         },
                         child: Padding(
@@ -359,9 +362,7 @@ class _MapPickPageState extends State<MapPickPage> {
                               controller: _searchController,
                               focusNode: _focusNode,
                               onChanged: (v) {
-                                if (!_isActive) {
-                                  setState(() => _isActive = true);
-                                }
+                                if (!_isActive) setState(() => _isActive = true);
                                 _onSearchChanged(v);
                               },
                               decoration: InputDecoration(

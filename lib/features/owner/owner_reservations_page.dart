@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mapbox_api/common/components/ui/app_styles.dart';
-import 'package:mapbox_api/common/components/ui/my_button.dart';
-import 'package:mapbox_api/common/components/ui/my_text.dart';
+import 'package:mapbox_api/common/ui/components/app_styles.dart';
+import 'package:mapbox_api/common/ui/components/my_button.dart';
+import 'package:mapbox_api/common/ui/components/my_text.dart';
 import 'package:mapbox_api/features/owner/widgets/app_header.dart';
 import 'package:mapbox_api/features/core/roles/role_utils.dart';
 import 'package:mapbox_api/features/reservations/models/reservation.dart';

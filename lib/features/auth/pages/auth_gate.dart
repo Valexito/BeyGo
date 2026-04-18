@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:mapbox_api/common/widgets/app_loading_screen.dart';
+import 'package:mapbox_api/common/ui/widgets/app_loading_screen.dart';
 import '../../core/providers/firebase_providers.dart';
 import '../../users/pages/complete_profile_page.dart';
 import '../../users/providers/user_providers.dart';

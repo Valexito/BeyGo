@@ -1,12 +1,16 @@
+// lib/features/reservations/providers/directions_providers.dart
+//
+// Replaced MapboxDirectionsService → GoogleDirectionsService
+// latlong2.LatLng → google_maps_flutter.LatLng
+//
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:latlong2/latlong.dart';
-import 'package:mapbox_api/features/reservations/services/mapbox_directions_service.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:mapbox_api/common/services/google_directions_service.dart';
 
-/// DI del servicio. Toma el token del entorno y si está vacío,
-/// el service hará fallback automático a OSRM.
-final directionsServiceProvider = Provider<MapboxDirectionsService>((ref) {
-  const token = String.fromEnvironment('MAPBOX_TOKEN', defaultValue: '');
-  return MapboxDirectionsService(mapboxAccessToken: token, profile: 'driving');
+/// DI of the directions service.
+/// Uses Env.googleMapsKey automatically; falls back to OSRM if key is empty.
+final directionsServiceProvider = Provider<GoogleDirectionsService>((ref) {
+  return GoogleDirectionsService();
 });
 
 typedef RouteArgs = ({LatLng origin, LatLng destination});
@@ -36,5 +40,8 @@ final routeDurationProvider = FutureProvider.autoDispose
         args.destination,
       );
       final minutes = (seconds / 60).round();
-      return '$minutes min';
+      if (minutes < 60) return '$minutes min';
+      final h = minutes ~/ 60;
+      final m = minutes % 60;
+      return m == 0 ? '${h}h' : '${h}h ${m}min';
     });

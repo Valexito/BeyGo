@@ -4,8 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:mapbox_api/features/core/providers/spaces_provider.dart';
 
-import 'package:mapbox_api/common/components/ui/my_text.dart';
-import 'package:mapbox_api/common/components/ui/navy_header.dart';
+import 'package:mapbox_api/common/ui/components/my_text.dart';
+import 'package:mapbox_api/common/ui/components/navy_header.dart';
 import 'package:mapbox_api/features/core/providers/favorites_provider.dart';
 import 'package:mapbox_api/features/reservations/pages/reserve_space_page.dart';
 

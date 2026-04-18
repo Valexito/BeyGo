@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:mapbox_api/common/components/ui/app_styles.dart';
-import 'package:mapbox_api/common/components/ui/my_text.dart';
-import 'package:mapbox_api/common/components/ui/navy_header.dart';
+import 'package:mapbox_api/common/ui/components/app_styles.dart';
+import 'package:mapbox_api/common/ui/components/my_text.dart';
+import 'package:mapbox_api/common/ui/components/navy_header.dart';
 
 class LegalInformationPage extends StatelessWidget {
   const LegalInformationPage({super.key});

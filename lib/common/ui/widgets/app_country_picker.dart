@@ -1,0 +1,422 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:mapbox_api/common/ui/components/app_styles.dart';
+
+// ─── Model ────────────────────────────────────────────────────────────────────
+class AppCountryCode {
+  final String flag;
+  final String name;
+  final String code; // e.g. "+502"
+
+  const AppCountryCode({
+    required this.flag,
+    required this.name,
+    required this.code,
+  });
+
+  /// Parses a full phone string like "+502 55551234" → splits code and number
+  static ({AppCountryCode country, String number}) parse(
+    String fullPhone, {
+    AppCountryCode? fallback,
+  }) {
+    final fb = fallback ?? AppCountryCodes.defaultCode;
+    for (final c in AppCountryCodes.all) {
+      if (fullPhone.startsWith(c.code)) {
+        final number = fullPhone.substring(c.code.length).trim();
+        return (country: c, number: number);
+      }
+    }
+    return (country: fb, number: fullPhone.trim());
+  }
+
+  String combine(String number) => '$code ${number.trim()}';
+
+  @override
+  bool operator ==(Object other) =>
+      other is AppCountryCode && other.code == code;
+
+  @override
+  int get hashCode => code.hashCode;
+}
+
+// ─── Countries list ───────────────────────────────────────────────────────────
+class AppCountryCodes {
+  AppCountryCodes._();
+
+  static const defaultCode = AppCountryCode(
+    flag: '🇬🇹',
+    name: 'Guatemala',
+    code: '+502',
+  );
+
+  static const all = <AppCountryCode>[
+    AppCountryCode(flag: '🇬🇹', name: 'Guatemala', code: '+502'),
+    AppCountryCode(flag: '🇲🇽', name: 'México', code: '+52'),
+    AppCountryCode(flag: '🇺🇸', name: 'Estados Unidos', code: '+1'),
+    AppCountryCode(flag: '🇸🇻', name: 'El Salvador', code: '+503'),
+    AppCountryCode(flag: '🇭🇳', name: 'Honduras', code: '+504'),
+    AppCountryCode(flag: '🇳🇮', name: 'Nicaragua', code: '+505'),
+    AppCountryCode(flag: '🇨🇷', name: 'Costa Rica', code: '+506'),
+    AppCountryCode(flag: '🇵🇦', name: 'Panamá', code: '+507'),
+    AppCountryCode(flag: '🇨🇴', name: 'Colombia', code: '+57'),
+    AppCountryCode(flag: '🇪🇸', name: 'España', code: '+34'),
+    AppCountryCode(flag: '🇦🇷', name: 'Argentina', code: '+54'),
+    AppCountryCode(flag: '🇨🇱', name: 'Chile', code: '+56'),
+    AppCountryCode(flag: '🇵🇪', name: 'Perú', code: '+51'),
+    AppCountryCode(flag: '🇻🇪', name: 'Venezuela', code: '+58'),
+    AppCountryCode(flag: '🇧🇷', name: 'Brasil', code: '+55'),
+    AppCountryCode(flag: '🇪🇨', name: 'Ecuador', code: '+593'),
+    AppCountryCode(flag: '🇧🇴', name: 'Bolivia', code: '+591'),
+    AppCountryCode(flag: '🇺🇾', name: 'Uruguay', code: '+598'),
+    AppCountryCode(flag: '🇵🇾', name: 'Paraguay', code: '+595'),
+    AppCountryCode(flag: '🇩🇴', name: 'Rep. Dominicana', code: '+1809'),
+  ];
+}
+
+// ─── Picker (bottom sheet) ────────────────────────────────────────────────────
+class AppCountryPicker {
+  AppCountryPicker._();
+
+  /// Shows the country picker and returns the selected country (or null if dismissed).
+  static Future<AppCountryCode?> show(
+    BuildContext context, {
+    AppCountryCode? selected,
+  }) {
+    return showModalBottomSheet<AppCountryCode>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => _CountryPickerSheet(selected: selected),
+    );
+  }
+}
+
+class _CountryPickerSheet extends StatefulWidget {
+  final AppCountryCode? selected;
+  const _CountryPickerSheet({this.selected});
+
+  @override
+  State<_CountryPickerSheet> createState() => _CountryPickerSheetState();
+}
+
+class _CountryPickerSheetState extends State<_CountryPickerSheet> {
+  final _searchCtrl = TextEditingController();
+  List<AppCountryCode> _filtered = AppCountryCodes.all;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchCtrl.addListener(_filter);
+  }
+
+  void _filter() {
+    final q = _searchCtrl.text.trim().toLowerCase();
+    setState(() {
+      _filtered =
+          q.isEmpty
+              ? AppCountryCodes.all
+              : AppCountryCodes.all
+                  .where(
+                    (c) =>
+                        c.name.toLowerCase().contains(q) || c.code.contains(q),
+                  )
+                  .toList();
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.6,
+      minChildSize: 0.45,
+      maxChildSize: 0.85,
+      expand: false,
+      builder:
+          (_, scrollCtrl) => Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+            ),
+            child: Column(
+              children: [
+                // Handle + header
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 40,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade300,
+                            borderRadius: BorderRadius.circular(99),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      const Text(
+                        'Código de país',
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF1E293B),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      // Search
+                      TextField(
+                        controller: _searchCtrl,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF1E293B),
+                        ),
+                        decoration: InputDecoration(
+                          hintText: 'Buscar país...',
+                          hintStyle: const TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFF8A94A6),
+                          ),
+                          prefixIcon: const Icon(
+                            Icons.search_rounded,
+                            size: 18,
+                            color: AppColors.headerBottom,
+                          ),
+                          filled: true,
+                          fillColor: const Color(0xFFF1F5F9),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 10,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Divider(color: Colors.grey.shade100, height: 1),
+                    ],
+                  ),
+                ),
+
+                // List
+                Expanded(
+                  child:
+                      _filtered.isEmpty
+                          ? const Center(
+                            child: Text(
+                              'Sin resultados',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Color(0xFF8A94A6),
+                              ),
+                            ),
+                          )
+                          : ListView.builder(
+                            controller: scrollCtrl,
+                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                            itemCount: _filtered.length,
+                            itemBuilder: (_, i) {
+                              final c = _filtered[i];
+                              final isSelected = c == widget.selected;
+                              return InkWell(
+                                onTap: () => Navigator.pop(context, c),
+                                borderRadius: BorderRadius.circular(12),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 150),
+                                  margin: const EdgeInsets.only(bottom: 4),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 12,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color:
+                                        isSelected
+                                            ? AppColors.headerBottom
+                                                .withOpacity(0.07)
+                                            : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color:
+                                          isSelected
+                                              ? AppColors.headerBottom
+                                                  .withOpacity(0.25)
+                                              : Colors.transparent,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Text(
+                                        c.flag,
+                                        style: const TextStyle(fontSize: 22),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Text(
+                                          c.name,
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                            color:
+                                                isSelected
+                                                    ? AppColors.headerBottom
+                                                    : const Color(0xFF3D4554),
+                                          ),
+                                        ),
+                                      ),
+                                      Text(
+                                        c.code,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w700,
+                                          color:
+                                              isSelected
+                                                  ? AppColors.headerBottom
+                                                  : const Color(0xFF6B7280),
+                                        ),
+                                      ),
+                                      if (isSelected) ...[
+                                        const SizedBox(width: 8),
+                                        const Icon(
+                                          Icons.check_rounded,
+                                          color: AppColors.headerBottom,
+                                          size: 18,
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                ),
+              ],
+            ),
+          ),
+    );
+  }
+}
+
+// ─── Phone field widget ───────────────────────────────────────────────────────
+/// Drop-in phone field with country code button.
+///
+/// ```dart
+/// AppPhoneField(
+///   selectedCountry: _country,
+///   numberController: _phoneCtrl,
+///   onPickCountry: () async {
+///     final picked = await AppCountryPicker.show(context, selected: _country);
+///     if (picked != null) setState(() => _country = picked);
+///   },
+/// )
+/// ```
+class AppPhoneField extends StatelessWidget {
+  final AppCountryCode selectedCountry;
+  final TextEditingController numberController;
+  final VoidCallback onPickCountry;
+  final String hint;
+  final bool readOnly;
+
+  const AppPhoneField({
+    super.key,
+    required this.selectedCountry,
+    required this.numberController,
+    required this.onPickCountry,
+    this.hint = '5555 1234',
+    this.readOnly = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.borderSoft),
+      ),
+      child: Row(
+        children: [
+          // Country picker button
+          GestureDetector(
+            onTap: readOnly ? null : onPickCountry,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+              decoration: BoxDecoration(
+                border: Border(right: BorderSide(color: AppColors.borderSoft)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    selectedCountry.flag,
+                    style: const TextStyle(fontSize: 20),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    selectedCountry.code,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color:
+                          readOnly
+                              ? AppColors.textSecondary
+                              : AppColors.headerBottom,
+                    ),
+                  ),
+                  if (!readOnly) ...[
+                    const SizedBox(width: 4),
+                    Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      size: 16,
+                      color: AppColors.headerBottom.withOpacity(0.6),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+
+          // Number input
+          Expanded(
+            child: TextField(
+              controller: numberController,
+              readOnly: readOnly,
+              keyboardType: TextInputType.phone,
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'[0-9\s\-]')),
+              ],
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color:
+                    readOnly
+                        ? AppColors.textSecondary
+                        : const Color(0xFF1E293B),
+              ),
+              decoration: InputDecoration(
+                hintText: hint,
+                hintStyle: const TextStyle(
+                  fontSize: 13,
+                  color: Color(0xFF8A94A6),
+                ),
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 14,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

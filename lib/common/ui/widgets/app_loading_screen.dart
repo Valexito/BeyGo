@@ -1,7 +1,7 @@
 // lib/common/utils/components/ui/app_loading_screen.dart
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:mapbox_api/common/components/ui/app_styles.dart';
+import 'package:mapbox_api/common/ui/components/app_styles.dart';
 
 /// Reusable animated loading screen.
 ///

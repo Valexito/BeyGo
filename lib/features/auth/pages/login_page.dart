@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import 'package:mapbox_api/common/components/ui/app_styles.dart';
-import 'package:mapbox_api/common/components/ui/my_textfield.dart';
-import 'package:mapbox_api/common/components/ui/my_password_field.dart';
-import 'package:mapbox_api/common/components/ui/my_button.dart';
+import 'package:mapbox_api/common/ui/components/app_styles.dart';
+import 'package:mapbox_api/common/ui/components/my_textfield.dart';
+import 'package:mapbox_api/common/ui/components/my_password_field.dart';
+import 'package:mapbox_api/common/ui/components/my_button.dart';
 
 import 'package:mapbox_api/features/auth/components/forgot_password_dialog.dart';
 import 'package:mapbox_api/features/auth/components/verify_email_page.dart';
@@ -271,7 +271,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
 
               // Hero section
               Positioned(
-                top: screen.height * 0.07,
+                top: screen.height * 0.04,
                 left: 28,
                 right: 28,
                 child: Column(
@@ -322,7 +322,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
 
               // Content sheet
               Positioned(
-                top: screen.height * 0.28,
+                top: screen.height * 0.23,
                 left: 0,
                 right: 0,
                 bottom: 0,
