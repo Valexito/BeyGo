@@ -1,10 +1,11 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 
-import 'package:mapbox_api/common/services/notification_service.dart'; // ← NEW
+import 'package:mapbox_api/common/services/notification_service.dart';
 
 import 'package:mapbox_api/features/reservations/pages/route_view_page.dart';
 import 'firebase_options.dart';
@@ -33,8 +34,18 @@ Future<void> main() async {
   );
   await FirebaseAppCheck.instance.setTokenAutoRefreshEnabled(true);
 
-  // ✅ Initialize push notifications (FCM token saved to Firestore)
+  // Init FCM (background handler, local notifications, channel setup).
+  // Token is NOT saved here because the user may not be authenticated yet.
   await NotificationService.instance.init();
+
+  // ✅ THE FIX: save FCM token as soon as auth state is known.
+  // This fires immediately on launch if a session already exists,
+  // OR after the user logs in for the first time — covering both cases.
+  FirebaseAuth.instance.authStateChanges().listen((user) {
+    if (user != null) {
+      NotificationService.instance.onSignIn();
+    }
+  });
 
   runApp(const ProviderScope(child: MyApp()));
 }
@@ -48,11 +59,7 @@ class MyApp extends StatelessWidget {
       title: 'Mapa con Parqueos',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.build(),
-
-      builder: (context, child) {
-        return SafeArea(child: child!);
-      },
-
+      builder: (context, child) => SafeArea(child: child!),
       home: const AuthGate(),
       routes: {
         '/auth': (_) => const AuthGate(),
