@@ -11,15 +11,30 @@ import '../../core/pages/home_switch.dart';
 import '../components/verify_email_page.dart';
 import 'auth_flow_page.dart';
 
-class AuthGate extends ConsumerWidget {
+class AuthGate extends ConsumerStatefulWidget {
   const AuthGate({super.key});
 
-  bool _isPasswordUser(User user) {
-    return user.providerData.any((p) => p.providerId == 'password');
+  @override
+  ConsumerState<AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends ConsumerState<AuthGate> {
+  String? _lastUid;
+  bool? _cachedCanEnter;
+
+  bool _isPasswordUser(User user) =>
+      user.providerData.any((p) => p.providerId == 'password');
+
+  void _clearProvidersForUid(String uid) {
+    ref.invalidate(canEnterAppProvider(uid));
+    ref.invalidate(isProfileCompleteProvider(uid));
+    ref.invalidate(myProfileStreamProvider);
+    ref.invalidate(myRoleStreamProvider);
+    ref.invalidate(iOwnAtLeastOneParkingProvider);
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final authAsync = ref.watch(authStateChangesProvider);
 
     return authAsync.when(
@@ -30,25 +45,52 @@ class AuthGate extends ConsumerWidget {
           ),
       error: (_, __) => const AuthFlowPage(),
       data: (user) {
-        // No user — show login/register
-        if (user == null) return const AuthFlowPage();
+        // ── Signed out ──────────────────────────────────────────────────────
+        if (user == null) {
+          if (_lastUid != null) {
+            final prev = _lastUid!;
+            _lastUid = null;
+            _cachedCanEnter = null;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) _clearProvidersForUid(prev);
+            });
+          }
+          return const AuthFlowPage();
+        }
 
-        // Password user with unverified email
+        // ── Email not verified ──────────────────────────────────────────────
         if (_isPasswordUser(user) && !user.emailVerified) {
           return VerifyEmailPage(user: user);
         }
 
-        // Check if profile is complete
+        // ── User switched accounts ──────────────────────────────────────────
+        if (_lastUid != null && _lastUid != user.uid) {
+          final prev = _lastUid!;
+          _cachedCanEnter = null;
+          // Clear previous user's providers so their streams stop
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) _clearProvidersForUid(prev);
+          });
+        }
+        _lastUid = user.uid;
+
+        // ── Already confirmed this user can enter ───────────────────────────
+        if (_cachedCanEnter == true) return const HomeSwitch();
+
+        // ── Check Firestore ─────────────────────────────────────────────────
         final canEnterAsync = ref.watch(canEnterAppProvider(user.uid));
 
         return canEnterAsync.when(
-          loading:
-              () => const AppLoadingScreen(
-                message: 'Verificando perfil...',
-                variant: LoadingVariant.profile,
-              ),
+          loading: () {
+            if (_cachedCanEnter == true) return const HomeSwitch();
+            return const AppLoadingScreen(
+              message: 'Verificando perfil...',
+              variant: LoadingVariant.profile,
+            );
+          },
           error: (_, __) => CompleteProfilePage(user: user, isNewUser: false),
           data: (canEnter) {
+            _cachedCanEnter = canEnter;
             if (canEnter) return const HomeSwitch();
             return CompleteProfilePage(user: user, isNewUser: false);
           },

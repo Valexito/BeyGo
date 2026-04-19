@@ -186,13 +186,24 @@ final myRoleStreamProvider = StreamProvider<UserRole>((ref) {
 });
 
 // ---------- ¿puede entrar a la app? ----------
-final canEnterAppProvider = FutureProvider.autoDispose.family<bool, String>((
+// ✅ FIX: sin autoDispose + retry en PERMISSION_DENIED (ocurre durante cambio de sesión)
+final canEnterAppProvider = FutureProvider.family<bool, String>((
   ref,
   uid,
 ) async {
+  // Verifica que el uid del provider coincida con el usuario actual
+  // Evita race condition durante cambio de sesión
+  final currentUid = FirebaseAuth.instance.currentUser?.uid;
+  if (currentUid != uid) {
+    // El usuario cambió, espera un momento y reverifica
+    await Future.delayed(const Duration(milliseconds: 500));
+    final recheck = FirebaseAuth.instance.currentUser?.uid;
+    if (recheck != uid) return false;
+  }
+
   final db = ref.watch(firestoreProvider);
 
-  try {
+  Future<bool> _check() async {
     final doc = await db
         .collection('users')
         .doc(uid)
@@ -206,9 +217,7 @@ final canEnterAppProvider = FutureProvider.autoDispose.family<bool, String>((
     final roleStr = ((data['role'] as String?) ?? '').trim();
     final role = parseRole(roleStr);
 
-    if (role == UserRole.provider || role == UserRole.admin) {
-      return true;
-    }
+    if (role == UserRole.provider || role == UserRole.admin) return true;
 
     String s(dynamic v) => (v as String? ?? '').trim();
 
@@ -233,7 +242,26 @@ final canEnterAppProvider = FutureProvider.autoDispose.family<bool, String>((
         .timeout(const Duration(seconds: 8));
 
     return owns.docs.isNotEmpty;
-  } catch (_) {
+  }
+
+  try {
+    return await _check();
+  } catch (e) {
+    final msg = e.toString();
+    // PERMISSION_DENIED durante cambio de sesión → reintenta después de que
+    // Firebase Auth termine de autenticar al nuevo usuario
+    if (msg.contains('PERMISSION_DENIED') ||
+        msg.contains('permission-denied')) {
+      await Future.delayed(const Duration(seconds: 2));
+      // Verifica que el uid aún sea el usuario actual antes de reintentar
+      final currentAfterDelay = FirebaseAuth.instance.currentUser?.uid;
+      if (currentAfterDelay != uid) return false;
+      try {
+        return await _check();
+      } catch (_) {
+        return false;
+      }
+    }
     return false;
   }
 });
