@@ -1,9 +1,17 @@
+// lib/features/reservations/components/reservation_details_sheet.dart
+//
+// ✅ ADDED: Rating dialog shown to USER after exit is approved (reservation completes)
+// ✅ Listens to reservation stream — when state → 'completed', show rating popup
+//
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'package:mapbox_api/common/ui/components/app_styles.dart';
 import 'package:mapbox_api/common/ui/components/my_button.dart';
 import 'package:mapbox_api/common/ui/components/my_text.dart';
+import 'package:mapbox_api/features/reservations/components/rating_dialog.dart';
 import 'package:mapbox_api/features/reservations/components/reservation_dialogs.dart';
 import 'package:mapbox_api/features/reservations/models/reservation.dart';
 import 'package:mapbox_api/features/reservations/providers/reservations_providers.dart';
@@ -22,13 +30,41 @@ class _ReservationDetailsSheetState
     extends ConsumerState<ReservationDetailsSheet> {
   bool _isProcessing = false;
 
+  // Track if we've already shown the rating dialog for this reservation
+  bool _ratingShown = false;
+
   @override
   Widget build(BuildContext context) {
     final requestExit = ref.read(requestExitProvider);
     final complete = ref.read(completeReservationWithBillingProvider);
     final cancel = ref.read(cancelReservationProvider);
-    final reservation = widget.reservation;
     final controlAsync = ref.watch(userReservationControlProvider);
+
+    // ✅ Listen to live reservation updates — detect exit approved
+    final liveAsync = ref.watch(
+      parkingStreamProvider(widget.reservation.parkingId),
+    );
+    // We actually watch the reservation itself via reservationStreamProvider
+    final reservationAsync = ref.watch(
+      _reservationStreamProvider(widget.reservation.id),
+    );
+
+    final reservation = reservationAsync.maybeWhen(
+      data: (r) => r,
+      orElse: () => widget.reservation,
+    );
+
+    // ✅ Show rating dialog when reservation becomes 'completed'
+    if (!_ratingShown &&
+        reservation.state == 'completed' &&
+        reservation.exitStatus == 'approved') {
+      _ratingShown = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
+        await showRatingDialog(context, reservation: reservation);
+        if (mounted) Navigator.of(context).pop();
+      });
+    }
 
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 18, 20, 26),
@@ -83,9 +119,7 @@ class _ReservationDetailsSheetState
     required int maxStrikes,
     required bool limitReached,
   }) {
-    final isPending = reservation.state == 'pending';
     final isApproved = reservation.providerApprovalStatus == 'approved';
-    final isRejected = reservation.providerApprovalStatus == 'rejected';
 
     final canCancel =
         reservation.state == 'active' &&
@@ -96,6 +130,7 @@ class _ReservationDetailsSheetState
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
+        // Handle bar
         Container(
           width: 42,
           height: 5,
@@ -105,6 +140,8 @@ class _ReservationDetailsSheetState
             borderRadius: BorderRadius.circular(999),
           ),
         ),
+
+        // Header icon
         Container(
           width: 64,
           height: 64,
@@ -150,6 +187,8 @@ class _ReservationDetailsSheetState
           ),
         ),
         const SizedBox(height: 18),
+
+        // Info box
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(16),
@@ -191,7 +230,6 @@ class _ReservationDetailsSheetState
                         ? 'Q ${reservation.pricePerHour}/hora'
                         : 'Pendiente',
               ),
-
               if (reservation.state == 'completed') ...[
                 const SizedBox(height: 12),
                 _InfoRow(
@@ -212,7 +250,6 @@ class _ReservationDetailsSheetState
                           : 'Pendiente',
                 ),
               ],
-
               const SizedBox(height: 12),
               _InfoRow(
                 icon: Icons.receipt_long_outlined,
@@ -235,12 +272,15 @@ class _ReservationDetailsSheetState
           ),
         ),
         const SizedBox(height: 20),
+
+        // ── Action buttons ─────────────────────────────────────────────
         if (reservation.state == 'pending')
           MyButton(
             text: 'Esperando aprobación del dueño...',
             onTap: null,
             margin: EdgeInsets.zero,
           ),
+
         if (reservation.state == 'active' &&
             reservation.providerApprovalStatus != 'approved')
           MyButton(
@@ -248,12 +288,13 @@ class _ReservationDetailsSheetState
             onTap: null,
             margin: EdgeInsets.zero,
           ),
+
         if (reservation.state == 'active' &&
             reservation.exitStatus == 'none' &&
-            reservation.providerApprovalStatus == 'approved')
+            isApproved)
           Row(
             children: [
-              if (canCancel)
+              if (canCancel) ...[
                 Expanded(
                   child: SizedBox(
                     height: 48,
@@ -272,23 +313,19 @@ class _ReservationDetailsSheetState
                                             reservation,
                                           ),
                                     );
-
                                 if (confirm != true || !mounted) return;
-
                                 setState(() => _isProcessing = true);
                                 try {
                                   await cancel(reservation: reservation);
-                                  if (!mounted) return;
-                                  Navigator.pop(context);
+                                  if (mounted) Navigator.pop(context);
                                 } catch (e, st) {
                                   debugPrint('CANCEL ERROR: $e');
                                   debugPrintStack(stackTrace: st);
-                                  if (!mounted) return;
-                                  _showError(context, e.toString());
+                                  if (mounted)
+                                    _showError(context, e.toString());
                                 } finally {
-                                  if (mounted) {
+                                  if (mounted)
                                     setState(() => _isProcessing = false);
-                                  }
                                 }
                               },
                       style: OutlinedButton.styleFrom(
@@ -310,7 +347,8 @@ class _ReservationDetailsSheetState
                     ),
                   ),
                 ),
-              if (canCancel) const SizedBox(width: 12),
+                const SizedBox(width: 12),
+              ],
               Expanded(
                 child: MyButton(
                   text: _isProcessing ? 'Procesando...' : 'Solicitar salida',
@@ -319,45 +357,37 @@ class _ReservationDetailsSheetState
                           ? null
                           : () async {
                             final now = DateTime.now();
-                            final durationMinutes =
+                            final dur =
                                 now
                                     .difference(reservation.reservedAt)
                                     .inMinutes;
+                            final ph = reservation.pricePerHour ?? 0;
+                            final est = (ph / 60.0) * dur;
 
-                            final pricePerHour = reservation.pricePerHour ?? 0;
-                            final estimated =
-                                (pricePerHour / 60.0) * durationMinutes;
-
-                            final updatedReservation = reservation.copyWith(
-                              estimatedAmount: estimated.toInt(),
-                              estimatedDurationMinutes: durationMinutes,
+                            final updated = reservation.copyWith(
+                              estimatedAmount: est.toInt(),
+                              estimatedDurationMinutes: dur,
                               exitLockedAt: now,
                             );
 
                             final confirm =
                                 await ReservationDialogs.showExitDialog(
                                   context,
-                                  reservation: updatedReservation,
+                                  reservation: updated,
                                 );
-
                             if (confirm != true || !mounted) return;
 
                             setState(() => _isProcessing = true);
                             try {
-                              await requestExit(
-                                reservation: updatedReservation,
-                              );
-                              if (!mounted) return;
-                              Navigator.pop(context);
+                              await requestExit(reservation: updated);
+                              if (mounted) Navigator.pop(context);
                             } catch (e, st) {
                               debugPrint('EXIT ERROR: $e');
                               debugPrintStack(stackTrace: st);
-                              if (!mounted) return;
-                              _showError(context, e.toString());
+                              if (mounted) _showError(context, e.toString());
                             } finally {
-                              if (mounted) {
+                              if (mounted)
                                 setState(() => _isProcessing = false);
-                              }
                             }
                           },
                   margin: EdgeInsets.zero,
@@ -366,13 +396,16 @@ class _ReservationDetailsSheetState
               ),
             ],
           ),
+
         if (reservation.state == 'active' &&
             reservation.exitStatus == 'requested')
           MyButton(
-            text: 'Esperando aprobación...',
+            text: 'Esperando aprobación de salida...',
             onTap: null,
             margin: EdgeInsets.zero,
           ),
+
+        // ✅ "Finalizar y pagar" — triggers rating dialog via stream
         if (reservation.state == 'active' &&
             reservation.exitStatus == 'approved')
           MyButton(
@@ -384,17 +417,13 @@ class _ReservationDetailsSheetState
                       setState(() => _isProcessing = true);
                       try {
                         await complete(r: reservation);
-                        if (!mounted) return;
-                        Navigator.pop(context);
+                        // Rating dialog is triggered by the stream listener above
+                        // when state changes to 'completed'
                       } catch (e, st) {
                         debugPrint('COMPLETE ERROR: $e');
                         debugPrintStack(stackTrace: st);
-                        if (!mounted) return;
-                        _showError(context, e.toString());
-                      } finally {
-                        if (mounted) {
-                          setState(() => _isProcessing = false);
-                        }
+                        if (mounted) _showError(context, e.toString());
+                        if (mounted) setState(() => _isProcessing = false);
                       }
                     },
             margin: EdgeInsets.zero,
@@ -402,6 +431,8 @@ class _ReservationDetailsSheetState
       ],
     );
   }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
 
   Future<bool?> _showCancelConfirmationDialog(
     BuildContext context, {
@@ -413,170 +444,169 @@ class _ReservationDetailsSheetState
 
     return showDialog<bool>(
       context: context,
-      builder: (ctx) {
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          insetPadding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Container(
-            decoration: BoxDecoration(
-              color: AppColors.cardBg,
-              borderRadius: BorderRadius.circular(AppDims.radiusXl),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primaryDark.withOpacity(0.10),
-                  blurRadius: 28,
-                  offset: const Offset(0, 14),
-                ),
-              ],
-            ),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(22, 24, 22, 22),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 62,
-                    height: 62,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [AppColors.headerTop, AppColors.headerBottom],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.headerBottom.withOpacity(0.22),
-                          blurRadius: 16,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.warning_amber_rounded,
-                      color: Colors.white,
-                      size: 30,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 18,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.primarySoft.withOpacity(0.25),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const MyText(
-                      text: 'Confirmar cancelación',
-                      variant: MyTextVariant.normalBold,
-                      customColor: AppColors.headerBottom,
-                      fontSize: 16,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  const MyText(
-                    text: '¿Deseas cancelar esta reservación?',
-                    variant: MyTextVariant.subtitle,
-                    textAlign: TextAlign.center,
-                    fontSize: 13,
-                  ),
-                  const SizedBox(height: 10),
-                  MyText(
-                    text:
-                        freeWindow
-                            ? 'Estás dentro del tiempo permitido. No se agregará strike.'
-                            : 'Esta cancelación agregará un strike a tu cuenta.',
-                    variant: MyTextVariant.bodyMuted,
-                    textAlign: TextAlign.center,
-                    fontSize: 12,
-                  ),
-                  const SizedBox(height: 12),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF7F7F9),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Column(
-                      children: [
-                        const MyText(
-                          text: 'Strikes',
-                          variant: MyTextVariant.bodyMuted,
-                          fontSize: 12,
-                        ),
-                        const SizedBox(height: 4),
-                        MyText(
-                          text: '$previewStrike/$maxStrikes',
-                          variant: MyTextVariant.bodyBold,
-                          fontSize: 18,
-                          customColor: AppColors.headerBottom,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: SizedBox(
-                          height: 48,
-                          child: OutlinedButton(
-                            onPressed: () => Navigator.pop(ctx, false),
-                            style: OutlinedButton.styleFrom(
-                              side: BorderSide(
-                                color: AppColors.headerBottom.withOpacity(0.35),
-                                width: 1.2,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(
-                                  AppDims.radiusLg,
-                                ),
-                              ),
-                              backgroundColor: Colors.white,
-                            ),
-                            child: const MyText(
-                              text: 'No',
-                              variant: MyTextVariant.normalBold,
-                              customColor: AppColors.headerBottom,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: MyButton(
-                          onTap: () => Navigator.pop(ctx, true),
-                          text: 'Aceptar',
-                          margin: EdgeInsets.zero,
-                          height: 48,
-                        ),
-                      ),
-                    ],
+      builder:
+          (ctx) => Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Container(
+              decoration: BoxDecoration(
+                color: AppColors.cardBg,
+                borderRadius: BorderRadius.circular(AppDims.radiusXl),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primaryDark.withOpacity(0.10),
+                    blurRadius: 28,
+                    offset: const Offset(0, 14),
                   ),
                 ],
               ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(22, 24, 22, 22),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 62,
+                      height: 62,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [AppColors.headerTop, AppColors.headerBottom],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.headerBottom.withOpacity(0.22),
+                            blurRadius: 16,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.warning_amber_rounded,
+                        color: Colors.white,
+                        size: 30,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primarySoft.withOpacity(0.25),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const MyText(
+                        text: 'Confirmar cancelación',
+                        variant: MyTextVariant.normalBold,
+                        customColor: AppColors.headerBottom,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    const MyText(
+                      text: '¿Deseas cancelar esta reservación?',
+                      variant: MyTextVariant.subtitle,
+                      textAlign: TextAlign.center,
+                      fontSize: 13,
+                    ),
+                    const SizedBox(height: 10),
+                    MyText(
+                      text:
+                          freeWindow
+                              ? 'Estás dentro del tiempo permitido. No se agregará strike.'
+                              : 'Esta cancelación agregará un strike a tu cuenta.',
+                      variant: MyTextVariant.bodyMuted,
+                      textAlign: TextAlign.center,
+                      fontSize: 12,
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF7F7F9),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Column(
+                        children: [
+                          const MyText(
+                            text: 'Strikes',
+                            variant: MyTextVariant.bodyMuted,
+                            fontSize: 12,
+                          ),
+                          const SizedBox(height: 4),
+                          MyText(
+                            text: '$previewStrike/$maxStrikes',
+                            variant: MyTextVariant.bodyBold,
+                            fontSize: 18,
+                            customColor: AppColors.headerBottom,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: SizedBox(
+                            height: 48,
+                            child: OutlinedButton(
+                              onPressed: () => Navigator.pop(ctx, false),
+                              style: OutlinedButton.styleFrom(
+                                side: BorderSide(
+                                  color: AppColors.headerBottom.withOpacity(
+                                    0.35,
+                                  ),
+                                  width: 1.2,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(
+                                    AppDims.radiusLg,
+                                  ),
+                                ),
+                                backgroundColor: Colors.white,
+                              ),
+                              child: const MyText(
+                                text: 'No',
+                                variant: MyTextVariant.normalBold,
+                                customColor: AppColors.headerBottom,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: MyButton(
+                            onTap: () => Navigator.pop(ctx, true),
+                            text: 'Aceptar',
+                            margin: EdgeInsets.zero,
+                            height: 48,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
-        );
-      },
     );
   }
 
   bool _isWithinFreeCancellationWindowLocal(Reservation reservation) {
     final now = DateTime.now();
-
     if (reservation.freeCancellationUntil != null) {
       return now.isBefore(reservation.freeCancellationUntil!) ||
           now.isAtSameMomentAs(reservation.freeCancellationUntil!);
     }
-
     final elapsedMinutes = now.difference(reservation.reservedAt).inMinutes;
     return elapsedMinutes <= Reservation.freeCancellationWindowMinutesLimit;
   }
@@ -587,22 +617,19 @@ class _ReservationDetailsSheetState
     if (r.state == 'completed') return 'Completada';
     if (r.state == 'cancelled') return 'Cancelada';
     if (r.state == 'cancellation_requested') return 'Cancelación pendiente';
-    if (r.state == 'active' && r.exitStatus == 'approved') {
+    if (r.state == 'active' && r.exitStatus == 'approved')
       return 'Salida aprobada';
-    }
-    if (r.state == 'active' && r.exitStatus == 'requested') {
+    if (r.state == 'active' && r.exitStatus == 'requested')
       return 'Salida solicitada';
-    }
     return 'Activa';
   }
 
   String _formatDateTime(DateTime value) {
-    final y = value.year.toString().padLeft(4, '0');
-    final m = value.month.toString().padLeft(2, '0');
-    final d = value.day.toString().padLeft(2, '0');
-    final h = value.hour.toString().padLeft(2, '0');
-    final min = value.minute.toString().padLeft(2, '0');
-    return '$d/$m/$y $h:$min';
+    return '${value.day.toString().padLeft(2, '0')}/'
+        '${value.month.toString().padLeft(2, '0')}/'
+        '${value.year} '
+        '${value.hour.toString().padLeft(2, '0')}:'
+        '${value.minute.toString().padLeft(2, '0')}';
   }
 
   String _formatDuration(int minutes) {
@@ -617,6 +644,21 @@ class _ReservationDetailsSheetState
   }
 }
 
+// ─── Stream provider for a single reservation (live updates) ──────────────
+final _reservationStreamProvider = StreamProvider.autoDispose
+    .family<Reservation, String>((ref, id) {
+      return FirebaseFirestore.instance
+          .collection('reservations')
+          .doc(id)
+          .snapshots()
+          .map(
+            (snap) => Reservation.fromDoc(
+              snap as DocumentSnapshot<Map<String, dynamic>>,
+            ),
+          );
+    });
+
+// ─── InfoRow widget ───────────────────────────────────────────────────────
 class _InfoRow extends StatelessWidget {
   final IconData icon;
   final String label;

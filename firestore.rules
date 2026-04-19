@@ -1,0 +1,361 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{db}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function emailVerified() {
+      return request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      return signedIn() &&
+        request.auth.token.email in [
+          "alexarpe.15@gmail.com"
+        ];
+    }
+
+    function isParkingOwner(pid) {
+      return signedIn()
+        && get(/databases/$(db)/documents/parkings/$(pid)).data.ownerID == request.auth.uid;
+    }
+
+    function isSelf(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function isReservationOwner() {
+      return signedIn() && resource.data.ownerId == request.auth.uid;
+    }
+
+    match /users/{uid} {
+      allow read: if isSelf(uid) || isAdmin();
+
+      allow create: if isSelf(uid)
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly([
+          'uid',
+          'email',
+          'displayName',
+          'name',
+          'phone',
+          'photoURL',
+          'role',
+          'profileCompleted',
+          'notificationSettings',
+          'providerProfile',
+          'providerStatus',
+          'dob',
+          'gender',
+          'updatedAt',
+          'createdAt'
+        ]);
+
+      allow update: if
+        (
+          isSelf(uid)
+          && request.resource.data.diff(resource.data).changedKeys().hasOnly([
+            'uid',
+            'email',
+            'displayName',
+            'name',
+            'phone',
+            'photoURL',
+            'role',
+            'profileCompleted',
+            'notificationSettings',
+            'providerProfile',
+            'providerStatus',
+            'dob',
+            'gender',
+            'updatedAt',
+            'createdAt',
+            'plateType',
+            'vehiclePlate',
+            'vehicleType',
+            'fcmToken'        // ← FCM push notifications token
+          ])
+          && request.resource.data.uid == request.auth.uid
+        )
+        ||
+        (
+          isAdmin()
+          && request.resource.data.diff(resource.data).changedKeys().hasOnly([
+            'providerStatus',
+            'role',
+            'updatedAt'
+          ])
+        );
+    }
+
+    match /support_reports/{reportId} {
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.reportId is string
+        && request.resource.data.reportType is string
+        && request.resource.data.subject is string
+        && request.resource.data.message is string;
+
+      allow read: if signedIn()
+        && (
+          resource.data.userId == request.auth.uid ||
+          isAdmin()
+        );
+
+      allow update: if isAdmin();
+      allow delete: if false;
+    }
+
+    match /users/{uid}/{any=**} {
+      allow read, create, update: if isSelf(uid) || isAdmin();
+      allow delete: if isSelf(uid) || isAdmin();
+    }
+
+    match /users/{uid} {
+      allow delete: if isSelf(uid) || isAdmin();
+    }
+
+    match /users/{uid}/reservation_control/{docId} {
+      allow read: if isSelf(uid) || isAdmin();
+
+      allow create: if isSelf(uid)
+        && docId == "main"
+        && request.resource.data.keys().hasOnly([
+          'userId',
+          'cancelAttempts',
+          'restrictedUntil',
+          'updatedAt',
+          'createdAt'
+        ])
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.cancelAttempts is int
+        && (
+          !request.resource.data.keys().hasAny(['restrictedUntil']) ||
+          request.resource.data.restrictedUntil == null ||
+          request.resource.data.restrictedUntil is timestamp
+        );
+
+      allow update: if
+        (
+          isSelf(uid)
+          && docId == "main"
+          && resource.data.userId == request.auth.uid
+          && request.resource.data.userId == request.auth.uid
+          && request.resource.data.diff(resource.data).changedKeys().hasOnly([
+            'cancelAttempts',
+            'restrictedUntil',
+            'updatedAt'
+          ])
+          && (
+            !request.resource.data.keys().hasAny(['cancelAttempts']) ||
+            request.resource.data.cancelAttempts is int
+          )
+          && (
+            !request.resource.data.keys().hasAny(['restrictedUntil']) ||
+            request.resource.data.restrictedUntil == null ||
+            request.resource.data.restrictedUntil is timestamp
+          )
+        )
+        ||
+        isAdmin();
+
+      allow delete: if false;
+    }
+
+    match /users/{uid}/vehicles/{vehicleId} {
+      allow read: if isSelf(uid) || isAdmin();
+
+      allow create: if isSelf(uid)
+        && request.resource.data.keys().hasOnly([
+          'type',
+          'plate',
+          'isPrimary',
+          'createdAt'
+        ])
+        && request.resource.data.type is string
+        && request.resource.data.plate is string
+        && request.resource.data.isPrimary is bool;
+
+      allow update: if isSelf(uid)
+        && request.resource.data.diff(resource.data).changedKeys().hasOnly([
+          'type',
+          'plate',
+          'isPrimary',
+          'updatedAt'
+        ]);
+
+      allow delete: if isSelf(uid) || isAdmin();
+    }
+
+    match /parkings/{parkingId} {
+      allow read: if true;
+      allow create: if
+        (signedIn() && request.resource.data.ownerID == request.auth.uid)
+        || isAdmin();
+
+      allow update, delete: if isParkingOwner(parkingId) || isAdmin();
+
+      // ── Star ratings submitted by users after completed reservations ──────
+      match /reviews/{reviewId} {
+        allow read: if true;
+        allow create, update: if signedIn()
+          && request.resource.data.uid == request.auth.uid;
+        allow delete: if false;
+      }
+
+      match /spaces/{spaceId} {
+        allow read: if true;
+        allow create, delete: if isParkingOwner(parkingId) || isAdmin();
+
+        allow update: if
+          isAdmin()
+          ||
+          // Owner: can set any status transition
+          (
+            isParkingOwner(parkingId) &&
+            request.resource.data.diff(resource.data).changedKeys()
+              .hasOnly(['status', 'currentReservationId', 'updatedAt'])
+          )
+          ||
+          // User: free → requested (reserveSpaceProvider transaction)
+          (
+            signedIn() &&
+            resource.data.status == "free" &&
+            request.resource.data.status == "requested" &&
+            request.resource.data.diff(resource.data).changedKeys()
+              .hasOnly(['status', 'currentReservationId', 'updatedAt']) &&
+            request.resource.data.currentReservationId is string
+          )
+          ||
+          // User: free → occupied (legacy compat)
+          (
+            signedIn() &&
+            resource.data.status == "free" &&
+            request.resource.data.status == "occupied" &&
+            request.resource.data.diff(resource.data).changedKeys()
+              .hasOnly(['status', 'currentReservationId', 'updatedAt']) &&
+            request.resource.data.currentReservationId is string
+          )
+          ||
+          // User: occupied or requested → free (cancel/complete)
+          (
+            signedIn() &&
+            (resource.data.status == "occupied" || resource.data.status == "requested") &&
+            request.resource.data.status == "free" &&
+            request.resource.data.diff(resource.data).changedKeys()
+              .hasOnly(['status', 'currentReservationId', 'updatedAt'])
+          );
+      }
+    }
+
+    match /reservations/{resId} {
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.parkingId is string
+        && request.resource.data.parkingName is string
+        && request.resource.data.ownerId is string
+        && request.resource.data.spaceNumber is int
+        && request.resource.data.state == "pending"
+        && request.resource.data.providerApprovalStatus == "pending"
+        && request.resource.data.reservedAt is timestamp
+        && (
+          !request.resource.data.keys().hasAny(['exitStatus']) ||
+          request.resource.data.exitStatus == "none"
+        );
+
+      allow read: if signedIn() && (
+        resource.data.userId == request.auth.uid ||
+        isReservationOwner() ||
+        isAdmin()
+      );
+
+      allow update: if signedIn() && (
+
+        // USER
+        (
+          resource.data.userId == request.auth.uid
+          && request.resource.data.diff(resource.data).changedKeys().hasOnly([
+            'state',
+            'cancelRequestedAt',
+            'cancellationReason',
+            'cancellationPenaltyApplied',
+            'providerApprovalStatus',
+            'cancelAttempts',
+            'userCancelAttempts',
+            'restrictedUntil',
+            'exitStatus',
+            'exitRequestedAt',
+            'exitRequestedBy',
+            'exitLockedAt',
+            'estimatedAmount',
+            'estimatedDurationMinutes',
+            'endedAt'
+          ])
+        )
+
+        ||
+
+        // OWNER
+        (
+          isReservationOwner()
+          && request.resource.data.diff(resource.data).changedKeys().hasOnly([
+            'state',
+            'providerApprovalStatus',
+            'reservationNumber',
+            'ownerId',
+            'endedAt',
+            'exitStatus',
+            'exitApprovedAt',
+            'exitApprovedBy',
+            'exitLockedAt',
+            'amount',
+            'durationMinutes',
+            'pricePerHour',
+            'cancellationReason',
+            'cancellationPenaltyApplied',
+            'estimatedAmount',
+            'estimatedDurationMinutes'
+          ])
+        )
+
+        ||
+
+        isAdmin()
+      );
+
+      allow delete: if signedIn() && (
+        resource.data.userId == request.auth.uid || isAdmin()
+      );
+    }
+
+    match /favorites/{favId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.userId == request.auth.uid;
+      allow update: if request.auth != null
+        && request.resource.data.userId == request.auth.uid;
+      allow delete: if request.auth != null;
+    }
+
+    match /provider_applications/{appId} {
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid;
+      allow read: if signedIn() && (
+        resource.data.uid == request.auth.uid || isAdmin()
+      );
+      allow update: if isAdmin();
+      allow delete: if false;
+    }
+
+    match /provider_requests/{requestId} {
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid;
+      allow read: if signedIn()
+        && (resource.data.uid == request.auth.uid || isAdmin());
+      allow update: if isAdmin();
+      allow delete: if false;
+    }
+
+  }
+}

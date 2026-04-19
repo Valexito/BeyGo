@@ -822,3 +822,68 @@ String _generateReservationNumber() {
   final random = (1000 + (now.microsecondsSinceEpoch % 9000)).toString();
   return 'RES-$ts$random';
 }
+// ─────────────────────────────────────────────────────────────────────────────
+// ADD THIS TO THE END OF:
+//   lib/features/reservations/providers/reservations_providers.dart
+//
+// After ownerForceCancelProvider and _generateReservationNumber()
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Owner rejects a pending reservation.
+/// Sets state → 'cancelled', providerApprovalStatus → 'rejected',
+/// and frees the space if it was in 'requested' status.
+final ownerRejectReservationProvider =
+    Provider<Future<void> Function({required Reservation reservation})>((ref) {
+      final db = ref.watch(_dbProvider);
+
+      return ({required Reservation reservation}) async {
+        final reservationRef = _reservationDoc(db, reservation.id);
+        final spaceRef = _spaceDoc(
+          db,
+          reservation.parkingId,
+          reservation.spaceNumber,
+        );
+
+        final now = DateTime.now();
+
+        await db.runTransaction((tx) async {
+          final reservationSnap = await tx.get(reservationRef);
+          final spaceSnap = await tx.get(spaceRef);
+
+          if (!reservationSnap.exists) {
+            throw StateError('La reservación ya no existe.');
+          }
+
+          final latest = Reservation.fromDoc(
+            reservationSnap as DocumentSnapshot<Map<String, dynamic>>,
+          );
+
+          if (latest.state != 'pending') {
+            throw StateError(
+              'Solo se pueden rechazar reservas en estado pendiente.',
+            );
+          }
+
+          tx.update(reservationRef, {
+            'state': 'cancelled',
+            'providerApprovalStatus': 'rejected',
+            'endedAt': Timestamp.fromDate(now),
+            'cancellationReason': 'Rechazada por el propietario',
+          });
+
+          final spaceData = spaceSnap.data() as Map<String, dynamic>? ?? {};
+          final currentStatus =
+              (spaceData['status'] ?? 'free').toString().toLowerCase().trim();
+
+          // Free the space if it was reserved for this reservation
+          if (currentStatus == 'requested' &&
+              spaceData['currentReservationId'] == reservation.id) {
+            tx.set(spaceRef, {
+              'status': 'free',
+              'currentReservationId': null,
+              'updatedAt': FieldValue.serverTimestamp(),
+            }, SetOptions(merge: true));
+          }
+        });
+      };
+    });

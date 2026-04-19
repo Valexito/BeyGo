@@ -1,32 +1,55 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Location -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
-    <!-- API 33+ -->
+
+    <!-- Storage -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-    <!-- API <= 32 -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28"/>
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
 
+    <!-- ✅ FCM: Push notifications (Android 13+) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <uses-permission android:name="android.permission.VIBRATE" />
 
     <application
         android:name="${applicationName}"
         android:label="mapbox_api"
         android:icon="@mipmap/ic_launcher">
 
-        //Google maps api
+        <!-- Google Maps API key -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyC7FJXBLr_cVkfx_nXXR80zBtk7JUFzBS0"/>
 
-        <!-- 🔴 Desactiva la inicialización automática de Firebase -->
+        <!-- Desactiva la inicialización automática de Firebase -->
         <provider
             android:name="com.google.firebase.provider.FirebaseInitProvider"
             android:authorities="${applicationId}.firebaseinitprovider"
             tools:node="remove" />
+
+        <!-- ✅ FCM Service — required for receiving push notifications -->
+        <service
+            android:name="com.google.firebase.messaging.FirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT"/>
+            </intent-filter>
+        </service>
+
+        <!-- ✅ Default notification channel for FCM (Android 8+) -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="parking_app_channel" />
+
+        <!-- ✅ Default notification icon -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@mipmap/ic_launcher" />
 
         <activity
             android:name=".MainActivity"
@@ -46,13 +69,11 @@
             </intent-filter>
         </activity>
 
-        <!-- No borrar: usado por Flutter -->
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
     </application>
 
-    <!-- Visibilidad de paquetes (usado por Flutter) -->
     <queries>
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT" />

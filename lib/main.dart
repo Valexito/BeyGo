@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
+
+import 'package:mapbox_api/common/services/notification_service.dart'; // ← NEW
+
 import 'package:mapbox_api/features/reservations/pages/route_view_page.dart';
 import 'firebase_options.dart';
 import 'common/ui/components/app_styles.dart';
@@ -29,6 +32,9 @@ Future<void> main() async {
     appleProvider: AppleProvider.appAttest,
   );
   await FirebaseAppCheck.instance.setTokenAutoRefreshEnabled(true);
+
+  // ✅ Initialize push notifications (FCM token saved to Firestore)
+  await NotificationService.instance.init();
 
   runApp(const ProviderScope(child: MyApp()));
 }

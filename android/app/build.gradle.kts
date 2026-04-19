@@ -9,11 +9,9 @@ plugins {
 android {
     namespace = "com.dev.parking"
     compileSdk = flutter.compileSdkVersion
-    // Si no necesitas NDK, omite la línea. (Déjala comentada)
-    // ndkVersion = "27.0.12077973"
 
     defaultConfig {
-        applicationId = "com.dev.parking" // Debe coincidir con google-services.json
+        applicationId = "com.dev.parking"
         minSdk = 23
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
@@ -24,27 +22,22 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+        isCoreLibraryDesugaringEnabled = true  // ✅ Required by flutter_local_notifications
     }
+
     kotlinOptions {
         jvmTarget = "11"
     }
 
     buildTypes {
-        // Debug: sin shrink, sin minify (más rápido)
         debug {
             isMinifyEnabled = false
             isShrinkResources = false
         }
-
-        // Release: puedes activar shrink+minify (opcional)
         release {
-            // Si todavía no firmas release, usa firma de debug para poder compilar
             signingConfig = signingConfigs.getByName("debug")
-
-            // Activa optimización cuando estés listo
             isMinifyEnabled = true
             isShrinkResources = true
-
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -52,7 +45,6 @@ android {
         }
     }
 
-    // Evita conflictos de META-INF cuando uses varias libs
     packaging {
         resources {
             excludes += setOf(
@@ -74,18 +66,16 @@ flutter {
 }
 
 dependencies {
-    // BOM centraliza versiones de Firebase
-    implementation(platform("com.google.firebase:firebase-bom:33.2.0"))
+    // ✅ Required by flutter_local_notifications
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 
-    // Solo lo que uses:
+    // Firebase BOM
+    implementation(platform("com.google.firebase:firebase-bom:33.2.0"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
+    implementation("com.google.firebase:firebase-messaging") // ✅ FCM
 
-    // Otras (opcional)
-    // implementation("com.google.firebase:firebase-crashlytics")
-    // implementation("com.google.firebase:firebase-messaging")
-
-    // Multidex si tu app crece
+    // Multidex
     implementation("androidx.multidex:multidex:2.0.1")
 }
