@@ -1,10 +1,11 @@
+// lib/features/auth/providers/auth_providers.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
+import 'package:mapbox_api/common/services/notification_service.dart';
 import 'package:mapbox_api/features/core/providers/firebase_providers.dart'
     show firebaseAuthProvider;
-
 import 'package:mapbox_api/features/users/providers/user_providers.dart';
 
 final authUserStreamProvider = StreamProvider<User?>((ref) {
@@ -68,6 +69,10 @@ class _AuthActions {
 
   Future<void> signOut() async {
     final uid = _auth.currentUser?.uid;
+
+    // ✅ Remove FCM token BEFORE signing out so this device stops receiving
+    // notifications for the user that is leaving.
+    await NotificationService.instance.onSignOut();
 
     try {
       await _ref.read(googleSignInInstanceProvider).signOut();
