@@ -13,6 +13,8 @@ import 'package:mapbox_api/features/reservations/components/reservation_dialogs.
 import 'package:mapbox_api/features/reservations/models/parking.dart';
 import 'package:mapbox_api/features/reservations/pages/reserve_space_content.dart';
 import 'package:mapbox_api/features/reservations/providers/reservations_providers.dart';
+import 'package:mapbox_api/features/users/models/vehicule.dart';
+import 'package:mapbox_api/features/users/providers/user_providers.dart';
 
 class ReserveSpacePage extends ConsumerStatefulWidget {
   final Parking parking;
@@ -26,6 +28,7 @@ class ReserveSpacePage extends ConsumerStatefulWidget {
 class _ReserveSpacePageState extends ConsumerState<ReserveSpacePage> {
   int? selectedSpace;
   bool _isSubmitting = false;
+  Vehicle? _selectedVehicle;
 
   List<String> get gallery {
     final g = <String>[];
@@ -49,11 +52,20 @@ class _ReserveSpacePageState extends ConsumerState<ReserveSpacePage> {
   Future<void> _confirmReservation() async {
     if (selectedSpace == null || _isSubmitting) return;
 
+    final vehicles = ref.read(myVehiclesProvider).asData?.value ?? const [];
+    final vehicle = _selectedVehicle ?? _pickDefaultVehicle(vehicles);
+
+    if (vehicle == null) {
+      _showErrorDialog('Debes agregar o seleccionar un vehículo para reservar.');
+      return;
+    }
+
     final ok = await ReservationDialogs.showConfirmReservationDialog(
       context,
       destination: LatLng(widget.parking.lat, widget.parking.lng),
       parkingName: widget.parking.name,
       spaceNumber: selectedSpace!,
+      vehiclePlate: vehicle.plate,
       pricePerHour:
           ref
               .read(parkingStreamProvider(widget.parking.id))
@@ -72,6 +84,7 @@ class _ReserveSpacePageState extends ConsumerState<ReserveSpacePage> {
         parkingId: widget.parking.id,
         parkingName: widget.parking.name,
         spaceNumber: selectedSpace!,
+        vehiclePlate: vehicle.plate,
       );
 
       if (!mounted) return;
@@ -96,6 +109,126 @@ class _ReserveSpacePageState extends ConsumerState<ReserveSpacePage> {
       _showErrorDialog(e.toString());
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
+
+  Vehicle? _pickDefaultVehicle(List<Vehicle> vehicles) {
+    if (vehicles.isEmpty) return null;
+    if (vehicles.length == 1) return vehicles.first;
+    for (final vehicle in vehicles) {
+      if (vehicle.isPrimary) return vehicle;
+    }
+    return vehicles.first;
+  }
+
+  Future<void> _pickVehicle(List<Vehicle> vehicles) async {
+    if (vehicles.isEmpty) {
+      _showErrorDialog('Debes registrar al menos un vehículo para reservar.');
+      return;
+    }
+
+    if (vehicles.length == 1) {
+      setState(() => _selectedVehicle = vehicles.first);
+      return;
+    }
+
+    final picked = await showModalBottomSheet<Vehicle>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        final current = _selectedVehicle ?? _pickDefaultVehicle(vehicles);
+        return Container(
+          decoration: BoxDecoration(
+            color: sheetContext.appCardBackground,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            border: Border.all(color: sheetContext.appBorderColor),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: sheetContext.appBorderColor,
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                'Selecciona un vehículo',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: sheetContext.appTextPrimaryColor,
+                ),
+              ),
+              const SizedBox(height: 14),
+              ...vehicles.map((vehicle) {
+                final selected = current?.id == vehicle.id;
+                return ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  tileColor:
+                      selected
+                          ? AppColors.headerBottom.withValues(
+                            alpha: sheetContext.isDarkMode ? 0.16 : 0.08,
+                          )
+                          : Colors.transparent,
+                  leading: Icon(
+                    switch (vehicle.type) {
+                      VehicleType.car => Icons.directions_car_rounded,
+                      VehicleType.motorcycle => Icons.two_wheeler_rounded,
+                      VehicleType.other => Icons.commute_rounded,
+                    },
+                    color:
+                        selected
+                            ? AppColors.headerBottom
+                            : sheetContext.appTextPrimaryColor,
+                  ),
+                  title: Text(
+                    vehicle.plate,
+                    style: TextStyle(color: sheetContext.appTextPrimaryColor),
+                  ),
+                  subtitle: Text(
+                    vehicle.type.label,
+                    style: TextStyle(
+                      color: sheetContext.appTextSecondaryColor,
+                    ),
+                  ),
+                  trailing:
+                      selected
+                          ? const Icon(
+                            Icons.check_rounded,
+                            color: AppColors.headerBottom,
+                          )
+                          : vehicle.isPrimary
+                          ? Text(
+                            'Principal',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: sheetContext.appTextSecondaryColor,
+                            ),
+                          )
+                          : null,
+                  onTap: () => Navigator.pop(sheetContext, vehicle),
+                );
+              }),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (picked != null && mounted) {
+      setState(() => _selectedVehicle = picked);
     }
   }
 
@@ -238,11 +371,28 @@ class _ReserveSpacePageState extends ConsumerState<ReserveSpacePage> {
 
   @override
   Widget build(BuildContext context) {
+    final vehiclesAsync = ref.watch(myVehiclesProvider);
+
+    vehiclesAsync.whenData((vehicles) {
+      if (_selectedVehicle == null && vehicles.isNotEmpty) {
+        final fallback = _pickDefaultVehicle(vehicles);
+        if (fallback != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted || _selectedVehicle != null) return;
+            setState(() => _selectedVehicle = fallback);
+          });
+        }
+      }
+    });
+
     return ReserveSpaceContent(
       parking: widget.parking,
       gallery: gallery,
       selectedSpace: selectedSpace,
       isSubmitting: _isSubmitting,
+      vehiclesAsync: vehiclesAsync,
+      selectedVehicle: _selectedVehicle,
+      onPickVehicle: _pickVehicle,
       onSelectSpace: (num) {
         setState(() {
           selectedSpace == num ? selectedSpace = null : selectedSpace = num;

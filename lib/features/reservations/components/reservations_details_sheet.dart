@@ -10,7 +10,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mapbox_api/common/ui/components/app_styles.dart';
 import 'package:mapbox_api/common/ui/components/my_button.dart';
 import 'package:mapbox_api/common/ui/components/my_text.dart';
-import 'package:mapbox_api/features/reservations/components/rating_dialog.dart';
 import 'package:mapbox_api/features/reservations/components/reservation_dialogs.dart';
 import 'package:mapbox_api/features/reservations/models/reservation.dart';
 import 'package:mapbox_api/features/reservations/providers/reservations_providers.dart';
@@ -29,9 +28,6 @@ class _ReservationDetailsSheetState
     extends ConsumerState<ReservationDetailsSheet> {
   bool _isProcessing = false;
 
-  // Track if we've already shown the rating dialog for this reservation
-  bool _ratingShown = false;
-
   @override
   Widget build(BuildContext context) {
     final requestExit = ref.read(requestExitProvider);
@@ -47,18 +43,6 @@ class _ReservationDetailsSheetState
       data: (r) => r,
       orElse: () => widget.reservation,
     );
-
-    // ✅ Show rating dialog when reservation becomes 'completed'
-    if (!_ratingShown &&
-        reservation.state == 'completed' &&
-        reservation.exitStatus == 'approved') {
-      _ratingShown = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) async {
-        if (!mounted) return;
-        await showRatingDialog(context, reservation: reservation);
-        if (mounted) Navigator.of(context).pop();
-      });
-    }
 
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 18, 20, 26),

@@ -5,12 +5,16 @@ import 'package:mapbox_api/common/ui/components/my_button.dart';
 import 'package:mapbox_api/common/ui/components/my_text.dart';
 import 'package:mapbox_api/features/reservations/models/parking.dart';
 import 'package:mapbox_api/features/reservations/providers/reservations_providers.dart';
+import 'package:mapbox_api/features/users/models/vehicule.dart';
 
 class ReserveSpaceContent extends ConsumerStatefulWidget {
   final Parking parking;
   final List<String> gallery;
   final int? selectedSpace;
   final bool isSubmitting;
+  final AsyncValue<List<Vehicle>> vehiclesAsync;
+  final Vehicle? selectedVehicle;
+  final ValueChanged<List<Vehicle>> onPickVehicle;
   final Function(int) onSelectSpace;
   final VoidCallback onConfirm;
 
@@ -20,6 +24,9 @@ class ReserveSpaceContent extends ConsumerStatefulWidget {
     required this.gallery,
     required this.selectedSpace,
     required this.isSubmitting,
+    required this.vehiclesAsync,
+    required this.selectedVehicle,
+    required this.onPickVehicle,
     required this.onSelectSpace,
     required this.onConfirm,
   });
@@ -157,6 +164,40 @@ class _ReserveSpaceContentState extends ConsumerState<ReserveSpaceContent> {
                                             '${currentParking.businessHours?['open'] ?? '--'} - ${currentParking.businessHours?['close'] ?? '--'}',
                                       ),
                                     ],
+                                  ),
+                                  const SizedBox(height: 16),
+                                  widget.vehiclesAsync.when(
+                                    loading:
+                                        () => const _VehicleSelectorCard(
+                                          icon: Icons.directions_car_rounded,
+                                          title: 'Vehículo',
+                                          subtitle: 'Cargando vehículos...',
+                                        ),
+                                    error:
+                                        (_, __) => _VehicleSelectorCard(
+                                          icon: Icons.error_outline_rounded,
+                                          title: 'Vehículo',
+                                          subtitle:
+                                              'No se pudieron cargar tus vehículos',
+                                        ),
+                                    data: (vehicles) {
+                                      final selected = widget.selectedVehicle;
+                                      final subtitle =
+                                          vehicles.isEmpty
+                                              ? 'Agrega un vehículo para continuar'
+                                              : selected == null
+                                              ? 'Selecciona el vehículo a usar'
+                                              : '${selected.plate} • ${selected.type.label}';
+
+                                      return _VehicleSelectorCard(
+                                        icon: Icons.directions_car_rounded,
+                                        title: 'Vehículo para esta reserva',
+                                        subtitle: subtitle,
+                                        onTap:
+                                            () =>
+                                                widget.onPickVehicle(vehicles),
+                                      );
+                                    },
                                   ),
                                 ],
                               ),
@@ -525,6 +566,80 @@ class _ReserveSpaceContentState extends ConsumerState<ReserveSpaceContent> {
         variant: MyTextVariant.bodyBold,
         fontSize: 12,
         customColor: color,
+      ),
+    );
+  }
+}
+
+class _VehicleSelectorCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback? onTap;
+
+  const _VehicleSelectorCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: context.appCardBackground,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: context.appBorderColor),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: context.appIconCircleColor,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: AppColors.headerBottom, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: context.appTextPrimaryColor,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: context.appTextSecondaryColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: context.appTextSecondaryColor,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

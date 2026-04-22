@@ -57,6 +57,33 @@ class _RatingDialogState extends State<_RatingDialog> {
   bool get _canSubmit =>
       _parkingRating > 0 && _serviceRating > 0 && !_submitting;
 
+  Future<void> _skip() async {
+    if (_submitting) return;
+    setState(() => _submitting = true);
+
+    try {
+      await FirebaseFirestore.instance
+          .collection('reservations')
+          .doc(widget.reservation.id)
+          .set({
+            'ratingPromptHandled': true,
+            'ratingSubmitted': false,
+            'ratingSkippedAt': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true));
+
+      if (mounted) Navigator.of(context).pop(false);
+    } catch (e) {
+      debugPrint('[Rating] Skip error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('No se pudo omitir la calificación: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
+  }
+
   Future<void> _submit() async {
     if (!_canSubmit) return;
     setState(() => _submitting = true);
@@ -80,6 +107,12 @@ class _RatingDialogState extends State<_RatingDialog> {
         'comment': _commentCtrl.text.trim(),
         'createdAt': FieldValue.serverTimestamp(),
       });
+
+      await db.collection('reservations').doc(widget.reservation.id).set({
+        'ratingPromptHandled': true,
+        'ratingSubmitted': true,
+        'ratingSubmittedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
 
       // Recalculate overall rating from all reviews
       final reviewsSnap = await parkingRef.collection('reviews').get();
@@ -289,9 +322,7 @@ class _RatingDialogState extends State<_RatingDialog> {
                           height: 48,
                           child: OutlinedButton(
                             onPressed:
-                                _submitting
-                                    ? null
-                                    : () => Navigator.of(context).pop(false),
+                                _submitting ? null : _skip,
                             style: OutlinedButton.styleFrom(
                               side: BorderSide(
                                 color: AppColors.headerBottom.withValues(

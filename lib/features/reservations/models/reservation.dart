@@ -55,6 +55,10 @@ class Reservation {
   final DateTime? exitLockedAt;
   final String? exitRequestedBy;
   final String? exitApprovedBy;
+  final bool ratingPromptHandled;
+  final bool ratingSubmitted;
+  final DateTime? ratingSubmittedAt;
+  final DateTime? ratingSkippedAt;
 
   /// Restricción futura para nuevas reservas.
   final DateTime? restrictedUntil;
@@ -90,6 +94,10 @@ class Reservation {
     this.exitLockedAt,
     this.exitRequestedBy,
     this.exitApprovedBy,
+    this.ratingPromptHandled = false,
+    this.ratingSubmitted = false,
+    this.ratingSubmittedAt,
+    this.ratingSkippedAt,
     this.restrictedUntil,
   });
 
@@ -114,6 +122,10 @@ class Reservation {
   bool get isExitRequested => exitStatus == 'requested';
   bool get isExitApproved => exitStatus == 'approved';
   bool get isExitRejected => exitStatus == 'rejected';
+  bool get needsRatingPrompt =>
+      state == 'completed' &&
+      exitStatus == 'approved' &&
+      !ratingPromptHandled;
   bool get isPending => state == 'pending';
   bool get isRejected => state == 'rejected';
   bool get isActive => state == 'active';
@@ -164,6 +176,10 @@ class Reservation {
       exitLockedAt: parseTimestamp(data['exitLockedAt']),
       exitRequestedBy: data['exitRequestedBy'] as String?,
       exitApprovedBy: data['exitApprovedBy'] as String?,
+      ratingPromptHandled: data['ratingPromptHandled'] as bool? ?? false,
+      ratingSubmitted: data['ratingSubmitted'] as bool? ?? false,
+      ratingSubmittedAt: parseTimestamp(data['ratingSubmittedAt']),
+      ratingSkippedAt: parseTimestamp(data['ratingSkippedAt']),
       restrictedUntil: parseTimestamp(data['restrictedUntil']),
     );
   }
@@ -209,6 +225,14 @@ class Reservation {
           exitLockedAt != null ? Timestamp.fromDate(exitLockedAt!) : null,
       'exitRequestedBy': exitRequestedBy,
       'exitApprovedBy': exitApprovedBy,
+      'ratingPromptHandled': ratingPromptHandled,
+      'ratingSubmitted': ratingSubmitted,
+      'ratingSubmittedAt':
+          ratingSubmittedAt != null
+              ? Timestamp.fromDate(ratingSubmittedAt!)
+              : null,
+      'ratingSkippedAt':
+          ratingSkippedAt != null ? Timestamp.fromDate(ratingSkippedAt!) : null,
       'restrictedUntil':
           restrictedUntil != null ? Timestamp.fromDate(restrictedUntil!) : null,
     };
@@ -245,6 +269,10 @@ class Reservation {
     DateTime? exitLockedAt,
     String? exitRequestedBy,
     String? exitApprovedBy,
+    bool? ratingPromptHandled,
+    bool? ratingSubmitted,
+    DateTime? ratingSubmittedAt,
+    DateTime? ratingSkippedAt,
     DateTime? restrictedUntil,
   }) {
     return Reservation(
@@ -282,6 +310,10 @@ class Reservation {
       exitLockedAt: exitLockedAt ?? this.exitLockedAt,
       exitRequestedBy: exitRequestedBy ?? this.exitRequestedBy,
       exitApprovedBy: exitApprovedBy ?? this.exitApprovedBy,
+      ratingPromptHandled: ratingPromptHandled ?? this.ratingPromptHandled,
+      ratingSubmitted: ratingSubmitted ?? this.ratingSubmitted,
+      ratingSubmittedAt: ratingSubmittedAt ?? this.ratingSubmittedAt,
+      ratingSkippedAt: ratingSkippedAt ?? this.ratingSkippedAt,
       restrictedUntil: restrictedUntil ?? this.restrictedUntil,
     );
   }

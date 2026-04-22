@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mapbox_api/common/ui/components/app_styles.dart';
 import 'package:mapbox_api/common/ui/components/my_text.dart';
 import 'package:mapbox_api/features/core/pages/userv/report_problem_page.dart';
+import 'package:mapbox_api/features/reservations/components/rating_dialog.dart';
 import 'package:mapbox_api/features/core/providers/firebase_providers.dart';
 import 'package:mapbox_api/features/reservations/components/reservation_card.dart';
 import 'package:mapbox_api/features/reservations/models/reservation.dart';
@@ -19,6 +20,7 @@ class ReservationsPage extends ConsumerStatefulWidget {
 class _ReservationsPageState extends ConsumerState<ReservationsPage>
     with SingleTickerProviderStateMixin {
   late final TabController _tab = TabController(length: 3, vsync: this);
+  final Set<String> _ratingPromptInFlight = <String>{};
 
   @override
   void dispose() {
@@ -44,6 +46,23 @@ class _ReservationsPageState extends ConsumerState<ReservationsPage>
 
     final asyncList = ref.watch(userReservationsProvider);
     final controlAsync = ref.watch(userReservationControlProvider);
+
+    asyncList.whenData((all) {
+      final pendingPrompt = all.cast<Reservation?>().firstWhere(
+        (reservation) => reservation?.needsRatingPrompt == true,
+        orElse: () => null,
+      );
+
+      if (pendingPrompt == null) return;
+      if (_ratingPromptInFlight.contains(pendingPrompt.id)) return;
+
+      _ratingPromptInFlight.add(pendingPrompt.id);
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
+        await showRatingDialog(context, reservation: pendingPrompt);
+        _ratingPromptInFlight.remove(pendingPrompt.id);
+      });
+    });
 
     return Scaffold(
       backgroundColor: context.appPageBackground,

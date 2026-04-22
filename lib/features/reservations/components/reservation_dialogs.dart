@@ -16,6 +16,7 @@ class ReservationDialogs {
     required LatLng destination, // ✅ now resolves correctly
     required String parkingName,
     required int spaceNumber,
+    required String vehiclePlate,
     required int pricePerHour,
   }) {
     debugPrint('[CONFIRM DIALOG] parkingName: $parkingName');
@@ -151,6 +152,12 @@ class ReservationDialogs {
                               icon: Icons.pin_outlined,
                               title: 'Espacio',
                               value: 'Espacio $spaceNumber',
+                            ),
+                            const SizedBox(height: 12),
+                            _SummaryRow(
+                              icon: Icons.directions_car_outlined,
+                              title: 'Vehículo',
+                              value: vehiclePlate,
                             ),
                             const SizedBox(height: 12),
                             _SummaryRow(

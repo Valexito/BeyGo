@@ -1,4 +1,3 @@
-import 'package:async/async.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -179,6 +178,7 @@ final reserveSpaceProvider = Provider<
     required String parkingId,
     required String parkingName,
     required int spaceNumber,
+    required String vehiclePlate,
   })
 >((ref) {
   final db = ref.watch(_dbProvider);
@@ -188,15 +188,20 @@ final reserveSpaceProvider = Provider<
     required String parkingId,
     required String parkingName,
     required int spaceNumber,
+    required String vehiclePlate,
   }) async {
     final uid = auth.currentUser?.uid;
+    if (uid == null) {
+      throw StateError('Debes iniciar sesión para reservar.');
+    }
+
     final userSnap = await db.collection('users').doc(uid).get();
     final userData = userSnap.data() ?? <String, dynamic>{};
 
     final userName = userData['name'] ?? userData['displayName'] ?? '';
-    final plate = userData['vehiclePlate'] ?? '';
-    if (uid == null) {
-      throw StateError('Debes iniciar sesión para reservar.');
+    final plate = vehiclePlate.trim().toUpperCase();
+    if (plate.isEmpty) {
+      throw StateError('Selecciona un vehículo para continuar.');
     }
 
     final controlRef = _userReservationControlDoc(db, uid);

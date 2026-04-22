@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mapbox_api/features/core/providers/firebase_providers.dart'
     show firestoreProvider, currentUserProvider;
 
+import 'package:mapbox_api/features/users/models/vehicule.dart';
 import 'package:mapbox_api/features/users/models/user_role.dart';
 
 // ---------- Refs ----------
@@ -96,6 +97,26 @@ final myProfileStreamProvider = StreamProvider<Map<String, dynamic>?>((ref) {
   if (uid == null) return const Stream.empty();
 
   return ref.watch(userDocRefProvider(uid)).snapshots().map((s) => s.data());
+});
+
+final myVehiclesProvider = StreamProvider<List<Vehicle>>((ref) {
+  final uid = ref.watch(currentUserProvider)?.uid;
+  if (uid == null) return const Stream.empty();
+
+  return ref
+      .watch(userDocRefProvider(uid))
+      .collection('vehicles')
+      .orderBy('createdAt')
+      .snapshots()
+      .map(
+        (snap) => snap.docs
+            .map((doc) => Vehicle.fromMap(doc.id, doc.data()))
+            .toList()
+          ..sort((a, b) {
+            if (a.isPrimary == b.isPrimary) return 0;
+            return a.isPrimary ? -1 : 1;
+          }),
+      );
 });
 
 // ---------- ¿tengo al menos un parking? ----------
