@@ -21,6 +21,7 @@ class _WalkIn {
   final String docId;
   final String spaceId;
   final int spaceNumber;
+  final String reservationNumber;
   final String customerName;
   final String plate;
   final DateTime enteredAt;
@@ -30,6 +31,7 @@ class _WalkIn {
     required this.docId,
     required this.spaceId,
     required this.spaceNumber,
+    required this.reservationNumber,
     required this.customerName,
     required this.plate,
     required this.enteredAt,
@@ -43,6 +45,13 @@ class _WalkIn {
     final hours = dur.inMinutes / 60.0;
     return (hours * pricePerHour!);
   }
+}
+
+String _generateManualReservationNumber() {
+  final now = DateTime.now();
+  final ts = now.millisecondsSinceEpoch.toString().substring(8);
+  final random = (1000 + (now.microsecondsSinceEpoch % 9000)).toString();
+  return 'MAN-$ts$random';
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -105,7 +114,29 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
           _loading = false;
         });
       }
+    }, fireImmediately: true);
+
+    Future<void>(() async {
+      try {
+        final parking = await ref.read(ownerParkingProvider.future);
+        if (!mounted) return;
+        if (parking == null) {
+          setState(() {
+            _error = 'No se encontró tu parqueo.';
+            _loading = false;
+          });
+          return;
+        }
+        _bindParking(parking.id, parking.pricePerHour.toDouble());
+      } catch (e) {
+        if (!mounted) return;
+        setState(() {
+          _error = e.toString();
+          _loading = false;
+        });
+      }
     });
+
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted && _walkIns.isNotEmpty) setState(() {});
     });
@@ -156,13 +187,31 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
         .collection('parkings')
         .doc(parkingId)
         .collection('spaces')
-        .orderBy('spaceNumber')
         .snapshots()
         .listen(
           (snap) {
+            final spaces =
+                snap.docs.map((d) {
+                  final data = d.data();
+                  final parsedNumber =
+                      (data['spaceNumber'] as num?)?.toInt() ??
+                      int.tryParse(d.id) ??
+                      0;
+                  return {
+                    'id': d.id,
+                    ...data,
+                    'spaceNumber': parsedNumber,
+                  };
+                }).toList()
+                  ..sort(
+                    (a, b) => ((a['spaceNumber'] as int?) ?? 0).compareTo(
+                      (b['spaceNumber'] as int?) ?? 0,
+                    ),
+                  );
+
             if (!mounted) return;
             setState(() {
-              _spaces = snap.docs.map((d) => {'id': d.id, ...d.data()}).toList();
+              _spaces = spaces;
               _loading = false;
             });
           },
@@ -192,6 +241,8 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
                 docId: doc.id,
                 spaceId: spaceId,
                 spaceNumber: (d['spaceNumber'] as num?)?.toInt() ?? 0,
+                reservationNumber:
+                    d['reservationNumber'] as String? ?? 'MAN-SIN-NUMERO',
                 customerName: d['customerName'] as String? ?? 'Cliente',
                 plate: d['plate'] as String? ?? '',
                 enteredAt: (d['enteredAt'] as Timestamp).toDate(),
@@ -234,6 +285,7 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
       final db = FirebaseFirestore.instance;
       final batch = db.batch();
       final now = DateTime.now();
+      final reservationNumber = _generateManualReservationNumber();
 
       // 1. Mark space as occupied
       batch.update(
@@ -256,6 +308,7 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
       batch.set(walkInRef, {
         'spaceId': spaceId,
         'spaceNumber': spaceNumber,
+        'reservationNumber': reservationNumber,
         'customerName': customerName,
         'plate': plate,
         'enteredAt': Timestamp.fromDate(now),
@@ -276,6 +329,7 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
           docId: walkInRef.id,
           spaceId: spaceId,
           spaceNumber: spaceNumber,
+          reservationNumber: reservationNumber,
           customerName: customerName,
           plate: plate,
           enteredAt: now,
@@ -284,7 +338,9 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
       });
 
       if (mounted) {
-        _showSnack('✓ Espacio $spaceNumber asignado a $customerName');
+        _showSnack(
+          '✓ Espacio $spaceNumber asignado a $customerName • $reservationNumber',
+        );
       }
     } catch (e) {
       if (mounted) _showSnack('Error: $e', isError: true);
@@ -658,7 +714,7 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
                         ),
                         const SizedBox(height: 10),
                         const Text(
-                          'Checkout',
+                          'Registrar salida',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 17,
@@ -671,6 +727,15 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
                           style: TextStyle(
                             color: Colors.white.withOpacity(0.75),
                             fontSize: 13,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'No. ${walkIn.reservationNumber}',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.82),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                       ],
@@ -691,6 +756,12 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
                           ),
                           child: Column(
                             children: [
+                              _SummaryRow(
+                                icon: Icons.receipt_long_rounded,
+                                label: 'Reservación',
+                                value: walkIn.reservationNumber,
+                              ),
+                              const SizedBox(height: 10),
                               _SummaryRow(
                                 icon: Icons.person_outline_rounded,
                                 label: 'Cliente',
@@ -845,10 +916,19 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
                         ),
                         const SizedBox(height: 8),
                         const Text(
-                          '¡Checkout completado!',
+                          '¡Salida registrada!',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 17,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'No. ${walkIn.reservationNumber}',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.82),
+                            fontSize: 11,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -947,8 +1027,8 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
           (_) => Column(
             children: [
               const AppHeader(
-                title: 'Acceso Directo',
-                subtitle: 'Registra clientes sin reserva en línea',
+                title: 'Reservas manuales',
+                subtitle: 'Registra clientes sin reservación en línea',
                 showBack: true,
               ),
 
@@ -974,15 +1054,12 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
                     slivers: [
                       // ── Stats banner ──────────────────────────────────────────
                       SliverToBoxAdapter(
-                        child: Transform.translate(
-                          offset: const Offset(0, -20),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: _StatsBanner(
-                              spaces: _spaces,
-                              walkIns: _walkIns,
-                              pricePerHour: _pricePerHour,
-                            ),
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 18, 16, 6),
+                          child: _StatsBanner(
+                            spaces: _spaces,
+                            walkIns: _walkIns,
+                            pricePerHour: _pricePerHour,
                           ),
                         ),
                       ),
@@ -1004,7 +1081,7 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
                                 ),
                                 const SizedBox(width: 8),
                                 const Text(
-                                  'EN PROCESO',
+                                  'EN CURSO',
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w800,
@@ -1120,9 +1197,9 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
                             gridDelegate:
                                 const SliverGridDelegateWithFixedCrossAxisCount(
                                   crossAxisCount: 3,
-                                  mainAxisSpacing: 12,
-                                  crossAxisSpacing: 12,
-                                  childAspectRatio: 0.85,
+                                  mainAxisSpacing: 8,
+                                  crossAxisSpacing: 8,
+                                  childAspectRatio: 1.16,
                                 ),
                           ),
                         ),
@@ -1242,7 +1319,7 @@ class _QuickAssignCard extends StatelessWidget {
                     return ActionChip(
                       onPressed: () => onAssign(space),
                       avatar: const Icon(
-                        Icons.local_parking_rounded,
+                        Icons.directions_car_rounded,
                         size: 16,
                         color: AppColors.headerBottom,
                       ),
@@ -1340,10 +1417,10 @@ class _StatsBanner extends StatelessWidget {
     final occupied = spaces.length - free;
 
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: AppColors.borderSoft),
         boxShadow: [
           BoxShadow(
@@ -1375,10 +1452,10 @@ class _StatsBanner extends StatelessWidget {
           _VertDivider(),
           Expanded(
             child: _BannerStat(
-              label: 'Walk-ins',
+              label: 'Manuales',
               value: '${walkIns.length}',
               color: AppColors.headerBottom,
-              icon: Icons.directions_walk_rounded,
+              icon: Icons.directions_car_filled_rounded,
             ),
           ),
           if (pricePerHour != null) ...[
@@ -1480,21 +1557,21 @@ class _SpaceTile extends StatelessWidget {
       border = const Color(0xFF16A34A);
       iconColor = const Color(0xFF16A34A);
       textColor = const Color(0xFF16A34A);
-      icon = Icons.add_rounded;
+      icon = Icons.directions_car_filled_rounded;
       label = 'Libre';
     } else if (isWalkIn) {
       bg = AppColors.headerBottom.withOpacity(0.06);
       border = AppColors.headerBottom;
       iconColor = AppColors.headerBottom;
       textColor = AppColors.headerBottom;
-      icon = Icons.directions_walk_rounded;
-      label = 'Walk-in';
+      icon = Icons.directions_car_filled_rounded;
+      label = 'Manual';
     } else {
       bg = const Color(0xFFFEF2F2);
       border = const Color(0xFFDC2626);
       iconColor = const Color(0xFFDC2626);
       textColor = const Color(0xFFDC2626);
-      icon = Icons.local_parking_rounded;
+      icon = Icons.directions_car_filled_rounded;
       label = 'Ocupado';
     }
 
@@ -1504,7 +1581,7 @@ class _SpaceTile extends StatelessWidget {
         duration: const Duration(milliseconds: 220),
         decoration: BoxDecoration(
           color: bg,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: border.withOpacity(0.4), width: 1.5),
           boxShadow: [
             BoxShadow(
@@ -1521,29 +1598,29 @@ class _SpaceTile extends StatelessWidget {
             Text(
               '$number',
               style: TextStyle(
-                fontSize: 28,
+                fontSize: 24,
                 fontWeight: FontWeight.w900,
                 color: textColor,
                 height: 1,
               ),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 5),
             // Icon
             Container(
-              width: 36,
-              height: 36,
+              width: 32,
+              height: 32,
               decoration: BoxDecoration(
                 color: iconColor.withOpacity(0.12),
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, size: 18, color: iconColor),
+              child: Icon(icon, size: 16, color: iconColor),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 5),
             // Label / elapsed
             Text(
               isWalkIn && elapsedLabel != null ? elapsedLabel! : label,
               style: TextStyle(
-                fontSize: isWalkIn ? 10 : 11,
+                fontSize: isWalkIn ? 9 : 10,
                 fontWeight: FontWeight.w700,
                 color: textColor,
               ),
@@ -1636,20 +1713,37 @@ class _ActiveWalkInCard extends StatelessWidget {
             child: Row(
               children: [
                 const Icon(
-                  Icons.directions_walk_rounded,
+                  Icons.directions_car_filled_rounded,
                   color: Colors.white,
                   size: 16,
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  'Espacio ${walkIn.spaceNumber}  •  ${walkIn.customerName}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'No. ${walkIn.reservationNumber}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 11,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Espacio ${walkIn.spaceNumber}  •  ${walkIn.customerName}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const Spacer(),
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,
@@ -1660,7 +1754,7 @@ class _ActiveWalkInCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    'WALK-IN',
+                    'MANUAL',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 9,
@@ -1726,14 +1820,14 @@ class _ActiveWalkInCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                // Checkout button
+                // Boton de salida
                 SizedBox(
                   height: 40,
                   child: ElevatedButton.icon(
                     onPressed: onCheckout,
                     icon: const Icon(Icons.logout_rounded, size: 15),
                     label: const Text(
-                      'Checkout',
+                      'Salida',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,

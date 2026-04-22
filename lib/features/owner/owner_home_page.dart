@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mapbox_api/common/ui/components/app_styles.dart';
-import 'package:mapbox_api/common/ui/components/my_text.dart';
 import 'package:mapbox_api/features/owner/owner_reservations_page.dart';
 import 'package:mapbox_api/features/owner/owner_requests_page.dart';
 import 'package:mapbox_api/features/owner/owner_settings_page.dart';
@@ -27,7 +26,7 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
     _TabItem('Reservas', Icons.receipt_long_outlined),
     _TabItem('Historial', Icons.history_rounded),
     _TabItem('Ajustes', Icons.settings_outlined),
-    _TabItem('Walk-in', Icons.directions_walk_rounded),
+    _TabItem('Manuales', Icons.directions_car_filled_rounded),
   ];
 
   @override
@@ -63,6 +62,7 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
               child: NavigationBar(
                 selectedIndex: _index,
                 onDestinationSelected: (i) => setState(() => _index = i),
+                height: 76,
                 backgroundColor: Colors.white,
                 indicatorColor: AppColors.primarySoft.withOpacity(0.25),
                 labelTextStyle: WidgetStateProperty.resolveWith<TextStyle>((
@@ -70,7 +70,7 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
                 ) {
                   final isSelected = states.contains(WidgetState.selected);
                   return TextStyle(
-                    fontSize: 12,
+                    fontSize: 11,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                     color:
                         isSelected
