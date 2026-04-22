@@ -140,6 +140,68 @@ class ParkingService {
     return urls;
   }
 
+  Future<void> updateParkingDetails({
+    required String ownerID,
+    required String parkingId,
+    required String name,
+    required String phone,
+    required String address,
+    required int spaces,
+    required String description,
+    required int pricePerHour,
+    required String openTime,
+    required String closeTime,
+    List<XFile> newImages = const [],
+  }) async {
+    _ensureSameUser(ownerID);
+
+    final docRef = _firestore.collection('parkings').doc(parkingId);
+    final snap = await docRef.get();
+    if (!snap.exists) {
+      throw StateError('El parqueo ya no existe.');
+    }
+    if (snap.data()?['ownerID'] != ownerID) {
+      throw StateError('No tienes permiso para editar este parqueo.');
+    }
+
+    final uploadedUrls =
+        newImages.isEmpty
+            ? const <String>[]
+            : await _uploadImages(
+              ownerID: ownerID,
+              parkingId: parkingId,
+              images: newImages,
+            );
+
+    final currentPhotos =
+        ((snap.data()?['photos'] as List?) ?? const [])
+            .map((e) => '$e')
+            .where((e) => e.trim().isNotEmpty)
+            .toList();
+    final mergedPhotos = [...currentPhotos, ...uploadedUrls];
+    final coverUrl =
+        mergedPhotos.isNotEmpty
+            ? mergedPhotos.first
+            : (snap.data()?['coverUrl'] as String?);
+
+    await docRef.set({
+      'name': name,
+      'phone': phone,
+      'address': address,
+      'spaces': spaces,
+      'descripcion': description,
+      'pricePerHour': pricePerHour,
+      'price': pricePerHour,
+      'businessHours': {
+        'open': openTime,
+        'close': closeTime,
+      },
+      'photos': mergedPhotos,
+      'coverUrl': coverUrl,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
   // ===== Helpers =====
   void _ensureSameUser(String ownerID) {
     final uid = _auth.currentUser?.uid;
