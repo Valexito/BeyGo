@@ -37,7 +37,7 @@ class RouteBottomInfoCard extends StatelessWidget {
             topRight: Radius.circular(26),
           ),
           child: Material(
-            color: const Color(0xFFF8FAFC),
+            color: context.appCardBackground,
             child: Container(
               width: double.infinity,
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
@@ -49,15 +49,17 @@ class RouteBottomInfoCard extends StatelessWidget {
                     height: 5,
                     margin: const EdgeInsets.only(bottom: 14),
                     decoration: BoxDecoration(
-                      color: AppColors.borderSoft,
+                      color: context.appBorderColor,
                       borderRadius: BorderRadius.circular(999),
                     ),
                   ),
-                  const MyText(
-                    text: 'Abrir navegación',
-                    variant: MyTextVariant.title,
-                    customColor: AppColors.headerBottom,
-                    fontSize: 20,
+                  Text(
+                    'Abrir navegación',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: context.appTextPrimaryColor,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 6),
@@ -141,9 +143,11 @@ class RouteBottomInfoCard extends StatelessWidget {
         topRight: Radius.circular(26),
       ),
       child: Material(
-        color: const Color(0xFFF8FAFC),
+        color: context.appCardBackground,
         elevation: 18,
-        shadowColor: AppColors.headerBottom.withOpacity(0.10),
+        shadowColor: Colors.black.withValues(
+          alpha: context.isDarkMode ? 0.22 : 0.10,
+        ),
         child: SafeArea(
           top: false,
           child: Container(
@@ -157,7 +161,7 @@ class RouteBottomInfoCard extends StatelessWidget {
                   height: 5,
                   margin: const EdgeInsets.only(bottom: 14),
                   decoration: BoxDecoration(
-                    color: AppColors.borderSoft,
+                    color: context.appBorderColor,
                     borderRadius: BorderRadius.circular(999),
                   ),
                 ),
@@ -167,8 +171,8 @@ class RouteBottomInfoCard extends StatelessWidget {
                     Container(
                       width: 42,
                       height: 42,
-                      decoration: const BoxDecoration(
-                        color: AppColors.iconCircle,
+                      decoration: BoxDecoration(
+                        color: context.appIconCircleColor,
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
@@ -300,10 +304,12 @@ class RouteBottomInfoCard extends StatelessWidget {
                               ),
                             ),
                             side: BorderSide(
-                              color: AppColors.headerBottom.withOpacity(0.55),
+                              color: AppColors.headerBottom.withValues(
+                                alpha: 0.55,
+                              ),
                               width: 1.3,
                             ),
-                            backgroundColor: Colors.white,
+                            backgroundColor: context.appCardBackground,
                           ),
                           child: const MyText(
                             text: 'Reservaciones',
@@ -340,17 +346,17 @@ class _MiniDetailTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.appCardBackgroundSoft,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.borderSoft),
+        border: Border.all(color: context.appBorderColor),
       ),
       child: Row(
         children: [
           Container(
             width: 32,
             height: 32,
-            decoration: const BoxDecoration(
-              color: AppColors.iconCircle,
+            decoration: BoxDecoration(
+              color: context.appIconCircleColor,
               shape: BoxShape.circle,
             ),
             child: Icon(icon, size: 17, color: AppColors.headerBottom),
@@ -396,7 +402,7 @@ class _NavAppTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white,
+      color: context.appCardBackgroundSoft,
       borderRadius: BorderRadius.circular(18),
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
@@ -405,15 +411,15 @@ class _NavAppTile extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: AppColors.borderSoft),
+            border: Border.all(color: context.appBorderColor),
           ),
           child: Row(
             children: [
               Container(
                 width: 38,
                 height: 38,
-                decoration: const BoxDecoration(
-                  color: AppColors.iconCircle,
+                decoration: BoxDecoration(
+                  color: context.appIconCircleColor,
                   shape: BoxShape.circle,
                 ),
                 child: Icon(icon, color: AppColors.headerBottom, size: 20),
@@ -437,9 +443,9 @@ class _NavAppTile extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(
+              Icon(
                 Icons.chevron_right_rounded,
-                color: AppColors.textSecondary,
+                color: context.appTextSecondaryColor,
               ),
             ],
           ),

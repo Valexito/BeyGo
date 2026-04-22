@@ -46,6 +46,10 @@ class AppDims {
 
 class AppTheme {
   static ThemeData build() {
+    return buildLight();
+  }
+
+  static ThemeData buildLight() {
     final base = ThemeData.light(useMaterial3: false);
 
     return base.copyWith(
@@ -66,4 +70,78 @@ class AppTheme {
       dividerColor: AppColors.borderSoft,
     );
   }
+
+  static ThemeData buildDark() {
+    final base = ThemeData.dark(useMaterial3: false);
+
+    return base.copyWith(
+      scaffoldBackgroundColor: const Color(0xFF0B1220),
+      primaryColor: AppColors.primary,
+      colorScheme: base.colorScheme.copyWith(
+        primary: AppColors.primarySoft,
+        secondary: AppColors.headerTop,
+        surface: const Color(0xFF111827),
+      ),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Color(0xFF111827),
+        elevation: 0,
+        foregroundColor: Colors.white,
+        centerTitle: true,
+      ),
+      cardColor: const Color(0xFF111827),
+      canvasColor: const Color(0xFF0F172A),
+      dividerColor: const Color(0xFF263244),
+      iconTheme: const IconThemeData(color: Colors.white),
+      textTheme: base.textTheme.apply(
+        bodyColor: const Color(0xFFE5E7EB),
+        displayColor: Colors.white,
+      ),
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.headerTop;
+          return const Color(0xFF94A3B8);
+        }),
+        trackColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return AppColors.headerBottom.withValues(alpha: 0.45);
+          }
+          return const Color(0xFF334155);
+        }),
+      ),
+    );
+  }
+}
+
+extension AppThemeContext on BuildContext {
+  bool get isDarkMode => Theme.of(this).brightness == Brightness.dark;
+
+  Color get appPageBackground =>
+      isDarkMode ? const Color(0xFF0B1220) : AppColors.pageBg;
+
+  Color get appSectionBackground =>
+      isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC);
+
+  Color get appCardBackground =>
+      isDarkMode ? const Color(0xFF111827) : Colors.white;
+
+  Color get appCardBackgroundSoft =>
+      isDarkMode ? const Color(0xFF162033) : const Color(0xFFF4F8FC);
+
+  Color get appInputBackground =>
+      isDarkMode ? const Color(0xFF162033) : AppColors.formFieldBg;
+
+  Color get appInputBackgroundActive =>
+      isDarkMode ? const Color(0xFF1B263B) : Colors.white;
+
+  Color get appBorderColor =>
+      isDarkMode ? const Color(0xFF263244) : AppColors.borderSoft;
+
+  Color get appTextPrimaryColor =>
+      isDarkMode ? const Color(0xFFE5E7EB) : AppColors.textPrimary;
+
+  Color get appTextSecondaryColor =>
+      isDarkMode ? const Color(0xFF94A3B8) : AppColors.textSecondary;
+
+  Color get appIconCircleColor =>
+      isDarkMode ? const Color(0xFF1E293B) : AppColors.iconCircle;
 }

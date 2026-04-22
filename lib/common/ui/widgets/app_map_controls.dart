@@ -67,7 +67,7 @@ class _MapCtrlBtn extends StatelessWidget {
       width: 42,
       height: 42,
       decoration: BoxDecoration(
-        color: accent ? accentColor : Colors.white,
+        color: accent ? accentColor : context.appCardBackground,
         borderRadius: BorderRadius.circular(13),
         boxShadow: [
           BoxShadow(

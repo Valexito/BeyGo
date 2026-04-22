@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:mapbox_api/common/services/google_places_service.dart';
-import 'package:mapbox_api/common/ui/components/app_styles.dart' show AppColors;
+import 'package:mapbox_api/common/ui/components/app_styles.dart';
 import 'package:mapbox_api/features/core/services/recent_searches.dart';
 
 class HomeBottomPanel extends StatefulWidget {
@@ -270,7 +270,7 @@ class _HomeBottomPanelState extends State<HomeBottomPanel> {
           onTap: () => _animateTo(_maxSize),
           child: Container(
             decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
+              color: context.appSectionBackground,
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(32),
               ),
@@ -289,7 +289,10 @@ class _HomeBottomPanelState extends State<HomeBottomPanel> {
                   height: 4,
                   width: 40,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFCBD5E1),
+                    color:
+                        context.isDarkMode
+                            ? const Color(0xFF334155)
+                            : const Color(0xFFCBD5E1),
                     borderRadius: BorderRadius.circular(99),
                   ),
                 ),
@@ -333,12 +336,12 @@ class _HomeBottomPanelState extends State<HomeBottomPanel> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      const Text(
+                                      Text(
                                         '¿A dónde vamos?',
                                         style: TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.w800,
-                                          color: Color(0xFF0F172A),
+                                          color: context.appTextPrimaryColor,
                                           letterSpacing: -0.3,
                                         ),
                                       ),
@@ -352,7 +355,8 @@ class _HomeBottomPanelState extends State<HomeBottomPanel> {
                                               hasLocation
                                                   ? AppColors.headerBottom
                                                       .withOpacity(0.7)
-                                                  : const Color(0xFF94A3B8),
+                                                  : context
+                                                      .appTextSecondaryColor,
                                           fontWeight: FontWeight.w500,
                                         ),
                                       ),
@@ -366,14 +370,14 @@ class _HomeBottomPanelState extends State<HomeBottomPanel> {
                               AnimatedContainer(
                                 duration: const Duration(milliseconds: 200),
                                 decoration: BoxDecoration(
-                                  color: Colors.white,
+                                  color: context.appCardBackground,
                                   borderRadius: BorderRadius.circular(18),
                                   border: Border.all(
                                     color:
                                         _hasFocus
                                             ? AppColors.headerBottom
                                                 .withOpacity(0.55)
-                                            : const Color(0xFFE2E8F0),
+                                            : context.appBorderColor,
                                     width: _hasFocus ? 1.5 : 1,
                                   ),
                                   boxShadow: [
@@ -393,16 +397,16 @@ class _HomeBottomPanelState extends State<HomeBottomPanel> {
                                   focusNode: _focus,
                                   onChanged: _onSearchChanged,
                                   textInputAction: TextInputAction.search,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
-                                    color: Color(0xFF0F172A),
+                                    color: context.appTextPrimaryColor,
                                   ),
                                   decoration: InputDecoration(
                                     hintText: 'Teatro, parqueo, hospital...',
-                                    hintStyle: const TextStyle(
+                                    hintStyle: TextStyle(
                                       fontSize: 13,
-                                      color: Color(0xFF94A3B8),
+                                      color: context.appTextSecondaryColor,
                                       fontWeight: FontWeight.w400,
                                     ),
                                     prefixIcon: Padding(
@@ -426,9 +430,8 @@ class _HomeBottomPanelState extends State<HomeBottomPanel> {
                                                 color:
                                                     _hasFocus
                                                         ? AppColors.headerBottom
-                                                        : const Color(
-                                                          0xFF94A3B8,
-                                                        ),
+                                                        : context
+                                                            .appTextSecondaryColor,
                                               ),
                                     ),
                                     suffixIcon:
@@ -449,17 +452,16 @@ class _HomeBottomPanelState extends State<HomeBottomPanel> {
                                                   padding: const EdgeInsets.all(
                                                     3,
                                                   ),
-                                                  decoration:
-                                                      const BoxDecoration(
-                                                        color: Color(
-                                                          0xFFE2E8F0,
-                                                        ),
-                                                        shape: BoxShape.circle,
-                                                      ),
-                                                  child: const Icon(
+                                                  decoration: BoxDecoration(
+                                                    color: context.appBorderColor,
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                  child: Icon(
                                                     Icons.close_rounded,
                                                     size: 12,
-                                                    color: Color(0xFF64748B),
+                                                    color:
+                                                        context
+                                                            .appTextSecondaryColor,
                                                   ),
                                                 ),
                                               ),
@@ -501,7 +503,7 @@ class _HomeBottomPanelState extends State<HomeBottomPanel> {
                                           color:
                                               active
                                                   ? AppColors.headerBottom
-                                                  : Colors.white,
+                                                  : context.appCardBackground,
                                           borderRadius: BorderRadius.circular(
                                             20,
                                           ),
@@ -509,7 +511,7 @@ class _HomeBottomPanelState extends State<HomeBottomPanel> {
                                             color:
                                                 active
                                                     ? AppColors.headerBottom
-                                                    : const Color(0xFFE2E8F0),
+                                                    : context.appBorderColor,
                                           ),
                                           boxShadow:
                                               active
@@ -536,7 +538,8 @@ class _HomeBottomPanelState extends State<HomeBottomPanel> {
                                               color:
                                                   active
                                                       ? Colors.white
-                                                      : const Color(0xFF64748B),
+                                                      : context
+                                                          .appTextSecondaryColor,
                                             ),
                                             const SizedBox(width: 5),
                                             Text(
@@ -547,9 +550,8 @@ class _HomeBottomPanelState extends State<HomeBottomPanel> {
                                                 color:
                                                     active
                                                         ? Colors.white
-                                                        : const Color(
-                                                          0xFF475569,
-                                                        ),
+                                                        : context
+                                                            .appTextPrimaryColor,
                                               ),
                                             ),
                                           ],
@@ -684,7 +686,7 @@ class _ResultTile extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Material(
-        color: Colors.white,
+        color: context.appCardBackground,
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
@@ -694,7 +696,7 @@ class _ResultTile extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFE9EFF6)),
+              border: Border.all(color: context.appBorderColor),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.03),
@@ -723,10 +725,10 @@ class _ResultTile extends StatelessWidget {
                         title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
-                          color: Color(0xFF0F172A),
+                          color: context.appTextPrimaryColor,
                         ),
                       ),
                       if (subtitle.isNotEmpty) ...[
@@ -735,9 +737,9 @@ class _ResultTile extends StatelessWidget {
                           subtitle,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 11,
-                            color: Color(0xFF94A3B8),
+                            color: context.appTextSecondaryColor,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -749,7 +751,7 @@ class _ResultTile extends StatelessWidget {
                   width: 28,
                   height: 28,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF1F5F9),
+                    color: context.appInputBackground,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
@@ -757,7 +759,7 @@ class _ResultTile extends StatelessWidget {
                         ? Icons.north_west_rounded
                         : Icons.arrow_forward_ios_rounded,
                     size: isRecent ? 13 : 10,
-                    color: const Color(0xFF94A3B8),
+                    color: context.appTextSecondaryColor,
                   ),
                 ),
               ],
@@ -776,9 +778,9 @@ class _EmptyRecents extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 32),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.appCardBackground,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE9EFF6)),
+        border: Border.all(color: context.appBorderColor),
       ),
       child: Column(
         children: [
@@ -786,28 +788,31 @@ class _EmptyRecents extends StatelessWidget {
             width: 52,
             height: 52,
             decoration: BoxDecoration(
-              color: const Color(0xFFF1F5F9),
+              color: context.appInputBackground,
               borderRadius: BorderRadius.circular(16),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.explore_outlined,
               size: 26,
-              color: Color(0xFF94A3B8),
+              color: context.appTextSecondaryColor,
             ),
           ),
           const SizedBox(height: 12),
-          const Text(
+          Text(
             'Aún no hay búsquedas',
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF475569),
+              color: context.appTextPrimaryColor,
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'Tus destinos recientes aparecerán aquí',
-            style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+            style: TextStyle(
+              fontSize: 12,
+              color: context.appTextSecondaryColor,
+            ),
           ),
         ],
       ),

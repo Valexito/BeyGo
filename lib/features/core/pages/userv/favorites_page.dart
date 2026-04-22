@@ -4,8 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:mapbox_api/features/core/providers/spaces_provider.dart';
 
+import 'package:mapbox_api/common/ui/components/app_styles.dart';
 import 'package:mapbox_api/common/ui/components/my_text.dart';
-import 'package:mapbox_api/common/ui/components/navy_header.dart';
 import 'package:mapbox_api/features/core/providers/favorites_provider.dart';
 import 'package:mapbox_api/features/reservations/pages/reserve_space_page.dart';
 
@@ -20,9 +20,6 @@ class FavoritesPage extends ConsumerStatefulWidget {
 
   @override
   ConsumerState<FavoritesPage> createState() => _FavoritesPageState();
-
-  static const bg = Color(0xFFF2F4F7);
-  static const navy = Color(0xFF1B3A57);
 }
 
 class _FavoritesPageState extends ConsumerState<FavoritesPage>
@@ -54,7 +51,6 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage>
       case FavFilter.spaces:
         return items.where((e) => e.spaces > 0).toList();
       case FavFilter.all:
-      default:
         return items;
     }
   }
@@ -84,23 +80,73 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage>
         final filter = _getFilter();
 
         return Scaffold(
-          backgroundColor: FavoritesPage.bg,
+          backgroundColor: context.appPageBackground,
           body: SafeArea(
             child: Column(
               children: [
                 Stack(
                   children: [
-                    const NavyHeader(
+                    Container(
                       height: 150,
-                      roundedBottom: false,
-                      children: [
-                        MyText(
-                          text: 'FAVORITOS',
-                          variant: MyTextVariant.title,
-                          textAlign: TextAlign.center,
-                          customColor: Colors.white,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors:
+                              context.isDarkMode
+                                  ? const [
+                                    Color(0xFF111827),
+                                    Color(0xFF0F172A),
+                                    Color(0xFF0B1220),
+                                  ]
+                                  : const [
+                                    AppColors.headerTop,
+                                    AppColors.headerBottom,
+                                  ],
                         ),
-                      ],
+                      ),
+                    ),
+                    Positioned(
+                      top: -18,
+                      right: -16,
+                      child: Container(
+                        width: 110,
+                        height: 110,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(
+                            alpha: context.isDarkMode ? 0.04 : 0.09,
+                          ),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      top: 56,
+                      left: -18,
+                      child: Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(
+                            alpha: context.isDarkMode ? 0.03 : 0.07,
+                          ),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                    const Positioned.fill(
+                      child: SafeArea(
+                        child: Align(
+                          alignment: Alignment.center,
+                          child: MyText(
+                            text: 'FAVORITOS',
+                            variant: MyTextVariant.title,
+                            textAlign: TextAlign.center,
+                            customColor: Colors.white,
+                          ),
+                        ),
+                      ),
                     ),
                     Positioned(
                       left: 12,
@@ -145,10 +191,11 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage>
                       final items = _applyFilter(all, filter);
 
                       if (items.isEmpty) {
-                        return const Center(
+                        return Center(
                           child: MyText(
                             text: 'No tienes favoritos aún',
                             variant: MyTextVariant.bodyMuted,
+                            customColor: context.appTextSecondaryColor,
                           ),
                         );
                       }
@@ -177,27 +224,38 @@ class _FavoritesTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const navy = FavoritesPage.navy;
-
     return Material(
-      elevation: 8,
-      color: Colors.white,
+      elevation: context.isDarkMode ? 0 : 8,
+      color: context.appCardBackground,
       borderRadius: BorderRadius.circular(24),
-      shadowColor: navy.withOpacity(0.10),
+      shadowColor: Colors.black.withValues(
+        alpha: context.isDarkMode ? 0.18 : 0.10,
+      ),
       child: Container(
         height: 56,
         padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: context.appCardBackground,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: context.appBorderColor),
+        ),
         child: TabBar(
           controller: controller,
           labelPadding: EdgeInsets.zero,
           indicator: BoxDecoration(
-            color: const Color(0xFFEAF0F7),
+            color:
+                context.isDarkMode
+                    ? context.appCardBackgroundSoft
+                    : const Color(0xFFEAF0F7),
             borderRadius: BorderRadius.circular(18),
           ),
           indicatorSize: TabBarIndicatorSize.tab,
           dividerColor: Colors.transparent,
-          labelColor: navy,
-          unselectedLabelColor: Colors.black54,
+          labelColor:
+              context.isDarkMode
+                  ? Colors.white
+                  : const Color(0xFF1B3A57),
+          unselectedLabelColor: context.appTextSecondaryColor,
           labelStyle: const TextStyle(
             fontWeight: FontWeight.w700,
             fontSize: 14,
@@ -219,12 +277,10 @@ class _FavoriteCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    const navy = FavoritesPage.navy;
     const accentBlue = Color(0xFF2563EB);
 
     final heroImg =
         item.heroImage ?? 'https://via.placeholder.com/800x450?text=Parking';
-    final hasRating = item.rating > 0;
     final spacesAsync = ref.watch(availableSpacesProvider(item.parkingId));
 
     return InkWell(
@@ -237,11 +293,19 @@ class _FavoriteCard extends ConsumerWidget {
         );
       },
       child: Material(
-        elevation: 4,
-        color: Colors.white,
+        elevation: context.isDarkMode ? 0 : 4,
+        color: context.appCardBackground,
         borderRadius: BorderRadius.circular(18),
-        shadowColor: navy.withOpacity(0.10),
-        child: Column(
+        shadowColor: Colors.black.withValues(
+          alpha: context.isDarkMode ? 0.16 : 0.10,
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            color: context.appCardBackground,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: context.appBorderColor),
+          ),
+          child: Column(
           children: [
             Stack(
               children: [
@@ -275,13 +339,16 @@ class _FavoriteCard extends ConsumerWidget {
                       );
 
                       return Material(
-                        color: Colors.white,
+                        color: context.appCardBackground,
                         shape: const CircleBorder(),
                         elevation: 2,
                         child: IconButton(
                           icon: Icon(
                             isFav ? Icons.favorite : Icons.favorite_border,
-                            color: isFav ? Colors.red : navy,
+                            color:
+                                isFav
+                                    ? Colors.red
+                                    : context.appTextPrimaryColor,
                           ),
                           onPressed:
                               favStream.isLoading
@@ -356,7 +423,7 @@ class _FavoriteCard extends ConsumerWidget {
                                                 .toDouble()
                                             : item.rating;
 
-                                    final hasRating = (rating ?? 0) > 0;
+                                    final hasRating = rating > 0;
 
                                     return _InfoPill(
                                       icon:
@@ -365,7 +432,7 @@ class _FavoriteCard extends ConsumerWidget {
                                               : Icons.fiber_new_rounded,
                                       text:
                                           hasRating
-                                              ? rating!.toStringAsFixed(1)
+                                              ? rating.toStringAsFixed(1)
                                               : 'Nuevo',
                                       iconColor:
                                           hasRating
@@ -456,6 +523,7 @@ class _FavoriteCard extends ConsumerWidget {
             ),
           ],
         ),
+        ),
       ),
     );
   }
@@ -474,8 +542,6 @@ class _InfoPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const textColor = Color(0xFF334155);
-
     return Row(
       children: [
         Icon(icon, size: 16, color: iconColor),
@@ -483,10 +549,10 @@ class _InfoPill extends StatelessWidget {
         Expanded(
           child: Text(
             text,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: textColor,
+              color: context.appTextPrimaryColor,
             ),
             overflow: TextOverflow.ellipsis,
           ),
@@ -502,7 +568,7 @@ class _ImageShimmer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFFE9EDF3),
+      color: context.appInputBackground,
       alignment: Alignment.center,
       child: const SizedBox(
         width: 22,
@@ -519,9 +585,12 @@ class _ImageFallback extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFFE7ECF3),
+      color: context.appInputBackground,
       alignment: Alignment.center,
-      child: const Icon(Icons.image_not_supported, color: Colors.grey),
+      child: Icon(
+        Icons.image_not_supported,
+        color: context.appTextSecondaryColor,
+      ),
     );
   }
 }
@@ -533,6 +602,7 @@ class _OnlyForUsers extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: context.appPageBackground,
       body: Center(
         child: ElevatedButton(
           onPressed: onGoHome,

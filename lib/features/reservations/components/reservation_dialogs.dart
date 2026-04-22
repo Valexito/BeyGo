@@ -33,11 +33,13 @@ class ReservationDialogs {
           insetPadding: const EdgeInsets.symmetric(horizontal: 20),
           child: Container(
             decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
+              color: context.appCardBackground,
               borderRadius: BorderRadius.circular(28),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.headerBottom.withOpacity(0.16),
+                  color: Colors.black.withValues(
+                    alpha: context.isDarkMode ? 0.24 : 0.16,
+                  ),
                   blurRadius: 28,
                   offset: const Offset(0, 12),
                 ),
@@ -49,13 +51,22 @@ class ReservationDialogs {
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      colors: [AppColors.headerTop, AppColors.headerBottom],
+                      colors:
+                          context.isDarkMode
+                              ? const [
+                                Color(0xFF1E3A5F),
+                                Color(0xFF0F172A),
+                              ]
+                              : const [
+                                AppColors.headerTop,
+                                AppColors.headerBottom,
+                              ],
                     ),
-                    borderRadius: BorderRadius.only(
+                    borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(28),
                       topRight: Radius.circular(28),
                     ),
@@ -66,10 +77,10 @@ class ReservationDialogs {
                         width: 66,
                         height: 66,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.16),
+                          color: Colors.white.withValues(alpha: 0.16),
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: Colors.white.withOpacity(0.24),
+                            color: Colors.white.withValues(alpha: 0.24),
                             width: 1.2,
                           ),
                         ),
@@ -108,11 +119,14 @@ class ReservationDialogs {
                         width: double.infinity,
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: context.appCardBackground,
                           borderRadius: BorderRadius.circular(22),
+                          border: Border.all(color: context.appBorderColor),
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.headerBottom.withOpacity(0.08),
+                              color: Colors.black.withValues(
+                                alpha: context.isDarkMode ? 0.16 : 0.08,
+                              ),
                               blurRadius: 18,
                               offset: const Offset(0, 8),
                             ),
@@ -166,15 +180,15 @@ class ReservationDialogs {
                                 onPressed: () => Navigator.of(ctx).pop(false),
                                 style: OutlinedButton.styleFrom(
                                   side: BorderSide(
-                                    color: AppColors.headerBottom.withOpacity(
-                                      0.35,
+                                    color: AppColors.headerBottom.withValues(
+                                      alpha: 0.35,
                                     ),
                                     width: 1.4,
                                   ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(18),
                                   ),
-                                  backgroundColor: Colors.white,
+                                  backgroundColor: context.appCardBackground,
                                 ),
                                 child: const MyText(
                                   text: 'Cancelar',
@@ -221,11 +235,13 @@ class ReservationDialogs {
           insetPadding: const EdgeInsets.symmetric(horizontal: 24),
           child: Container(
             decoration: BoxDecoration(
-              color: AppColors.cardBg,
+              color: context.appCardBackground,
               borderRadius: BorderRadius.circular(AppDims.radiusXl),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.primaryDark.withOpacity(0.10),
+                  color: Colors.black.withValues(
+                    alpha: context.isDarkMode ? 0.24 : 0.10,
+                  ),
                   blurRadius: 28,
                   offset: const Offset(0, 14),
                 ),
@@ -236,9 +252,9 @@ class ReservationDialogs {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _circleIcon(Icons.warning_amber_rounded),
+                  _circleIcon(context, Icons.warning_amber_rounded),
                   const SizedBox(height: 16),
-                  _title('Confirmar cancelación'),
+                  _title(context, 'Confirmar cancelación'),
                   const SizedBox(height: 12),
                   const MyText(
                     text: '¿Deseas cancelar esta reservación?',
@@ -257,9 +273,9 @@ class ReservationDialogs {
                     fontSize: 12,
                   ),
                   const SizedBox(height: 12),
-                  _strikeBox(previewStrike, maxStrikes),
+                  _strikeBox(context, previewStrike, maxStrikes),
                   const SizedBox(height: 20),
-                  _actions(ctx, 'Aceptar'),
+                  _actions(context, ctx, 'Aceptar'),
                 ],
               ),
             ),
@@ -293,11 +309,13 @@ class ReservationDialogs {
           insetPadding: const EdgeInsets.symmetric(horizontal: 24),
           child: Container(
             decoration: BoxDecoration(
-              color: AppColors.cardBg,
+              color: context.appCardBackground,
               borderRadius: BorderRadius.circular(AppDims.radiusXl),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.primaryDark.withOpacity(0.10),
+                  color: Colors.black.withValues(
+                    alpha: context.isDarkMode ? 0.24 : 0.10,
+                  ),
                   blurRadius: 28,
                   offset: const Offset(0, 14),
                 ),
@@ -308,9 +326,9 @@ class ReservationDialogs {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _circleIcon(Icons.exit_to_app_rounded),
+                  _circleIcon(context, Icons.exit_to_app_rounded),
                   const SizedBox(height: 16),
-                  _title('Confirmar solicitud de salida'),
+                  _title(context, 'Confirmar solicitud de salida'),
                   const SizedBox(height: 12),
                   const MyText(
                     text: '¿Deseas solicitar tu salida?',
@@ -327,7 +345,7 @@ class ReservationDialogs {
                     fontSize: 12,
                   ),
                   const SizedBox(height: 16),
-                  _infoBox([
+                  _infoBox(context, [
                     _Row(
                       Icons.local_parking_rounded,
                       'Parqueo',
@@ -361,7 +379,7 @@ class ReservationDialogs {
                     ),
                   ]),
                   const SizedBox(height: 20),
-                  _actions(ctx, 'Confirmar salida'),
+                  _actions(context, ctx, 'Confirmar salida'),
                 ],
               ),
             ),
@@ -371,19 +389,22 @@ class ReservationDialogs {
     );
   }
 
-  static Widget _circleIcon(IconData icon) => Container(
+  static Widget _circleIcon(BuildContext context, IconData icon) => Container(
     width: 62,
     height: 62,
     decoration: BoxDecoration(
-      gradient: const LinearGradient(
-        colors: [AppColors.headerTop, AppColors.headerBottom],
+      gradient: LinearGradient(
+        colors:
+            context.isDarkMode
+                ? const [Color(0xFF1E3A5F), Color(0xFF0F172A)]
+                : const [AppColors.headerTop, AppColors.headerBottom],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ),
       shape: BoxShape.circle,
       boxShadow: [
         BoxShadow(
-          color: AppColors.headerBottom.withOpacity(0.22),
+          color: AppColors.headerBottom.withValues(alpha: 0.22),
           blurRadius: 16,
           offset: const Offset(0, 8),
         ),
@@ -392,10 +413,10 @@ class ReservationDialogs {
     child: Icon(icon, color: Colors.white, size: 30),
   );
 
-  static Widget _title(String text) => Container(
+  static Widget _title(BuildContext context, String text) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
     decoration: BoxDecoration(
-      color: AppColors.primarySoft.withOpacity(0.25),
+      color: AppColors.primarySoft.withValues(alpha: 0.25),
       borderRadius: BorderRadius.circular(20),
     ),
     child: MyText(
@@ -406,11 +427,11 @@ class ReservationDialogs {
     ),
   );
 
-  static Widget _strikeBox(int used, int max) => Container(
+  static Widget _strikeBox(BuildContext context, int used, int max) => Container(
     width: double.infinity,
     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
     decoration: BoxDecoration(
-      color: const Color(0xFFF7F7F9),
+      color: context.appCardBackgroundSoft,
       borderRadius: BorderRadius.circular(14),
     ),
     child: Column(
@@ -431,11 +452,11 @@ class ReservationDialogs {
     ),
   );
 
-  static Widget _infoBox(List<Widget> children) => Container(
+  static Widget _infoBox(BuildContext context, List<Widget> children) => Container(
     width: double.infinity,
     padding: const EdgeInsets.all(16),
     decoration: BoxDecoration(
-      color: const Color(0xFFF7F7F9),
+      color: context.appCardBackgroundSoft,
       borderRadius: BorderRadius.circular(16),
     ),
     child: Column(
@@ -449,7 +470,11 @@ class ReservationDialogs {
     ),
   );
 
-  static Widget _actions(BuildContext ctx, String confirmText) => Row(
+  static Widget _actions(
+    BuildContext context,
+    BuildContext ctx,
+    String confirmText,
+  ) => Row(
     children: [
       Expanded(
         child: SizedBox(
@@ -458,13 +483,13 @@ class ReservationDialogs {
             onPressed: () => Navigator.pop(ctx, false),
             style: OutlinedButton.styleFrom(
               side: BorderSide(
-                color: AppColors.headerBottom.withOpacity(0.35),
+                color: AppColors.headerBottom.withValues(alpha: 0.35),
                 width: 1.2,
               ),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppDims.radiusLg),
               ),
-              backgroundColor: Colors.white,
+              backgroundColor: context.appCardBackground,
             ),
             child: const MyText(
               text: 'No',
@@ -511,8 +536,8 @@ class _Row extends StatelessWidget {
         Container(
           width: 30,
           height: 30,
-          decoration: const BoxDecoration(
-            color: AppColors.iconCircle,
+          decoration: BoxDecoration(
+            color: context.appIconCircleColor,
             shape: BoxShape.circle,
           ),
           child: Icon(icon, size: 16, color: AppColors.headerBottom),
@@ -558,8 +583,8 @@ class _SummaryRow extends StatelessWidget {
         Container(
           width: 38,
           height: 38,
-          decoration: const BoxDecoration(
-            color: AppColors.iconCircle,
+          decoration: BoxDecoration(
+            color: context.appIconCircleColor,
             shape: BoxShape.circle,
           ),
           child: Icon(icon, size: 19, color: AppColors.headerBottom),

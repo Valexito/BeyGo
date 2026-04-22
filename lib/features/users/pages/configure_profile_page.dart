@@ -249,21 +249,6 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage>
     return ref.getDownloadURL();
   }
 
-  void _addVehicle() {
-    if (_vehicles.length >= 4) return;
-    setState(() => _vehicles.add(_VehicleEditEntry(isNew: true)));
-  }
-
-  void _removeVehicle(int index) {
-    if (_vehicles.length <= 1) return;
-    setState(() {
-      _vehicles[index].dispose();
-      _vehicles.removeAt(index);
-      // Ensure first is primary
-      if (_vehicles.isNotEmpty) _vehicles[0].isPrimary = true;
-    });
-  }
-
   void _showCountryPicker() {
     showModalBottomSheet(
       context: context,
@@ -277,9 +262,11 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage>
           expand: false,
           builder: (_, scrollCtrl) {
             return Container(
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+              decoration: BoxDecoration(
+                color: context.appCardBackground,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(28),
+                ),
               ),
               child: Column(
                 children: [
@@ -293,25 +280,25 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage>
                             width: 40,
                             height: 4,
                             decoration: BoxDecoration(
-                              color: Colors.grey.shade300,
+                              color: context.appBorderColor,
                               borderRadius: BorderRadius.circular(99),
                             ),
                           ),
                         ),
                         const SizedBox(height: 14),
-                        const Align(
+                        Align(
                           alignment: Alignment.centerLeft,
                           child: Text(
                             'Código de país',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF1E293B),
+                              color: context.appTextPrimaryColor,
                             ),
                           ),
                         ),
                         const SizedBox(height: 10),
-                        Divider(color: Colors.grey.shade100, height: 1),
+                        Divider(color: context.appBorderColor, height: 1),
                       ],
                     ),
                   ),
@@ -339,14 +326,16 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage>
                             decoration: BoxDecoration(
                               color:
                                   selected
-                                      ? AppColors.headerBottom.withOpacity(0.07)
+                                      ? AppColors.headerBottom.withValues(
+                                        alpha: 0.07,
+                                      )
                                       : Colors.transparent,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
                                 color:
                                     selected
-                                        ? AppColors.headerBottom.withOpacity(
-                                          0.25,
+                                        ? AppColors.headerBottom.withValues(
+                                          alpha: 0.25,
                                         )
                                         : Colors.transparent,
                               ),
@@ -367,7 +356,7 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage>
                                       color:
                                           selected
                                               ? AppColors.headerBottom
-                                              : const Color(0xFF3D4554),
+                                              : context.appTextPrimaryColor,
                                     ),
                                   ),
                                 ),
@@ -379,7 +368,7 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage>
                                     color:
                                         selected
                                             ? AppColors.headerBottom
-                                            : const Color(0xFF6B7280),
+                                            : context.appTextSecondaryColor,
                                   ),
                                 ),
                                 if (selected) ...[
@@ -522,7 +511,7 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage>
                 : null);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F4F8),
+      backgroundColor: context.appPageBackground,
       body: SafeArea(
         top: false,
         child: SizedBox(
@@ -533,11 +522,21 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage>
               Container(
                 height: screen.height * 0.40,
                 width: double.infinity,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [AppColors.headerTop, AppColors.headerBottom],
+                    colors:
+                        context.isDarkMode
+                            ? const [
+                              Color(0xFF111827),
+                              Color(0xFF0F172A),
+                              Color(0xFF0B1220),
+                            ]
+                            : const [
+                              AppColors.headerTop,
+                              AppColors.headerBottom,
+                            ],
                   ),
                 ),
               ),
@@ -640,9 +639,9 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage>
                 right: 0,
                 bottom: 0,
                 child: Container(
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.only(
+                  decoration: BoxDecoration(
+                    color: context.appSectionBackground,
+                    borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(34),
                       topRight: Radius.circular(34),
                     ),
@@ -665,21 +664,24 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage>
                                   crossAxisAlignment:
                                       CrossAxisAlignment.stretch,
                                   children: [
-                                    const Text(
+                                    Text(
                                       'Editar perfil',
                                       style: TextStyle(
                                         fontSize: 22,
                                         fontWeight: FontWeight.w800,
-                                        color: AppColors.headerBottom,
+                                        color:
+                                            context.isDarkMode
+                                                ? Colors.white
+                                                : AppColors.headerBottom,
                                         letterSpacing: -0.5,
                                       ),
                                     ),
                                     const SizedBox(height: 4),
-                                    const Text(
+                                    Text(
                                       'Actualiza tu información y vehículos.',
                                       style: TextStyle(
                                         fontSize: 13,
-                                        color: Color(0xFF8A94A6),
+                                        color: context.appTextSecondaryColor,
                                       ),
                                     ),
 
@@ -828,7 +830,7 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage>
                                           boxShadow: [
                                             BoxShadow(
                                               color: AppColors.headerBottom
-                                                  .withOpacity(0.04),
+                                                  .withValues(alpha: 0.04),
                                               blurRadius: 8,
                                               offset: const Offset(0, 2),
                                             ),
@@ -841,7 +843,7 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage>
                                               height: 36,
                                               decoration: BoxDecoration(
                                                 color: AppColors.headerBottom
-                                                    .withOpacity(0.08),
+                                                    .withValues(alpha: 0.08),
                                                 borderRadius:
                                                     BorderRadius.circular(10),
                                               ),
@@ -916,7 +918,7 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage>
     width: size,
     height: size,
     decoration: BoxDecoration(
-      color: Colors.white.withOpacity(opacity),
+      color: Colors.white.withValues(alpha: opacity),
       shape: BoxShape.circle,
     ),
   );
@@ -967,18 +969,20 @@ class _VehicleEditCardState extends State<_VehicleEditCard> {
       duration: const Duration(milliseconds: 220),
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.appCardBackground,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color:
               widget.isPrimary
-                  ? AppColors.headerBottom.withOpacity(0.30)
-                  : AppColors.borderSoft,
+                  ? AppColors.headerBottom.withValues(alpha: 0.30)
+                  : context.appBorderColor,
           width: widget.isPrimary ? 1.5 : 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.headerBottom.withOpacity(0.05),
+            color: Colors.black.withValues(
+              alpha: context.isDarkMode ? 0.14 : 0.05,
+            ),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -992,8 +996,8 @@ class _VehicleEditCardState extends State<_VehicleEditCard> {
             decoration: BoxDecoration(
               color:
                   widget.isPrimary
-                      ? AppColors.headerBottom.withOpacity(0.05)
-                      : const Color(0xFFF8FAFC),
+                      ? AppColors.headerBottom.withValues(alpha: 0.05)
+                      : context.appCardBackgroundSoft,
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(20),
                 topRight: Radius.circular(20),
@@ -1005,7 +1009,7 @@ class _VehicleEditCardState extends State<_VehicleEditCard> {
                   width: 32,
                   height: 32,
                   decoration: BoxDecoration(
-                    color: AppColors.headerBottom.withOpacity(0.10),
+                    color: AppColors.headerBottom.withValues(alpha: 0.10),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
@@ -1025,7 +1029,7 @@ class _VehicleEditCardState extends State<_VehicleEditCard> {
                     color:
                         widget.isPrimary
                             ? AppColors.headerBottom
-                            : const Color(0xFF3D4554),
+                            : context.appTextPrimaryColor,
                   ),
                 ),
                 if (widget.isPrimary) ...[
@@ -1036,7 +1040,7 @@ class _VehicleEditCardState extends State<_VehicleEditCard> {
                       vertical: 2,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.headerBottom.withOpacity(0.10),
+                      color: AppColors.headerBottom.withValues(alpha: 0.10),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
@@ -1056,7 +1060,7 @@ class _VehicleEditCardState extends State<_VehicleEditCard> {
                     child: Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFDC2626).withOpacity(0.08),
+                        color: const Color(0xFFDC2626).withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Icon(
@@ -1095,7 +1099,7 @@ class _VehicleEditCardState extends State<_VehicleEditCard> {
                                 color:
                                     selected
                                         ? AppColors.headerBottom
-                                        : const Color(0xFFF1F5F9),
+                                        : context.appInputBackground,
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Column(
@@ -1208,10 +1212,10 @@ class _VehicleEditCardState extends State<_VehicleEditCard> {
                     vertical: 10,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.headerBottom.withOpacity(0.05),
+                    color: AppColors.headerBottom.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: AppColors.headerBottom.withOpacity(0.12),
+                      color: AppColors.headerBottom.withValues(alpha: 0.12),
                     ),
                   ),
                   child: Row(
@@ -1220,14 +1224,14 @@ class _VehicleEditCardState extends State<_VehicleEditCard> {
                       Icon(
                         Icons.credit_card_rounded,
                         size: 15,
-                        color: AppColors.headerBottom.withOpacity(0.6),
+                        color: AppColors.headerBottom.withValues(alpha: 0.6),
                       ),
                       const SizedBox(width: 8),
                       Text(
                         'Placa: ',
                         style: TextStyle(
                           fontSize: 12,
-                          color: AppColors.headerBottom.withOpacity(0.6),
+                          color: AppColors.headerBottom.withValues(alpha: 0.6),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -1247,9 +1251,9 @@ class _VehicleEditCardState extends State<_VehicleEditCard> {
                 const SizedBox(height: 8),
                 Text(
                   entry.type.hint,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 10,
-                    color: Color(0xFF8A94A6),
+                    color: context.appTextSecondaryColor,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -1276,16 +1280,16 @@ class _FieldLabel extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF1E293B),
+            color: context.appTextPrimaryColor,
           ),
         ),
         const SizedBox(height: 2),
         Text(
           hint,
-          style: const TextStyle(fontSize: 11, color: Color(0xFF8A94A6)),
+          style: TextStyle(fontSize: 11, color: context.appTextSecondaryColor),
         ),
       ],
     );
@@ -1297,44 +1301,40 @@ class _StyledField extends StatelessWidget {
   final String hint;
   final IconData icon;
   final String? Function(String?)? validator;
-  final TextInputType? keyboardType;
-
   const _StyledField({
     required this.controller,
     required this.hint,
     required this.icon,
     this.validator,
-    this.keyboardType,
   });
 
   @override
   Widget build(BuildContext context) {
     return TextFormField(
       controller: controller,
-      keyboardType: keyboardType,
       validator: validator,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 14,
         fontWeight: FontWeight.w600,
-        color: Color(0xFF1E293B),
+        color: context.appTextPrimaryColor,
       ),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF8A94A6)),
+        hintStyle: TextStyle(fontSize: 13, color: context.appTextSecondaryColor),
         prefixIcon: Icon(icon, size: 18, color: AppColors.headerBottom),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: context.appInputBackgroundActive,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 14,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: AppColors.borderSoft),
+          borderSide: BorderSide(color: context.appBorderColor),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: AppColors.borderSoft),
+          borderSide: BorderSide(color: context.appBorderColor),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
@@ -1373,47 +1373,52 @@ class _ReadonlyField extends StatelessWidget {
       style: TextStyle(
         fontSize: 14,
         fontWeight: FontWeight.w600,
-        color: muted ? const Color(0xFF8A94A6) : const Color(0xFF1E293B),
+        color:
+            muted
+                ? context.appTextSecondaryColor
+                : context.appTextPrimaryColor,
       ),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF8A94A6)),
+        hintStyle: TextStyle(fontSize: 13, color: context.appTextSecondaryColor),
         prefixIcon: Icon(
           icon,
           size: 18,
-          color: muted ? const Color(0xFF8A94A6) : AppColors.headerBottom,
+          color:
+              muted ? context.appTextSecondaryColor : AppColors.headerBottom,
         ),
         suffixIcon:
             onTap != null && !muted
                 ? Icon(
                   Icons.edit_calendar_outlined,
                   size: 16,
-                  color: AppColors.headerBottom.withOpacity(0.5),
+                  color: AppColors.headerBottom.withValues(alpha: 0.5),
                 )
                 : muted
-                ? const Icon(
+                ? Icon(
                   Icons.lock_outline_rounded,
                   size: 16,
-                  color: Color(0xFF8A94A6),
+                  color: context.appTextSecondaryColor,
                 )
                 : null,
         filled: true,
-        fillColor: muted ? const Color(0xFFF1F5F9) : Colors.white,
+        fillColor:
+            muted ? context.appInputBackground : context.appInputBackgroundActive,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 14,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: AppColors.borderSoft),
+          borderSide: BorderSide(color: context.appBorderColor),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: AppColors.borderSoft),
+          borderSide: BorderSide(color: context.appBorderColor),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: AppColors.borderSoft),
+          borderSide: BorderSide(color: context.appBorderColor),
         ),
       ),
     );
@@ -1435,9 +1440,9 @@ class _PhoneField extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.appInputBackgroundActive,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.borderSoft),
+        border: Border.all(color: context.appBorderColor),
       ),
       child: Row(
         children: [
@@ -1447,7 +1452,7 @@ class _PhoneField extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
               decoration: BoxDecoration(
-                border: Border(right: BorderSide(color: AppColors.borderSoft)),
+                border: Border(right: BorderSide(color: context.appBorderColor)),
               ),
               child: Row(
                 children: [
@@ -1468,7 +1473,7 @@ class _PhoneField extends StatelessWidget {
                   Icon(
                     Icons.keyboard_arrow_down_rounded,
                     size: 16,
-                    color: AppColors.headerBottom.withOpacity(0.6),
+                    color: AppColors.headerBottom.withValues(alpha: 0.6),
                   ),
                 ],
               ),
@@ -1482,16 +1487,19 @@ class _PhoneField extends StatelessWidget {
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'[0-9\s\-]')),
               ],
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF1E293B),
+                color: context.appTextPrimaryColor,
               ),
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: '5555 1234',
-                hintStyle: TextStyle(fontSize: 13, color: Color(0xFF8A94A6)),
+                hintStyle: TextStyle(
+                  fontSize: 13,
+                  color: context.appTextSecondaryColor,
+                ),
                 border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(
+                contentPadding: const EdgeInsets.symmetric(
                   horizontal: 12,
                   vertical: 14,
                 ),
@@ -1517,7 +1525,7 @@ class _SectionHeader extends StatelessWidget {
           width: 30,
           height: 30,
           decoration: BoxDecoration(
-            color: AppColors.headerBottom.withOpacity(0.08),
+            color: AppColors.headerBottom.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(9),
           ),
           child: Icon(icon, size: 16, color: AppColors.headerBottom),
@@ -1525,10 +1533,10 @@ class _SectionHeader extends StatelessWidget {
         const SizedBox(width: 9),
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF1E293B),
+            color: context.appTextPrimaryColor,
           ),
         ),
       ],
@@ -1558,7 +1566,8 @@ class _GenderChip extends StatelessWidget {
           duration: const Duration(milliseconds: 180),
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 11),
           decoration: BoxDecoration(
-            color: selected ? AppColors.headerBottom : const Color(0xFFF1F5F9),
+            color:
+                selected ? AppColors.headerBottom : context.appInputBackground,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Column(
@@ -1566,7 +1575,8 @@ class _GenderChip extends StatelessWidget {
               Icon(
                 icon,
                 size: 18,
-                color: selected ? Colors.white : const Color(0xFF6B7280),
+                color:
+                    selected ? Colors.white : context.appTextSecondaryColor,
               ),
               const SizedBox(height: 4),
               Text(
@@ -1575,7 +1585,8 @@ class _GenderChip extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
-                  color: selected ? Colors.white : const Color(0xFF6B7280),
+                  color:
+                      selected ? Colors.white : context.appTextSecondaryColor,
                 ),
               ),
             ],

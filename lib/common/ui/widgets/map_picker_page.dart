@@ -133,7 +133,7 @@ class _MapPickerPageState extends State<MapPickerPage> {
     final initial = widget.initialPosition ?? _defaultCenter;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F4F8),
+      backgroundColor: context.appPageBackground,
       body: Column(
         children: [
           // ── Header ──
@@ -198,7 +198,7 @@ class _MapPickerPageState extends State<MapPickerPage> {
                         Container(
                           margin: const EdgeInsets.only(top: 4),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: context.appCardBackground,
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
@@ -225,7 +225,8 @@ class _MapPickerPageState extends State<MapPickerPage> {
                                             width: 32,
                                             height: 32,
                                             decoration: BoxDecoration(
-                                              color: AppColors.iconCircle,
+                                              color:
+                                                  context.appIconCircleColor,
                                               borderRadius:
                                                   BorderRadius.circular(9),
                                             ),
@@ -243,18 +244,22 @@ class _MapPickerPageState extends State<MapPickerPage> {
                                               children: [
                                                 Text(
                                                   s.mainText,
-                                                  style: const TextStyle(
+                                                  style: TextStyle(
                                                     fontSize: 13,
                                                     fontWeight: FontWeight.w700,
-                                                    color: Color(0xFF1E293B),
+                                                    color:
+                                                        context
+                                                            .appTextPrimaryColor,
                                                   ),
                                                 ),
                                                 if (s.secondaryText.isNotEmpty)
                                                   Text(
                                                     s.secondaryText,
-                                                    style: const TextStyle(
+                                                    style: TextStyle(
                                                       fontSize: 11,
-                                                      color: Color(0xFF8A94A6),
+                                                      color:
+                                                          context
+                                                              .appTextSecondaryColor,
                                                     ),
                                                   ),
                                               ],
@@ -312,9 +317,9 @@ class _MapPickerPageState extends State<MapPickerPage> {
                         vertical: 12,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: context.appCardBackground,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppColors.borderSoft),
+                        border: Border.all(color: context.appBorderColor),
                         boxShadow: [
                           BoxShadow(
                             color: AppColors.headerBottom.withOpacity(0.08),
@@ -323,20 +328,20 @@ class _MapPickerPageState extends State<MapPickerPage> {
                           ),
                         ],
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
                             Icons.touch_app_outlined,
                             size: 18,
-                            color: AppColors.textSecondary,
+                            color: context.appTextSecondaryColor,
                           ),
                           SizedBox(width: 8),
                           Text(
                             'Toca el mapa para marcar la ubicación',
                             style: TextStyle(
                               fontSize: 13,
-                              color: AppColors.textSecondary,
+                              color: context.appTextSecondaryColor,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -371,7 +376,7 @@ class _SearchBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.appCardBackground,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -385,14 +390,17 @@ class _SearchBar extends StatelessWidget {
         controller: controller,
         focusNode: focusNode,
         onChanged: onChanged,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w600,
-          color: Color(0xFF1E293B),
+          color: context.appTextPrimaryColor,
         ),
         decoration: InputDecoration(
           hintText: 'Buscar dirección...',
-          hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF8A94A6)),
+          hintStyle: TextStyle(
+            fontSize: 13,
+            color: context.appTextSecondaryColor,
+          ),
           prefixIcon: const Icon(
             Icons.search_rounded,
             color: AppColors.headerBottom,
@@ -409,7 +417,7 @@ class _SearchBar extends StatelessWidget {
                   )
                   : null,
           filled: true,
-          fillColor: Colors.white,
+          fillColor: context.appCardBackground,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
             vertical: 14,

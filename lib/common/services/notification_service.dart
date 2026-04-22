@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:mapbox_api/common/services/app_preferences_service.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -156,6 +157,12 @@ class NotificationService {
     final notif = message.notification;
     if (notif == null) return;
 
+    final prefs = AppPreferencesService.instance.loadState();
+    if (!_shouldDisplayMessage(message, prefs)) {
+      debugPrint('[FCM FG] Skipped by user preferences: ${message.data}');
+      return;
+    }
+
     debugPrint('[FCM FG] ${notif.title}: ${notif.body}');
 
     await _localNotif.show(
@@ -170,8 +177,11 @@ class NotificationService {
           importance: Importance.high,
           priority: Priority.high,
           icon: '@mipmap/ic_launcher',
+          playSound: prefs.notificationSoundEnabled,
         ),
-        iOS: const DarwinNotificationDetails(),
+        iOS: DarwinNotificationDetails(
+          presentSound: prefs.notificationSoundEnabled,
+        ),
       ),
       payload: message.data['route'],
     );
@@ -180,4 +190,44 @@ class NotificationService {
   void _onNotificationTap(RemoteMessage message) {
     debugPrint('[FCM] Tapped notification: ${message.data}');
   }
+
+  bool _shouldDisplayMessage(
+    RemoteMessage message,
+    AppPreferencesState preferences,
+  ) {
+    if (!preferences.notificationsEnabled) return false;
+
+    final category = _resolveCategory(message.data);
+    switch (category) {
+      case _NotificationCategory.reminder:
+        return preferences.reservationRemindersEnabled;
+      case _NotificationCategory.update:
+        return preferences.appUpdatesEnabled;
+      case _NotificationCategory.general:
+        return true;
+    }
+  }
+
+  _NotificationCategory _resolveCategory(Map<String, dynamic> data) {
+    final raw =
+        ((data['category'] ?? data['type'] ?? data['kind']) as String? ?? '')
+            .toLowerCase();
+
+    if (raw.contains('reservation') ||
+        raw.contains('reminder') ||
+        raw.contains('checkin') ||
+        raw.contains('checkout')) {
+      return _NotificationCategory.reminder;
+    }
+
+    if (raw.contains('update') ||
+        raw.contains('system') ||
+        raw.contains('news')) {
+      return _NotificationCategory.update;
+    }
+
+    return _NotificationCategory.general;
+  }
 }
+
+enum _NotificationCategory { reminder, update, general }

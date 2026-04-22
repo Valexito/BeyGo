@@ -118,11 +118,13 @@ class _RatingDialogState extends State<_RatingDialog> {
       insetPadding: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFFF8FAFC),
+          color: context.appCardBackground,
           borderRadius: BorderRadius.circular(28),
           boxShadow: [
             BoxShadow(
-              color: AppColors.headerBottom.withOpacity(0.16),
+              color: Colors.black.withValues(
+                alpha: context.isDarkMode ? 0.24 : 0.16,
+              ),
               blurRadius: 28,
               offset: const Offset(0, 12),
             ),
@@ -135,13 +137,22 @@ class _RatingDialogState extends State<_RatingDialog> {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [AppColors.headerTop, AppColors.headerBottom],
+                  colors:
+                      context.isDarkMode
+                          ? const [
+                            Color(0xFF1E3A5F),
+                            Color(0xFF0F172A),
+                          ]
+                          : const [
+                            AppColors.headerTop,
+                            AppColors.headerBottom,
+                          ],
                 ),
-                borderRadius: BorderRadius.only(
+                borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(28),
                   topRight: Radius.circular(28),
                 ),
@@ -152,10 +163,10 @@ class _RatingDialogState extends State<_RatingDialog> {
                     width: 60,
                     height: 60,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.18),
+                      color: Colors.white.withValues(alpha: 0.18),
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: Colors.white.withOpacity(0.26),
+                        color: Colors.white.withValues(alpha: 0.26),
                         width: 1.2,
                       ),
                     ),
@@ -218,7 +229,7 @@ class _RatingDialogState extends State<_RatingDialog> {
                           vertical: 8,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.headerBottom.withOpacity(0.08),
+                          color: AppColors.headerBottom.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Row(
@@ -255,10 +266,10 @@ class _RatingDialogState extends State<_RatingDialog> {
                       hintText: 'Comentario opcional...',
                       hintStyle: TextStyle(
                         fontSize: 12,
-                        color: Colors.grey.shade400,
+                        color: context.appTextSecondaryColor,
                       ),
                       filled: true,
-                      fillColor: const Color(0xFFF1F5F9),
+                      fillColor: context.appInputBackground,
                       contentPadding: const EdgeInsets.all(12),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
@@ -283,13 +294,15 @@ class _RatingDialogState extends State<_RatingDialog> {
                                     : () => Navigator.of(context).pop(false),
                             style: OutlinedButton.styleFrom(
                               side: BorderSide(
-                                color: AppColors.headerBottom.withOpacity(0.35),
+                                color: AppColors.headerBottom.withValues(
+                                  alpha: 0.35,
+                                ),
                                 width: 1.2,
                               ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16),
                               ),
-                              backgroundColor: Colors.white,
+                              backgroundColor: context.appCardBackground,
                             ),
                             child: const MyText(
                               text: 'Omitir',
@@ -346,7 +359,10 @@ class _StarSection extends StatelessWidget {
               width: 28,
               height: 28,
               decoration: BoxDecoration(
-                color: AppColors.headerBottom.withOpacity(0.08),
+                color:
+                    context.isDarkMode
+                        ? context.appIconCircleColor
+                        : AppColors.headerBottom.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, size: 14, color: AppColors.headerBottom),
@@ -354,10 +370,10 @@ class _StarSection extends StatelessWidget {
             const SizedBox(width: 8),
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF1E293B),
+                color: context.appTextPrimaryColor,
               ),
             ),
           ],
@@ -379,7 +395,7 @@ class _StarSection extends StatelessWidget {
                   color:
                       rating >= starVal
                           ? const Color(0xFFFBBF24)
-                          : Colors.grey.shade300,
+                          : context.appBorderColor,
                 ),
               ),
             );

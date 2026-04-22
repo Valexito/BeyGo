@@ -64,7 +64,8 @@ class _MyPasswordFieldState extends State<MyPasswordField> {
     final radius = BorderRadius.circular(AppDims.radiusLg);
 
     final textStyle = TextStyle(
-      color: _active ? AppColors.textPrimary : AppColors.textSecondary,
+      color:
+          _active ? context.appTextPrimaryColor : context.appTextSecondaryColor,
       fontWeight: FontWeight.w600,
       fontSize: 15,
     );
@@ -88,7 +89,8 @@ class _MyPasswordFieldState extends State<MyPasswordField> {
       errorText: widget.errorText,
       hintText: widget.hintText,
       filled: true,
-      fillColor: _active ? Colors.white : AppColors.formFieldBg,
+      fillColor:
+          _active ? context.appInputBackgroundActive : context.appInputBackground,
       prefixIcon: _buildPrefix(),
       contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 18),
       border: baseBorder,
@@ -107,7 +109,8 @@ class _MyPasswordFieldState extends State<MyPasswordField> {
         onPressed: () => setState(() => _obscure = !_obscure),
         icon: Icon(
           _obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-          color: _active ? AppColors.headerBottom : AppColors.textSecondary,
+          color:
+              _active ? AppColors.headerBottom : context.appTextSecondaryColor,
         ),
       ),
     );

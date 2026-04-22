@@ -104,8 +104,8 @@ class _MyTextFieldState extends State<MyTextField> {
       child: Container(
         width: 28,
         height: 28,
-        decoration: const BoxDecoration(
-          color: AppColors.iconCircle,
+        decoration: BoxDecoration(
+          color: context.appIconCircleColor,
           shape: BoxShape.circle,
         ),
         child: Icon(widget.prefixIcon, size: 16, color: color),
@@ -118,7 +118,8 @@ class _MyTextFieldState extends State<MyTextField> {
     final radius = BorderRadius.circular(AppDims.radiusLg);
 
     final textStyle = TextStyle(
-      color: _active ? AppColors.textPrimary : AppColors.textSecondary,
+      color:
+          _active ? context.appTextPrimaryColor : context.appTextSecondaryColor,
       fontWeight: FontWeight.w600,
       fontSize: 15,
     );
@@ -142,7 +143,8 @@ class _MyTextFieldState extends State<MyTextField> {
       errorText: widget.errorText,
       hintText: widget.hintText,
       filled: true,
-      fillColor: _active ? Colors.white : AppColors.formFieldBg,
+      fillColor:
+          _active ? context.appInputBackgroundActive : context.appInputBackground,
       prefixIcon: _buildPrefix(),
       suffixIcon: widget.suffix,
       contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 18),

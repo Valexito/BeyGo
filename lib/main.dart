@@ -4,7 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 
+import 'package:mapbox_api/common/services/app_preferences_service.dart';
 import 'package:mapbox_api/common/services/notification_service.dart';
+import 'package:mapbox_api/features/core/providers/app_preferences_provider.dart';
 import 'package:mapbox_api/features/reservations/pages/route_view_page.dart';
 import 'firebase_options.dart';
 import 'common/ui/components/app_styles.dart';
@@ -32,6 +34,8 @@ Future<void> main() async {
   );
   await FirebaseAppCheck.instance.setTokenAutoRefreshEnabled(true);
 
+  await AppPreferencesService.instance.init();
+
   // Init FCM (registers background handler + local notifications channel).
   // Token saving happens in NotificationService via its own auth listener.
   await NotificationService.instance.init();
@@ -39,15 +43,19 @@ Future<void> main() async {
   runApp(const ProviderScope(child: MyApp()));
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final preferences = ref.watch(appPreferencesProvider);
+
     return MaterialApp(
       title: 'Mapa con Parqueos',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.build(),
+      theme: AppTheme.buildLight(),
+      darkTheme: AppTheme.buildDark(),
+      themeMode: preferences.themeMode,
       builder: (context, child) => SafeArea(child: child!),
       home: const AuthGate(),
       routes: {

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mapbox_api/common/ui/components/app_styles.dart';
 import 'package:mapbox_api/common/ui/components/my_text.dart';
-import 'package:mapbox_api/common/ui/components/navy_header.dart';
 
 class FrequentQuestionsPage extends StatelessWidget {
   const FrequentQuestionsPage({super.key});
@@ -34,7 +33,7 @@ class FrequentQuestionsPage extends StatelessWidget {
     ];
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: context.appPageBackground,
       body: SafeArea(
         top: false,
         child: LayoutBuilder(
@@ -47,11 +46,21 @@ class FrequentQuestionsPage extends StatelessWidget {
                     Container(
                       height: 250,
                       width: double.infinity,
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         gradient: LinearGradient(
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
-                          colors: [AppColors.headerTop, AppColors.headerBottom],
+                          colors:
+                              context.isDarkMode
+                                  ? const [
+                                    Color(0xFF111827),
+                                    Color(0xFF0F172A),
+                                    Color(0xFF0B1220),
+                                  ]
+                                  : const [
+                                    AppColors.headerTop,
+                                    AppColors.headerBottom,
+                                  ],
                         ),
                       ),
                     ),
@@ -62,7 +71,9 @@ class FrequentQuestionsPage extends StatelessWidget {
                         width: 92,
                         height: 92,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.12),
+                          color: Colors.white.withValues(
+                            alpha: context.isDarkMode ? 0.04 : 0.12,
+                          ),
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -74,7 +85,9 @@ class FrequentQuestionsPage extends StatelessWidget {
                         width: 118,
                         height: 118,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.10),
+                          color: Colors.white.withValues(
+                            alpha: context.isDarkMode ? 0.03 : 0.10,
+                          ),
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -83,26 +96,28 @@ class FrequentQuestionsPage extends StatelessWidget {
                       children: [
                         Stack(
                           children: [
-                            const NavyHeader(
-                              height: 200,
-                              roundedBottom: false,
-                              children: [
-                                SizedBox(height: 18),
-                                Icon(
-                                  Icons.help_outline_rounded,
-                                  color: Colors.white,
-                                  size: 48,
+                            const SizedBox(height: 200, width: double.infinity),
+                            const Positioned.fill(
+                              child: SafeArea(
+                                child: Column(
+                                  children: [
+                                    SizedBox(height: 32),
+                                    Icon(
+                                      Icons.help_outline_rounded,
+                                      color: Colors.white,
+                                      size: 48,
+                                    ),
+                                    SizedBox(height: 10),
+                                    MyText(
+                                      text: 'PREGUNTAS FRECUENTES',
+                                      variant: MyTextVariant.title,
+                                      textAlign: TextAlign.center,
+                                      customColor: Colors.white,
+                                      fontSize: 26,
+                                    ),
+                                  ],
                                 ),
-                                SizedBox(height: 10),
-                                MyText(
-                                  text: 'PREGUNTAS FRECUENTES',
-                                  variant: MyTextVariant.title,
-                                  textAlign: TextAlign.center,
-                                  customColor: Colors.white,
-                                  fontSize: 26,
-                                ),
-                                SizedBox(height: 4),
-                              ],
+                              ),
                             ),
                             Positioned(
                               left: 8,
@@ -131,9 +146,9 @@ class FrequentQuestionsPage extends StatelessWidget {
                           offset: const Offset(0, -22),
                           child: Container(
                             width: double.infinity,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFFF8FAFC),
-                              borderRadius: BorderRadius.only(
+                            decoration: BoxDecoration(
+                              color: context.appSectionBackground,
+                              borderRadius: const BorderRadius.only(
                                 topLeft: Radius.circular(34),
                                 topRight: Radius.circular(34),
                               ),
@@ -155,9 +170,11 @@ class FrequentQuestionsPage extends StatelessWidget {
                                         bottom: 12,
                                       ),
                                       child: Material(
-                                        color: Colors.white,
-                                        elevation: 1.5,
-                                        shadowColor: Colors.black12,
+                                        color: context.appCardBackground,
+                                        elevation: context.isDarkMode ? 0 : 1.5,
+                                        shadowColor: Colors.black.withValues(
+                                          alpha: context.isDarkMode ? 0.18 : 0.12,
+                                        ),
                                         borderRadius: BorderRadius.circular(18),
                                         child: ExpansionTile(
                                           tilePadding:
@@ -192,8 +209,8 @@ class FrequentQuestionsPage extends StatelessWidget {
                                               Container(
                                                 width: 36,
                                                 height: 36,
-                                                decoration: const BoxDecoration(
-                                                  color: Color(0xFFEAF3FF),
+                                                decoration: BoxDecoration(
+                                                  color: context.appIconCircleColor,
                                                   shape: BoxShape.circle,
                                                 ),
                                                 alignment: Alignment.center,
@@ -221,8 +238,7 @@ class FrequentQuestionsPage extends StatelessWidget {
                                               child: MyText(
                                                 text: it.a,
                                                 variant: MyTextVariant.body,
-                                                customColor:
-                                                    AppColors.textSecondary,
+                                                customColor: context.appTextSecondaryColor,
                                               ),
                                             ),
                                           ],

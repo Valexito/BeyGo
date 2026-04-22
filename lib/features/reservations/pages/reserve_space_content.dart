@@ -46,7 +46,7 @@ class _ReserveSpaceContentState extends ConsumerState<ReserveSpaceContent> {
     final spacesAsync = ref.watch(parkingSpacesProvider(widget.parking.id));
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: context.appPageBackground,
       body: Stack(
         children: [
           Column(
@@ -64,9 +64,9 @@ class _ReserveSpaceContentState extends ConsumerState<ReserveSpaceContent> {
             maxChildSize: 0.95,
             builder: (context, scrollController) {
               return Container(
-                decoration: const BoxDecoration(
-                  color: Color.fromARGB(255, 255, 255, 255),
-                  borderRadius: BorderRadius.only(
+                decoration: BoxDecoration(
+                  color: context.appSectionBackground,
+                  borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(34),
                     topRight: Radius.circular(34),
                   ),
@@ -90,11 +90,14 @@ class _ReserveSpaceContentState extends ConsumerState<ReserveSpaceContent> {
                                 children: [
                                   Row(
                                     children: [
-                                      const Expanded(
+                                      Expanded(
                                         child: MyText(
                                           text: 'Reservar espacio',
                                           variant: MyTextVariant.title,
-                                          customColor: AppColors.headerBottom,
+                                          customColor:
+                                              context.isDarkMode
+                                                  ? Colors.white
+                                                  : AppColors.headerBottom,
                                           fontSize: 22,
                                         ),
                                       ),
@@ -164,8 +167,11 @@ class _ReserveSpaceContentState extends ConsumerState<ReserveSpaceContent> {
                               child: Container(
                                 padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
-                                  color: Colors.white,
+                                  color: context.appCardBackground,
                                   borderRadius: BorderRadius.circular(22),
+                                  border: Border.all(
+                                    color: context.appBorderColor,
+                                  ),
                                 ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -281,14 +287,14 @@ class _ReserveSpaceContentState extends ConsumerState<ReserveSpaceContent> {
                               decoration: BoxDecoration(
                                 color:
                                     widget.selectedSpace != null
-                                        ? AppColors.headerBottom.withOpacity(
-                                          0.12,
+                                        ? AppColors.headerBottom.withValues(
+                                          alpha: 0.12,
                                         )
-                                        : AppColors.formFieldBg,
+                                        : context.appInputBackground,
                                 borderRadius: BorderRadius.circular(14),
                                 border: Border.all(
-                                  color: AppColors.headerBottom.withOpacity(
-                                    0.15,
+                                  color: AppColors.headerBottom.withValues(
+                                    alpha: 0.15,
                                   ),
                                 ),
                               ),
@@ -339,7 +345,9 @@ class _ReserveSpaceContentState extends ConsumerState<ReserveSpaceContent> {
                                                           20,
                                                         ),
                                                     decoration: BoxDecoration(
-                                                      color: Colors.white,
+                                                      color:
+                                                          context
+                                                              .appCardBackground,
                                                       borderRadius:
                                                           BorderRadius.circular(
                                                             20,
@@ -509,7 +517,7 @@ class _ReserveSpaceContentState extends ConsumerState<ReserveSpaceContent> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
       ),
       child: MyText(
@@ -534,7 +542,6 @@ class _ReservationHeader extends StatefulWidget {
 
 class _ReservationHeaderState extends State<_ReservationHeader> {
   late final PageController _pageController;
-  int _page = 0;
 
   @override
   void initState() {
@@ -562,7 +569,6 @@ class _ReservationHeaderState extends State<_ReservationHeader> {
             PageView.builder(
               controller: _pageController,
               itemCount: widget.gallery.length,
-              onPageChanged: (i) => setState(() => _page = i),
               itemBuilder: (_, i) {
                 return GestureDetector(
                   onTap: () {
@@ -622,7 +628,22 @@ class _ReservationHeaderState extends State<_ReservationHeader> {
               },
             )
           else
-            Container(color: Colors.grey),
+            Container(color: context.appInputBackground),
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withValues(alpha: 0.20),
+                    Colors.black.withValues(alpha: 0.06),
+                    Colors.black.withValues(alpha: 0.28),
+                  ],
+                ),
+              ),
+            ),
+          ),
           Positioned(
             top: 12,
             left: 18,
@@ -652,12 +673,16 @@ class _InfoChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.appCardBackgroundSoft,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.headerBottom.withOpacity(0.08)),
+        border: Border.all(
+          color: AppColors.headerBottom.withValues(alpha: 0.08),
+        ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.headerBottom.withOpacity(0.06),
+            color: Colors.black.withValues(
+              alpha: context.isDarkMode ? 0.14 : 0.06,
+            ),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -700,7 +725,7 @@ class _SpaceTile extends StatelessWidget {
             )
             : requested
             ? BoxDecoration(
-              color: Colors.white,
+              color: context.appCardBackground,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: const Color(0xFFF59E0B), width: 1.6),
             )
@@ -710,14 +735,14 @@ class _SpaceTile extends StatelessWidget {
               borderRadius: BorderRadius.circular(14),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.headerBottom.withOpacity(0.25),
+                  color: AppColors.headerBottom.withValues(alpha: 0.25),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
               ],
             )
             : BoxDecoration(
-              color: Colors.white,
+              color: context.appCardBackground,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: const Color(0xFF22C55E), width: 1.2),
             );

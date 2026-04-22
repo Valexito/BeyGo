@@ -3,11 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mapbox_api/common/ui/components/app_styles.dart';
 import 'package:mapbox_api/common/ui/components/my_text.dart';
-import 'package:mapbox_api/common/ui/components/navy_header.dart';
+import 'package:mapbox_api/features/core/pages/userv/configurations_page.dart';
 import 'package:mapbox_api/features/core/pages/userv/report_problem_page.dart';
 import 'package:mapbox_api/features/users/widgets/delete_account_dialog.dart';
 import 'package:mapbox_api/features/users/widgets/profile_security_dialogs.dart';
 import 'package:mapbox_api/features/users/pages/configure_profile_page.dart';
+import 'package:mapbox_api/features/users/providers/user_providers.dart';
 import 'package:mapbox_api/features/reservations/pages/reservations_page.dart';
 import 'package:mapbox_api/features/owner/widgets/become_owner_page.dart';
 
@@ -17,14 +18,28 @@ class ProfilePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = FirebaseAuth.instance.currentUser;
+    final profile = ref.watch(myProfileStreamProvider).value;
     final photoUrl = user?.photoURL;
-    final name =
-        (user?.displayName?.trim().isNotEmpty ?? false)
-            ? user!.displayName!.trim().toUpperCase()
+    final firestoreName = (profile?['name'] as String?)?.trim();
+    final firestoreDisplayName = (profile?['displayName'] as String?)?.trim();
+    final authName = user?.displayName?.trim();
+    final resolvedName =
+        (firestoreName?.isNotEmpty ?? false)
+            ? firestoreName!
+            : (firestoreDisplayName?.isNotEmpty ?? false)
+            ? firestoreDisplayName!
+            : (authName?.isNotEmpty ?? false)
+            ? authName!
             : 'TU NOMBRE';
+    final name = resolvedName.toUpperCase();
+    final isDark = context.isDarkMode;
+    final headerGradient =
+        isDark
+            ? const [Color(0xFF111827), Color(0xFF0F172A), Color(0xFF0B1220)]
+            : const [AppColors.headerTop, AppColors.headerBottom];
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: context.appPageBackground,
       body: SafeArea(
         top: false,
         child: LayoutBuilder(
@@ -37,11 +52,11 @@ class ProfilePage extends ConsumerWidget {
                     Container(
                       height: 310,
                       width: double.infinity,
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         gradient: LinearGradient(
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
-                          colors: [AppColors.headerTop, AppColors.headerBottom],
+                          colors: headerGradient,
                         ),
                       ),
                     ),
@@ -52,7 +67,9 @@ class ProfilePage extends ConsumerWidget {
                         width: 92,
                         height: 92,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.12),
+                          color: Colors.white.withValues(
+                            alpha: isDark ? 0.04 : 0.12,
+                          ),
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -64,7 +81,9 @@ class ProfilePage extends ConsumerWidget {
                         width: 118,
                         height: 118,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.10),
+                          color: Colors.white.withValues(
+                            alpha: isDark ? 0.03 : 0.10,
+                          ),
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -73,81 +92,109 @@ class ProfilePage extends ConsumerWidget {
                       children: [
                         Stack(
                           children: [
-                            NavyHeader(
-                              height: 250,
-                              roundedBottom: false,
-                              trailing: SizedBox(
-                                height: 34,
-                                child: OutlinedButton(
-                                  style: OutlinedButton.styleFrom(
-                                    side: BorderSide(
-                                      color: Colors.white.withOpacity(0.55),
-                                    ),
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 14,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
+                            const SizedBox(height: 250, width: double.infinity),
+                            Positioned.fill(
+                              child: SafeArea(
+                                bottom: false,
+                                child: Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    20,
+                                    8,
+                                    20,
+                                    0,
                                   ),
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder:
-                                            (_) => const ConfigureProfilePage(),
-                                      ),
-                                    );
-                                  },
-                                  child: const Text('Editar perfil'),
-                                ),
-                              ),
-                              children: [
-                                Container(
-                                  width: 92,
-                                  height: 92,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: Colors.white,
-                                      width: 3,
-                                    ),
-                                    boxShadow: const [
-                                      BoxShadow(
-                                        color: Colors.black26,
-                                        blurRadius: 10,
-                                        offset: Offset(0, 6),
-                                      ),
-                                    ],
-                                  ),
-                                  child: ClipOval(
-                                    child:
-                                        photoUrl != null
-                                            ? Image.network(
-                                              photoUrl,
-                                              fit: BoxFit.cover,
-                                            )
-                                            : Container(
-                                              color: Colors.white,
-                                              child: const Icon(
-                                                Icons.person,
-                                                size: 54,
-                                                color: AppColors.headerBottom,
+                                  child: Column(
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.end,
+                                        children: [
+                                          SizedBox(
+                                            height: 34,
+                                            child: OutlinedButton(
+                                              style: OutlinedButton.styleFrom(
+                                                side: BorderSide(
+                                                  color: Colors.white.withValues(
+                                                    alpha: 0.55,
+                                                  ),
+                                                ),
+                                                foregroundColor: Colors.white,
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 14,
+                                                    ),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                ),
+                                              ),
+                                              onPressed: () {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder:
+                                                        (_) =>
+                                                            const ConfigureProfilePage(),
+                                                  ),
+                                                );
+                                              },
+                                              child: const Text(
+                                                'Editar perfil',
                                               ),
                                             ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Container(
+                                        width: 92,
+                                        height: 92,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: Colors.white,
+                                            width: 3,
+                                          ),
+                                          boxShadow: const [
+                                            BoxShadow(
+                                              color: Colors.black26,
+                                              blurRadius: 10,
+                                              offset: Offset(0, 6),
+                                            ),
+                                          ],
+                                        ),
+                                        child: ClipOval(
+                                          child:
+                                              photoUrl != null
+                                                  ? Image.network(
+                                                    photoUrl,
+                                                    fit: BoxFit.cover,
+                                                  )
+                                                  : Container(
+                                                    color: Colors.white,
+                                                    child: const Icon(
+                                                      Icons.person,
+                                                      size: 54,
+                                                      color:
+                                                          AppColors
+                                                              .headerBottom,
+                                                    ),
+                                                  ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 12),
+                                      MyText(
+                                        text: name,
+                                        variant: MyTextVariant.title,
+                                        customColor: Colors.white,
+                                        textAlign: TextAlign.center,
+                                        fontSize: 28,
+                                      ),
+                                      const SizedBox(height: 6),
+                                    ],
                                   ),
                                 ),
-                                const SizedBox(height: 12),
-                                MyText(
-                                  text: name,
-                                  variant: MyTextVariant.title,
-                                  customColor: Colors.white,
-                                  textAlign: TextAlign.center,
-                                  fontSize: 28,
-                                ),
-                                const SizedBox(height: 6),
-                              ],
+                              ),
                             ),
                             Positioned(
                               left: 8,
@@ -176,8 +223,8 @@ class ProfilePage extends ConsumerWidget {
                           offset: const Offset(0, -22),
                           child: Container(
                             width: double.infinity,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFFF8FAFC),
+                            decoration: BoxDecoration(
+                              color: context.appSectionBackground,
                               borderRadius: BorderRadius.only(
                                 topLeft: Radius.circular(34),
                                 topRight: Radius.circular(34),
@@ -193,36 +240,42 @@ class ProfilePage extends ConsumerWidget {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
-                                  const Align(
+                                  Align(
                                     alignment: Alignment.centerLeft,
                                     child: MyText(
                                       text: 'Configuración de perfil',
                                       variant: MyTextVariant.title,
-                                      customColor: AppColors.headerBottom,
+                                      customColor:
+                                          isDark
+                                              ? Colors.white
+                                              : AppColors.headerBottom,
                                       fontSize: 22,
                                     ),
                                   ),
                                   const SizedBox(height: 8),
-                                  const MyText(
+                                  MyText(
                                     text:
                                         'Administra tu cuenta, accesos y opciones principales desde aquí.',
                                     variant: MyTextVariant.subtitle,
                                     fontSize: 13,
+                                    customColor: context.appTextSecondaryColor,
                                   ),
                                   const SizedBox(height: 24),
                                   Container(
                                     decoration: BoxDecoration(
-                                      color: Colors.white,
+                                      color: context.appCardBackground,
                                       borderRadius: BorderRadius.circular(24),
-                                      boxShadow: const [
+                                      boxShadow: [
                                         BoxShadow(
-                                          color: Color(0x12000000),
+                                          color: Colors.black.withValues(
+                                            alpha: isDark ? 0.28 : 0.07,
+                                          ),
                                           blurRadius: 16,
                                           offset: Offset(0, 6),
                                         ),
                                       ],
                                       border: Border.all(
-                                        color: const Color(0xFFE8EEF5),
+                                        color: context.appBorderColor,
                                       ),
                                     ),
                                     child: const Padding(
@@ -260,7 +313,7 @@ class ProfilePage extends ConsumerWidget {
                                     ),
                                   ),
                                   const SizedBox(height: 18),
-                                  const Padding(
+                                  Padding(
                                     padding: EdgeInsets.symmetric(
                                       horizontal: 4,
                                     ),
@@ -268,22 +321,25 @@ class ProfilePage extends ConsumerWidget {
                                       text: 'Accesos rápidos',
                                       variant: MyTextVariant.normal,
                                       fontSize: 13,
+                                      customColor: context.appTextPrimaryColor,
                                     ),
                                   ),
                                   const SizedBox(height: 10),
                                   Container(
                                     decoration: BoxDecoration(
-                                      color: Colors.white,
+                                      color: context.appCardBackground,
                                       borderRadius: BorderRadius.circular(24),
-                                      boxShadow: const [
+                                      boxShadow: [
                                         BoxShadow(
-                                          color: Color(0x12000000),
+                                          color: Colors.black.withValues(
+                                            alpha: isDark ? 0.28 : 0.07,
+                                          ),
                                           blurRadius: 16,
                                           offset: Offset(0, 6),
                                         ),
                                       ],
                                       border: Border.all(
-                                        color: const Color(0xFFE8EEF5),
+                                        color: context.appBorderColor,
                                       ),
                                     ),
                                     child: const Padding(
@@ -343,9 +399,9 @@ class _Divider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Padding(
+    return Padding(
       padding: EdgeInsets.symmetric(horizontal: 10),
-      child: Divider(height: 1, thickness: 1, color: Color(0xFFE8EEF5)),
+      child: Divider(height: 1, thickness: 1, color: context.appBorderColor),
     );
   }
 }
@@ -360,7 +416,6 @@ enum _Go {
   signout,
   deleteProfile,
   notifications,
-  none,
 }
 
 class _ActionItem extends StatelessWidget {
@@ -419,9 +474,11 @@ class _ActionItem extends StatelessWidget {
     final isDanger = go == _Go.signout || go == _Go.deleteProfile;
 
     final iconColor = isDanger ? Colors.red : AppColors.headerBottom;
-    final textColor = isDanger ? Colors.red : AppColors.textPrimary;
+    final textColor = isDanger ? Colors.red : context.appTextPrimaryColor;
     final bgColor =
-        isDanger ? Colors.red.withOpacity(0.08) : const Color(0xFFEAF3FF);
+        isDanger
+            ? Colors.red.withValues(alpha: 0.08)
+            : context.appIconCircleColor;
 
     return InkWell(
       borderRadius: BorderRadius.circular(18),
@@ -452,7 +509,8 @@ class _ActionItem extends StatelessWidget {
             ),
             Icon(
               Icons.chevron_right_rounded,
-              color: isDanger ? Colors.red : AppColors.textSecondary,
+              color:
+                  isDanger ? Colors.red : context.appTextSecondaryColor,
             ),
           ],
         ),
@@ -487,7 +545,7 @@ class _Shortcut extends StatelessWidget {
       case _Go.notifications:
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const ReportProblemPage()),
+          MaterialPageRoute(builder: (_) => const ConfigurationsPage()),
         );
         break;
 
@@ -516,12 +574,17 @@ class _Shortcut extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDanger = go == _Go.deleteProfile;
-    final textColor = isDanger ? Colors.red : AppColors.textPrimary;
+    final textColor = isDanger ? Colors.red : context.appTextPrimaryColor;
     final iconColor = isDanger ? Colors.red : AppColors.headerBottom;
     final bgColor =
-        isDanger ? Colors.red.withOpacity(0.08) : const Color(0xFFEAF3FF);
+        isDanger
+            ? Colors.red.withValues(alpha: 0.08)
+            : context.appIconCircleColor;
     return Material(
-      color: isDanger ? Colors.red.withOpacity(0.05) : const Color(0xFFF4F8FC),
+      color:
+          isDanger
+              ? Colors.red.withValues(alpha: 0.05)
+              : context.appCardBackgroundSoft,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: () => _handleTap(context),
@@ -553,7 +616,7 @@ class _Shortcut extends StatelessWidget {
               ),
               Icon(
                 Icons.chevron_right_rounded,
-                color: isDanger ? Colors.red : AppColors.textSecondary,
+                color: isDanger ? Colors.red : context.appTextSecondaryColor,
               ),
             ],
           ),

@@ -12,6 +12,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import 'package:mapbox_api/common/services/geolocator.dart';
 import 'package:mapbox_api/common/ui/components/app_styles.dart';
+import 'package:mapbox_api/common/ui/components/google_map_styles.dart';
 import 'package:mapbox_api/features/core/components/home_bottom_parking_details.dart';
 import 'package:mapbox_api/features/core/services/favorite_service.dart';
 import 'package:mapbox_api/features/reservations/models/parking.dart';
@@ -192,6 +193,7 @@ class MapWidgetState extends ConsumerState<MapWidget> {
   Widget build(BuildContext context) {
     // Real-time parking markers ✅
     final parkingsAsync = ref.watch(allParkingsStreamProvider);
+    final brightness = Theme.of(context).brightness;
 
     if (_currentPosition == null) {
       return _MapLoading();
@@ -224,6 +226,7 @@ class MapWidgetState extends ConsumerState<MapWidget> {
       zoomControlsEnabled: false,
       mapToolbarEnabled: false,
       compassEnabled: false,
+      style: GoogleMapStyles.forBrightness(brightness),
       onTap: (_) => widget.onMapTap?.call(),
     );
   }
@@ -234,7 +237,7 @@ class _MapLoading extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFFF0F4F8),
+      color: context.appPageBackground,
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -249,7 +252,7 @@ class _MapLoading extends StatelessWidget {
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.headerBottom.withOpacity(0.25),
+                    color: AppColors.headerBottom.withValues(alpha: 0.25),
                     blurRadius: 16,
                     offset: const Offset(0, 6),
                   ),

@@ -4,7 +4,6 @@ import 'package:mapbox_api/common/ui/components/app_styles.dart';
 import 'package:mapbox_api/common/ui/components/my_button.dart';
 import 'package:mapbox_api/common/ui/components/my_text.dart';
 import 'package:mapbox_api/common/ui/components/my_textfield.dart';
-import 'package:mapbox_api/common/ui/components/navy_header.dart';
 import 'package:mapbox_api/features/core/providers/report_provider.dart';
 
 class ReportProblemPage extends ConsumerStatefulWidget {
@@ -95,7 +94,7 @@ class _ReportProblemPageState extends ConsumerState<ReportProblemPage> {
     );
 
     return Scaffold(
-      backgroundColor: const Color(0xFFD8F3EE),
+      backgroundColor: context.appPageBackground,
       body: SafeArea(
         top: false,
         child: Stack(
@@ -105,27 +104,77 @@ class _ReportProblemPageState extends ConsumerState<ReportProblemPage> {
                 // HEADER
                 Stack(
                   children: [
-                    NavyHeader(
+                    Container(
                       height: 250,
-                      roundedBottom: false,
-                      children: const [
-                        Icon(
-                          Icons.report_problem_outlined,
-                          color: Colors.white,
-                          size: 52,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors:
+                              context.isDarkMode
+                                  ? const [
+                                    Color(0xFF111827),
+                                    Color(0xFF0F172A),
+                                    Color(0xFF0B1220),
+                                  ]
+                                  : const [
+                                    AppColors.headerTop,
+                                    AppColors.headerBottom,
+                                  ],
                         ),
-                        SizedBox(height: 12),
-                        MyText(
-                          text: 'Reportar un problema',
-                          variant: MyTextVariant.title,
-                          customColor: Colors.white,
-                          fontSize: 28,
-                          textAlign: TextAlign.center,
-                        ),
-                        SizedBox(height: 6),
-                      ],
+                      ),
                     ),
-
+                    Positioned(
+                      top: 38,
+                      left: -20,
+                      child: Container(
+                        width: 92,
+                        height: 92,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(
+                            alpha: context.isDarkMode ? 0.04 : 0.12,
+                          ),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      top: -10,
+                      right: -8,
+                      child: Container(
+                        width: 118,
+                        height: 118,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(
+                            alpha: context.isDarkMode ? 0.03 : 0.10,
+                          ),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                    const Positioned.fill(
+                      child: SafeArea(
+                        child: Column(
+                          children: [
+                            SizedBox(height: 56),
+                            Icon(
+                              Icons.report_problem_outlined,
+                              color: Colors.white,
+                              size: 52,
+                            ),
+                            SizedBox(height: 12),
+                            MyText(
+                              text: 'Reportar un problema',
+                              variant: MyTextVariant.title,
+                              customColor: Colors.white,
+                              fontSize: 28,
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                     Positioned(
                       left: 8,
                       top: 10,
@@ -156,9 +205,9 @@ class _ReportProblemPageState extends ConsumerState<ReportProblemPage> {
                     offset: const Offset(0, -22),
                     child: Container(
                       width: double.infinity,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.only(
+                      decoration: BoxDecoration(
+                        color: context.appSectionBackground,
+                        borderRadius: const BorderRadius.only(
                           topLeft: Radius.circular(34),
                           topRight: Radius.circular(34),
                         ),
@@ -170,37 +219,43 @@ class _ReportProblemPageState extends ConsumerState<ReportProblemPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              const MyText(
+                              MyText(
                                 text: 'Detalle del reporte',
                                 variant: MyTextVariant.title,
-                                customColor: AppColors.headerBottom,
+                                customColor:
+                                    context.isDarkMode
+                                        ? Colors.white
+                                        : AppColors.headerBottom,
                                 fontSize: 22,
                               ),
 
                               const SizedBox(height: 8),
 
-                              const MyText(
+                              MyText(
                                 text:
                                     'Incluye la mayor cantidad de información posible para revisar el caso más rápido.',
                                 variant: MyTextVariant.subtitle,
                                 fontSize: 13,
+                                customColor: context.appTextSecondaryColor,
                               ),
 
                               const SizedBox(height: 24),
 
                               Container(
                                 decoration: BoxDecoration(
-                                  color: Colors.white,
+                                  color: context.appCardBackground,
                                   borderRadius: BorderRadius.circular(24),
-                                  boxShadow: const [
+                                  boxShadow: [
                                     BoxShadow(
-                                      color: Color(0x12000000),
+                                      color: Colors.black.withValues(
+                                        alpha: context.isDarkMode ? 0.22 : 0.07,
+                                      ),
                                       blurRadius: 16,
-                                      offset: Offset(0, 6),
+                                      offset: const Offset(0, 6),
                                     ),
                                   ],
                                   border: Border.all(
-                                    color: const Color(0xFFE8EEF5),
+                                    color: context.appBorderColor,
                                   ),
                                 ),
                                 child: Padding(

@@ -5,7 +5,6 @@
 //
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:mapbox_api/common/ui/components/app_styles.dart';
@@ -40,11 +39,6 @@ class _ReservationDetailsSheetState
     final cancel = ref.read(cancelReservationProvider);
     final controlAsync = ref.watch(userReservationControlProvider);
 
-    // ✅ Listen to live reservation updates — detect exit approved
-    final liveAsync = ref.watch(
-      parkingStreamProvider(widget.reservation.parkingId),
-    );
-    // We actually watch the reservation itself via reservationStreamProvider
     final reservationAsync = ref.watch(
       _reservationStreamProvider(widget.reservation.id),
     );
@@ -68,9 +62,9 @@ class _ReservationDetailsSheetState
 
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 18, 20, 26),
-      decoration: const BoxDecoration(
-        color: Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      decoration: BoxDecoration(
+        color: context.appSectionBackground,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       ),
       child: SafeArea(
         top: false,
@@ -136,7 +130,7 @@ class _ReservationDetailsSheetState
           height: 5,
           margin: const EdgeInsets.only(bottom: 16),
           decoration: BoxDecoration(
-            color: AppColors.borderSoft,
+            color: context.appBorderColor,
             borderRadius: BorderRadius.circular(999),
           ),
         ),
@@ -146,15 +140,18 @@ class _ReservationDetailsSheetState
           width: 64,
           height: 64,
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [AppColors.headerTop, AppColors.headerBottom],
+            gradient: LinearGradient(
+              colors:
+                  context.isDarkMode
+                      ? const [Color(0xFF1E3A5F), Color(0xFF0F172A)]
+                      : const [AppColors.headerTop, AppColors.headerBottom],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: AppColors.headerBottom.withOpacity(0.18),
+                color: AppColors.headerBottom.withValues(alpha: 0.18),
                 blurRadius: 16,
                 offset: const Offset(0, 8),
               ),
@@ -176,7 +173,7 @@ class _ReservationDetailsSheetState
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: AppColors.primarySoft.withOpacity(0.35),
+            color: AppColors.primarySoft.withValues(alpha: 0.20),
             borderRadius: BorderRadius.circular(999),
           ),
           child: MyText(
@@ -193,9 +190,9 @@ class _ReservationDetailsSheetState
           width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: context.appCardBackground,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.borderSoft),
+            border: Border.all(color: context.appBorderColor),
           ),
           child: Column(
             children: [
@@ -330,13 +327,13 @@ class _ReservationDetailsSheetState
                               },
                       style: OutlinedButton.styleFrom(
                         side: BorderSide(
-                          color: AppColors.headerBottom.withOpacity(0.35),
+                          color: AppColors.headerBottom.withValues(alpha: 0.35),
                           width: 1.2,
                         ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        backgroundColor: Colors.white,
+                        backgroundColor: context.appCardBackground,
                       ),
                       child: const MyText(
                         text: 'Cancelar reserva',
@@ -450,11 +447,13 @@ class _ReservationDetailsSheetState
             insetPadding: const EdgeInsets.symmetric(horizontal: 24),
             child: Container(
               decoration: BoxDecoration(
-                color: AppColors.cardBg,
+                color: context.appCardBackground,
                 borderRadius: BorderRadius.circular(AppDims.radiusXl),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primaryDark.withOpacity(0.10),
+                    color: Colors.black.withValues(
+                      alpha: context.isDarkMode ? 0.24 : 0.10,
+                    ),
                     blurRadius: 28,
                     offset: const Offset(0, 14),
                   ),
@@ -469,15 +468,24 @@ class _ReservationDetailsSheetState
                       width: 62,
                       height: 62,
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [AppColors.headerTop, AppColors.headerBottom],
+                        gradient: LinearGradient(
+                          colors:
+                              context.isDarkMode
+                                  ? const [
+                                    Color(0xFF1E3A5F),
+                                    Color(0xFF0F172A),
+                                  ]
+                                  : const [
+                                    AppColors.headerTop,
+                                    AppColors.headerBottom,
+                                  ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.headerBottom.withOpacity(0.22),
+                            color: AppColors.headerBottom.withValues(alpha: 0.22),
                             blurRadius: 16,
                             offset: const Offset(0, 8),
                           ),
@@ -496,7 +504,7 @@ class _ReservationDetailsSheetState
                         vertical: 8,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.primarySoft.withOpacity(0.25),
+                        color: AppColors.primarySoft.withValues(alpha: 0.18),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: const MyText(
@@ -531,7 +539,7 @@ class _ReservationDetailsSheetState
                         vertical: 12,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF7F7F9),
+                        color: context.appCardBackgroundSoft,
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Column(
@@ -561,8 +569,8 @@ class _ReservationDetailsSheetState
                               onPressed: () => Navigator.pop(ctx, false),
                               style: OutlinedButton.styleFrom(
                                 side: BorderSide(
-                                  color: AppColors.headerBottom.withOpacity(
-                                    0.35,
+                                  color: AppColors.headerBottom.withValues(
+                                    alpha: 0.35,
                                   ),
                                   width: 1.2,
                                 ),
@@ -571,7 +579,7 @@ class _ReservationDetailsSheetState
                                     AppDims.radiusLg,
                                   ),
                                 ),
-                                backgroundColor: Colors.white,
+                                backgroundColor: context.appCardBackground,
                               ),
                               child: const MyText(
                                 text: 'No',
@@ -651,11 +659,7 @@ final _reservationStreamProvider = StreamProvider.autoDispose
           .collection('reservations')
           .doc(id)
           .snapshots()
-          .map(
-            (snap) => Reservation.fromDoc(
-              snap as DocumentSnapshot<Map<String, dynamic>>,
-            ),
-          );
+          .map((snap) => Reservation.fromDoc(snap));
     });
 
 // ─── InfoRow widget ───────────────────────────────────────────────────────
@@ -677,8 +681,8 @@ class _InfoRow extends StatelessWidget {
         Container(
           width: 30,
           height: 30,
-          decoration: const BoxDecoration(
-            color: AppColors.iconCircle,
+          decoration: BoxDecoration(
+            color: context.appIconCircleColor,
             shape: BoxShape.circle,
           ),
           child: Icon(icon, size: 16, color: AppColors.headerBottom),

@@ -9,10 +9,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:mapbox_api/common/ui/components/app_styles.dart';
+import 'package:mapbox_api/common/services/app_preferences_service.dart';
 import 'package:mapbox_api/common/ui/widgets/app_map_controls.dart';
 import 'package:mapbox_api/common/ui/widgets/app_drawer.dart';
 import 'package:mapbox_api/common/ui/widgets/home_bottom_panel.dart';
 import 'package:mapbox_api/features/core/components/map_widget.dart';
+import 'package:mapbox_api/features/core/providers/app_preferences_provider.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -94,6 +96,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     final screen = MediaQuery.of(context).size;
     final safeTop = MediaQuery.of(context).padding.top;
     final controlsBottom = (_sheetFraction * screen.height) + 16;
+    final preferences = ref.watch(appPreferencesProvider);
 
     return Scaffold(
       key: _scaffoldKey,
@@ -133,7 +136,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                   () => showModalBottomSheet(
                     context: context,
                     backgroundColor: Colors.transparent,
-                    builder: (_) => const _SettingsSheet(),
+                    builder:
+                        (_) => _SettingsSheet(
+                          themePreference: preferences.themePreference,
+                        ),
                   ),
             ),
           ),
@@ -177,11 +183,12 @@ class _TopBtn extends StatelessWidget {
       width: 44,
       height: 44,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.appCardBackground,
         borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: context.appBorderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.13),
+            color: Colors.black.withValues(alpha: context.isDarkMode ? 0.24 : 0.13),
             blurRadius: 14,
             offset: const Offset(0, 4),
           ),
@@ -193,14 +200,17 @@ class _TopBtn extends StatelessWidget {
 }
 
 class _SettingsSheet extends StatelessWidget {
-  const _SettingsSheet();
+  const _SettingsSheet({required this.themePreference});
+
+  final AppThemePreference themePreference;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      decoration: BoxDecoration(
+        color: context.appCardBackground,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        border: Border.all(color: context.appBorderColor),
       ),
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
       child: Column(
@@ -211,16 +221,16 @@ class _SettingsSheet extends StatelessWidget {
             height: 4,
             margin: const EdgeInsets.only(bottom: 18),
             decoration: BoxDecoration(
-              color: Colors.grey.shade300,
+              color: context.appBorderColor,
               borderRadius: BorderRadius.circular(99),
             ),
           ),
-          const Text(
+          Text(
             'Configuración',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w800,
-              color: AppColors.headerBottom,
+              color: context.appTextPrimaryColor,
             ),
           ),
           const SizedBox(height: 16),
@@ -232,7 +242,7 @@ class _SettingsSheet extends StatelessWidget {
           _Tile(
             icon: Icons.brightness_6_outlined,
             label: 'Tema',
-            subtitle: 'Claro',
+            subtitle: _themeLabel(themePreference),
           ),
           _Tile(
             icon: Icons.notifications_outlined,
@@ -263,7 +273,7 @@ class _Tile extends StatelessWidget {
           width: 36,
           height: 36,
           decoration: BoxDecoration(
-            color: AppColors.headerBottom.withOpacity(0.08),
+            color: context.appIconCircleColor,
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(icon, size: 18, color: AppColors.headerBottom),
@@ -275,15 +285,18 @@ class _Tile extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF1E293B),
+                  color: context.appTextPrimaryColor,
                 ),
               ),
               Text(
                 subtitle,
-                style: const TextStyle(fontSize: 12, color: Color(0xFF8A94A6)),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: context.appTextSecondaryColor,
+                ),
               ),
             ],
           ),
@@ -291,9 +304,20 @@ class _Tile extends StatelessWidget {
         Icon(
           Icons.chevron_right_rounded,
           size: 18,
-          color: Colors.grey.shade400,
+          color: context.appTextSecondaryColor,
         ),
       ],
     ),
   );
+}
+
+String _themeLabel(AppThemePreference preference) {
+  switch (preference) {
+    case AppThemePreference.system:
+      return 'Sistema';
+    case AppThemePreference.light:
+      return 'Claro';
+    case AppThemePreference.dark:
+      return 'Oscuro';
+  }
 }

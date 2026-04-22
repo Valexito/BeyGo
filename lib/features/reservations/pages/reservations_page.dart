@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:mapbox_api/common/ui/components/app_styles.dart';
 import 'package:mapbox_api/common/ui/components/my_text.dart';
-import 'package:mapbox_api/common/ui/components/navy_header.dart';
 import 'package:mapbox_api/features/core/pages/userv/report_problem_page.dart';
 import 'package:mapbox_api/features/core/providers/firebase_providers.dart';
 import 'package:mapbox_api/features/reservations/components/reservation_card.dart';
@@ -18,9 +18,6 @@ class ReservationsPage extends ConsumerStatefulWidget {
 
 class _ReservationsPageState extends ConsumerState<ReservationsPage>
     with SingleTickerProviderStateMixin {
-  static const navyBottom = Color(0xFF1B3A57);
-  static const bg = Color(0xFFF2F4F7);
-
   late final TabController _tab = TabController(length: 3, vsync: this);
 
   @override
@@ -34,8 +31,8 @@ class _ReservationsPageState extends ConsumerState<ReservationsPage>
     final auth = ref.watch(firebaseAuthProvider);
 
     if (auth.currentUser == null) {
-      return const Scaffold(
-        backgroundColor: bg,
+      return Scaffold(
+        backgroundColor: context.appPageBackground,
         body: Center(
           child: MyText(
             text: 'Inicia sesión para ver tus reservaciones',
@@ -49,59 +46,114 @@ class _ReservationsPageState extends ConsumerState<ReservationsPage>
     final controlAsync = ref.watch(userReservationControlProvider);
 
     return Scaffold(
-      backgroundColor: bg,
+      backgroundColor: context.appPageBackground,
       body: SafeArea(
         bottom: false,
         child: Column(
           children: [
             Stack(
               children: [
-                NavyHeader(
+                Container(
                   height: 175,
-                  roundedBottom: false,
-                  children: [
-                    const Padding(
-                      padding: EdgeInsets.only(top: 10),
-                      child: MyText(
-                        text: 'MIS RESERVACIONES',
-                        variant: MyTextVariant.title,
-                        textAlign: TextAlign.center,
-                        customColor: Colors.white,
-                      ),
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors:
+                          context.isDarkMode
+                              ? const [
+                                Color(0xFF111827),
+                                Color(0xFF0F172A),
+                                Color(0xFF0B1220),
+                              ]
+                              : const [
+                                AppColors.headerTop,
+                                AppColors.headerBottom,
+                              ],
                     ),
-                    const SizedBox(height: 10),
-                    controlAsync.when(
-                      loading: () => const SizedBox(height: 18),
-                      error: (_, __) => const SizedBox(height: 18),
-                      data: (control) {
-                        final used =
-                            (control?['cancelAttempts'] as num?)?.toInt() ?? 0;
-                        final max = Reservation.maxCancellationAttemptsLimit;
-                        final limitReached = used >= max;
+                  ),
+                ),
+                Positioned(
+                  top: -20,
+                  right: -20,
+                  child: Container(
+                    width: 110,
+                    height: 110,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(
+                        alpha: context.isDarkMode ? 0.04 : 0.09,
+                      ),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 64,
+                  left: -18,
+                  child: Container(
+                    width: 82,
+                    height: 82,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(
+                        alpha: context.isDarkMode ? 0.03 : 0.07,
+                      ),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+                Positioned.fill(
+                  child: SafeArea(
+                    bottom: false,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 48, 24, 0),
+                      child: Column(
+                        children: [
+                          const MyText(
+                            text: 'MIS RESERVACIONES',
+                            variant: MyTextVariant.title,
+                            textAlign: TextAlign.center,
+                            customColor: Colors.white,
+                          ),
+                          const SizedBox(height: 10),
+                          controlAsync.when(
+                            loading: () => const SizedBox(height: 18),
+                            error: (_, __) => const SizedBox(height: 18),
+                            data: (control) {
+                              final used =
+                                  (control?['cancelAttempts'] as num?)?.toInt() ??
+                                  0;
+                              final max =
+                                  Reservation.maxCancellationAttemptsLimit;
+                              final limitReached = used >= max;
 
-                        if (limitReached) {
-                          return _HeaderLimitMessage(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const ReportProblemPage(),
-                                ),
+                              if (limitReached) {
+                                return _HeaderLimitMessage(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder:
+                                            (_) => const ReportProblemPage(),
+                                      ),
+                                    );
+                                  },
+                                );
+                              }
+
+                              return MyText(
+                                text: 'Cancelaciones usadas: $used/$max',
+                                variant: MyTextVariant.bodyMuted,
+                                textAlign: TextAlign.center,
+                                customColor: Colors.white70,
+                                fontSize: 13,
                               );
                             },
-                          );
-                        }
-
-                        return MyText(
-                          text: 'Cancelaciones usadas: $used/$max',
-                          variant: MyTextVariant.bodyMuted,
-                          textAlign: TextAlign.center,
-                          customColor: Colors.white70,
-                          fontSize: 13,
-                        );
-                      },
+                          ),
+                        ],
+                      ),
                     ),
-                  ],
+                  ),
                 ),
                 Positioned(
                   left: 10,
@@ -239,31 +291,38 @@ class _SegmentTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const navyBottom = _ReservationsPageState.navyBottom;
-
     return Material(
-      elevation: 8,
-      color: Colors.white,
+      elevation: context.isDarkMode ? 0 : 8,
+      color: context.appCardBackground,
       borderRadius: BorderRadius.circular(24),
-      shadowColor: navyBottom.withOpacity(0.10),
+      shadowColor: Colors.black.withValues(
+        alpha: context.isDarkMode ? 0.18 : 0.10,
+      ),
       child: Container(
         height: 56,
         padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.appCardBackground,
           borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: context.appBorderColor),
         ),
         child: TabBar(
           controller: controller,
           labelPadding: EdgeInsets.zero,
           indicator: BoxDecoration(
-            color: const Color(0xFFEAF0F7),
+            color:
+                context.isDarkMode
+                    ? context.appCardBackgroundSoft
+                    : const Color(0xFFEAF0F7),
             borderRadius: BorderRadius.circular(18),
           ),
           indicatorSize: TabBarIndicatorSize.tab,
           dividerColor: Colors.transparent,
-          labelColor: navyBottom,
-          unselectedLabelColor: Colors.black54,
+          labelColor:
+              context.isDarkMode
+                  ? Colors.white
+                  : const Color(0xFF1B3A57),
+          unselectedLabelColor: context.appTextSecondaryColor,
           labelStyle: const TextStyle(
             fontWeight: FontWeight.w700,
             fontSize: 14,
@@ -338,11 +397,14 @@ class _EmptyReservationsState extends StatelessWidget {
               width: 86,
               height: 86,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: context.appCardBackground,
                 shape: BoxShape.circle,
+                border: Border.all(color: context.appBorderColor),
                 boxShadow: [
                   BoxShadow(
-                    color: _ReservationsPageState.navyBottom.withOpacity(0.08),
+                    color: Colors.black.withValues(
+                      alpha: context.isDarkMode ? 0.18 : 0.08,
+                    ),
                     blurRadius: 20,
                     offset: const Offset(0, 8),
                   ),
@@ -351,7 +413,7 @@ class _EmptyReservationsState extends StatelessWidget {
               child: Icon(
                 icon,
                 size: 34,
-                color: _ReservationsPageState.navyBottom,
+                color: AppColors.headerBottom,
               ),
             ),
             const SizedBox(height: 18),

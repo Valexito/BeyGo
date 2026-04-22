@@ -108,9 +108,18 @@ class AppDrawer extends ConsumerWidget {
         final displayName = _resolveName(user, profile);
         final email = user?.email ?? '';
         final photoUrl = _resolvePhoto(user, profile);
+        final isDark = context.isDarkMode;
+        final headerGradient =
+            isDark
+                ? const [
+                  Color(0xFF111827),
+                  Color(0xFF0F172A),
+                  Color(0xFF0B1220),
+                ]
+                : const [AppColors.headerTop, AppColors.headerBottom];
 
         return Drawer(
-          backgroundColor: Colors.white,
+          backgroundColor: context.appCardBackground,
           surfaceTintColor: Colors.transparent,
           child: Column(
             children: [
@@ -119,11 +128,11 @@ class AppDrawer extends ConsumerWidget {
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.only(top: 54, bottom: 28),
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
-                        colors: [AppColors.headerTop, AppColors.headerBottom],
+                        colors: headerGradient,
                       ),
                     ),
                     child: Column(
@@ -198,7 +207,9 @@ class AppDrawer extends ConsumerWidget {
                       width: 110,
                       height: 110,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.09),
+                        color: Colors.white.withValues(
+                          alpha: isDark ? 0.04 : 0.09,
+                        ),
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -210,7 +221,9 @@ class AppDrawer extends ConsumerWidget {
                       width: 80,
                       height: 80,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.07),
+                        color: Colors.white.withValues(
+                          alpha: isDark ? 0.03 : 0.07,
+                        ),
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -285,7 +298,7 @@ class AppDrawer extends ConsumerWidget {
                           ),
                     ),
                     const SizedBox(height: 6),
-                    Divider(color: AppColors.borderSoft, height: 1),
+                    Divider(color: context.appBorderColor, height: 1),
                     const SizedBox(height: 6),
                     _DrawerItem(
                       icon: Icons.logout_rounded,
@@ -308,7 +321,7 @@ class AppDrawer extends ConsumerWidget {
 class _DefaultAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
-    color: Colors.white.withOpacity(0.18),
+    color: Colors.white.withValues(alpha: 0.18),
     child: const Icon(Icons.person_rounded, size: 48, color: Colors.white),
   );
 }
@@ -325,7 +338,7 @@ class _SectionLabel extends StatelessWidget {
       style: TextStyle(
         fontSize: 10,
         fontWeight: FontWeight.w700,
-        color: AppColors.textSecondary.withOpacity(0.6),
+        color: context.appTextSecondaryColor.withValues(alpha: 0.6),
         letterSpacing: 1.2,
       ),
     ),
@@ -357,11 +370,13 @@ class _DrawerItemState extends State<_DrawerItem> {
     final Color activeColor =
         widget.danger ? const Color(0xFFDC2626) : AppColors.headerBottom;
     final Color bg =
-        _pressed ? activeColor.withOpacity(0.08) : Colors.transparent;
+        _pressed ? activeColor.withValues(alpha: 0.08) : Colors.transparent;
     final Color textColor =
         _pressed
             ? activeColor
-            : (widget.danger ? const Color(0xFFDC2626) : AppColors.textPrimary);
+            : (widget.danger
+                ? const Color(0xFFDC2626)
+                : context.appTextPrimaryColor);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 2),
@@ -386,10 +401,12 @@ class _DrawerItemState extends State<_DrawerItem> {
                   decoration: BoxDecoration(
                     color:
                         _pressed
-                            ? activeColor.withOpacity(0.10)
+                            ? activeColor.withValues(alpha: 0.10)
                             : (widget.danger
-                                ? const Color(0xFFDC2626).withOpacity(0.08)
-                                : AppColors.iconCircle),
+                                ? const Color(
+                                  0xFFDC2626,
+                                ).withValues(alpha: 0.08)
+                                : context.appIconCircleColor),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(widget.icon, size: 18, color: activeColor),
@@ -411,7 +428,7 @@ class _DrawerItemState extends State<_DrawerItem> {
                   color:
                       _pressed
                           ? activeColor
-                          : AppColors.textSecondary.withOpacity(0.5),
+                          : context.appTextSecondaryColor.withValues(alpha: 0.5),
                 ),
               ],
             ),

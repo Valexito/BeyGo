@@ -83,7 +83,7 @@ class _ReservationCardShell extends StatelessWidget {
         final rightWidth = totalWidth * 0.24;
 
         return Material(
-          color: Colors.white,
+          color: context.appCardBackground,
           borderRadius: BorderRadius.circular(24),
           child: InkWell(
             borderRadius: BorderRadius.circular(24),
@@ -100,11 +100,13 @@ class _ReservationCardShell extends StatelessWidget {
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: AppColors.borderSoft),
+                border: Border.all(color: context.appBorderColor),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.headerBottom.withOpacity(0.05),
-                    blurRadius: 16,
+                    color: Colors.black.withValues(
+                      alpha: context.isDarkMode ? 0.18 : 0.05,
+                    ),
+                    blurRadius: context.isDarkMode ? 20 : 16,
                     offset: const Offset(0, 6),
                   ),
                 ],
@@ -177,7 +179,7 @@ class _ReservationCardShell extends StatelessWidget {
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: statusColor.withOpacity(0.12),
+                            color: statusColor.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(999),
                           ),
                           child: Text(
@@ -207,15 +209,18 @@ class _ReservationCardShell extends StatelessWidget {
                                       ),
                               style: OutlinedButton.styleFrom(
                                 side: BorderSide(
-                                  color: AppColors.headerBottom.withOpacity(
-                                    0.18,
+                                  color: AppColors.headerBottom.withValues(
+                                    alpha: 0.18,
                                   ),
                                   width: 1.1,
                                 ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(16),
                                 ),
-                                backgroundColor: const Color(0xFFF3F4F6),
+                                backgroundColor:
+                                    context.isDarkMode
+                                        ? context.appCardBackgroundSoft
+                                        : const Color(0xFFF3F4F6),
                                 foregroundColor: AppColors.headerBottom,
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 8,
@@ -409,14 +414,17 @@ class _InfoChipLine extends StatelessWidget {
           decoration: BoxDecoration(
             color:
                 highlight
-                    ? AppColors.headerBottom.withOpacity(0.10)
-                    : AppColors.iconCircle,
+                    ? AppColors.headerBottom.withValues(alpha: 0.10)
+                    : context.appIconCircleColor,
             shape: BoxShape.circle,
           ),
           child: Icon(
             icon,
             size: 13,
-            color: highlight ? AppColors.headerBottom : AppColors.textSecondary,
+            color:
+                highlight
+                    ? AppColors.headerBottom
+                    : context.appTextSecondaryColor,
           ),
         ),
         const SizedBox(width: 7),
@@ -427,7 +435,9 @@ class _InfoChipLine extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
               color:
-                  highlight ? AppColors.headerBottom : AppColors.textSecondary,
+                  highlight
+                      ? AppColors.headerBottom
+                      : context.appTextSecondaryColor,
               fontSize: 11.5,
               fontWeight: highlight ? FontWeight.w700 : FontWeight.w500,
             ),
@@ -451,7 +461,7 @@ class _CardImage extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(18),
         child: Container(
-          color: AppColors.formFieldBg,
+          color: context.appInputBackground,
           child:
               loading
                   ? const Center(
@@ -490,9 +500,12 @@ class _CardImageFallback extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [AppColors.headerTop, AppColors.headerBottom],
+          colors:
+              context.isDarkMode
+                  ? const [Color(0xFF1E3A5F), Color(0xFF0F172A)]
+                  : const [AppColors.headerTop, AppColors.headerBottom],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),

@@ -35,12 +35,14 @@ class MyText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primary = context.appTextPrimaryColor;
+    final secondary = context.appTextSecondaryColor;
     TextStyle style;
 
     switch (variant) {
       case MyTextVariant.title:
         style = TextStyle(
-          color: AppColors.textPrimary,
+          color: primary,
           fontWeight: FontWeight.w800,
           fontSize: fontSize ?? 22,
           letterSpacing: 0.2,
@@ -48,7 +50,7 @@ class MyText extends StatelessWidget {
         break;
       case MyTextVariant.subtitle:
         style = TextStyle(
-          color: AppColors.textSecondary,
+          color: secondary,
           fontWeight: FontWeight.w500,
           fontSize: fontSize ?? 14,
           height: 1.4,
@@ -56,35 +58,35 @@ class MyText extends StatelessWidget {
         break;
       case MyTextVariant.normal:
         style = TextStyle(
-          color: AppColors.textPrimary,
+          color: primary,
           fontWeight: FontWeight.w500,
           fontSize: fontSize ?? 14,
         );
         break;
       case MyTextVariant.normalBold:
         style = TextStyle(
-          color: AppColors.textPrimary,
+          color: primary,
           fontWeight: FontWeight.w700,
           fontSize: fontSize ?? 14,
         );
         break;
       case MyTextVariant.body:
         style = TextStyle(
-          color: AppColors.textPrimary,
+          color: primary,
           fontWeight: FontWeight.w600,
           fontSize: fontSize ?? 15,
         );
         break;
       case MyTextVariant.bodyBold:
         style = TextStyle(
-          color: AppColors.textPrimary,
+          color: primary,
           fontWeight: FontWeight.w700,
           fontSize: fontSize ?? 15,
         );
         break;
       case MyTextVariant.bodyMuted:
         style = TextStyle(
-          color: AppColors.textSecondary,
+          color: secondary,
           fontWeight: FontWeight.w400,
           fontSize: fontSize ?? 13,
         );

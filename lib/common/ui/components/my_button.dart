@@ -93,12 +93,14 @@ class MyButton extends StatelessWidget {
                 color:
                     _isFilled
                         ? (color ?? null)
-                        : (color ?? const Color(0xFFF4F7FB)),
+                        : (color ?? context.appCardBackgroundSoft),
                 border: Border.all(
                   color:
                       _isFilled
                           ? Colors.transparent
-                          : AppColors.headerBottom.withOpacity(0.18),
+                          : (context.isDarkMode
+                              ? context.appBorderColor
+                              : AppColors.headerBottom.withOpacity(0.18)),
                   width: _isFilled ? 0 : 1.1,
                 ),
                 boxShadow:

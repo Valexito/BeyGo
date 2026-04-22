@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import 'package:mapbox_api/common/ui/components/app_styles.dart';
+import 'package:mapbox_api/common/ui/components/google_map_styles.dart';
 import 'package:mapbox_api/common/ui/components/my_button.dart';
 import 'package:mapbox_api/common/ui/widgets/app_map_controls.dart';
 import 'package:mapbox_api/features/reservations/components/route_bottom_info_card.dart';
@@ -175,7 +176,7 @@ class _RouteViewPageState extends ConsumerState<RouteViewPage> {
                 ),
               ),
               child: Scaffold(
-                backgroundColor: AppColors.pageBg,
+                backgroundColor: context.appPageBackground,
                 body: Stack(
                   children: [
                     // ── Map ─────────────────────────────────────────────────
@@ -221,6 +222,9 @@ class _RouteViewPageState extends ConsumerState<RouteViewPage> {
                       zoomControlsEnabled: false,
                       mapToolbarEnabled: false,
                       compassEnabled: false,
+                      style: GoogleMapStyles.forBrightness(
+                        Theme.of(context).brightness,
+                      ),
                     ),
 
                     // ── Header ───────────────────────────────────────────────
@@ -310,7 +314,7 @@ class _RouteLoaderPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.pageBg,
+      backgroundColor: context.appPageBackground,
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -318,17 +322,17 @@ class _RouteLoaderPage extends StatelessWidget {
             Container(
               width: 72,
               height: 72,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [AppColors.headerTop, AppColors.headerBottom],
-                ),
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.headerBottom.withOpacity(0.25),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [AppColors.headerTop, AppColors.headerBottom],
                   ),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.headerBottom.withValues(alpha: 0.25),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
                 ],
               ),
               child: const CircularProgressIndicator(
@@ -337,12 +341,12 @@ class _RouteLoaderPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-            const Text(
+            Text(
               'Calculando ruta...',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
-                color: AppColors.headerBottom,
+                color: context.appTextPrimaryColor,
               ),
             ),
           ],
@@ -361,7 +365,7 @@ class _RouteErrorPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.pageBg,
+      backgroundColor: context.appPageBackground,
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(32),
@@ -372,7 +376,7 @@ class _RouteErrorPage extends StatelessWidget {
                 width: 64,
                 height: 64,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFDC2626).withOpacity(0.10),
+                  color: const Color(0xFFDC2626).withValues(alpha: 0.10),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -382,20 +386,23 @@ class _RouteErrorPage extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'No se pudo obtener la ruta',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w800,
-                  color: Color(0xFF1E293B),
+                  color: context.appTextPrimaryColor,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                 message,
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 13, color: Color(0xFF8A94A6)),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: context.appTextSecondaryColor,
+                ),
               ),
               const SizedBox(height: 24),
               MyButton(
@@ -419,6 +426,11 @@ class _RouteHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final headerGradient =
+        context.isDarkMode
+            ? const [Color(0xFF111827), Color(0xFF0F172A), Color(0xFF0B1220)]
+            : const [AppColors.headerTop, AppColors.headerBottom];
+
     return SizedBox(
       height: 120,
       width: double.infinity,
@@ -426,11 +438,11 @@ class _RouteHeader extends StatelessWidget {
         children: [
           Container(
             height: 120,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [AppColors.headerTop, AppColors.headerBottom],
+                colors: headerGradient,
               ),
             ),
           ),
@@ -441,7 +453,9 @@ class _RouteHeader extends StatelessWidget {
               width: 90,
               height: 90,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.10),
+                color: Colors.white.withValues(
+                  alpha: context.isDarkMode ? 0.04 : 0.10,
+                ),
                 shape: BoxShape.circle,
               ),
             ),
@@ -453,7 +467,9 @@ class _RouteHeader extends StatelessWidget {
               width: 120,
               height: 120,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.08),
+                color: Colors.white.withValues(
+                  alpha: context.isDarkMode ? 0.03 : 0.08,
+                ),
                 shape: BoxShape.circle,
               ),
             ),

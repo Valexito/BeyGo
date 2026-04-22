@@ -60,8 +60,7 @@ class _ReserveSpacePageState extends ConsumerState<ReserveSpacePage> {
               .asData
               ?.value
               .pricePerHour ??
-          widget.parking.pricePerHour ??
-          0,
+          widget.parking.pricePerHour,
     );
 
     if (ok != true || !mounted) return;
@@ -150,11 +149,11 @@ class _ReserveSpacePageState extends ConsumerState<ReserveSpacePage> {
             insetPadding: const EdgeInsets.symmetric(horizontal: 28),
             child: Container(
               decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
+                color: context.appCardBackground,
                 borderRadius: BorderRadius.circular(28),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.14),
+                    color: Colors.black.withValues(alpha: 0.14),
                     blurRadius: 28,
                     offset: const Offset(0, 12),
                   ),
@@ -179,10 +178,10 @@ class _ReserveSpacePageState extends ConsumerState<ReserveSpacePage> {
                           width: 56,
                           height: 56,
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.18),
+                            color: Colors.white.withValues(alpha: 0.18),
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: Colors.white.withOpacity(0.26),
+                              color: Colors.white.withValues(alpha: 0.26),
                               width: 1.2,
                             ),
                           ),
@@ -208,9 +207,9 @@ class _ReserveSpacePageState extends ConsumerState<ReserveSpacePage> {
                         Text(
                           message,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 13,
-                            color: Color(0xFF5A6478),
+                            color: context.appTextSecondaryColor,
                             height: 1.5,
                           ),
                         ),

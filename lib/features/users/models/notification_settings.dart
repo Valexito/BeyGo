@@ -2,23 +2,23 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class NotificationSettings {
-  final bool enableAll;
-  final bool emailAlerts;
-  final bool reservationAlerts;
-  final bool generalAlerts;
+  final bool enabled;
+  final bool reminders;
+  final bool updates;
+  final bool soundEnabled;
 
   const NotificationSettings({
-    required this.enableAll,
-    required this.emailAlerts,
-    required this.reservationAlerts,
-    required this.generalAlerts,
+    required this.enabled,
+    required this.reminders,
+    required this.updates,
+    required this.soundEnabled,
   });
 
   factory NotificationSettings.defaults() => const NotificationSettings(
-    enableAll: true,
-    emailAlerts: false,
-    reservationAlerts: true,
-    generalAlerts: true,
+    enabled: true,
+    reminders: true,
+    updates: true,
+    soundEnabled: true,
   );
 
   factory NotificationSettings.fromDoc(
@@ -26,30 +26,30 @@ class NotificationSettings {
   ) {
     final d = doc.data() ?? {};
     return NotificationSettings(
-      enableAll: (d['enableAll'] as bool?) ?? true,
-      emailAlerts: (d['emailAlerts'] as bool?) ?? false,
-      reservationAlerts: (d['reservationAlerts'] as bool?) ?? true,
-      generalAlerts: (d['generalAlerts'] as bool?) ?? true,
+      enabled: (d['enabled'] as bool?) ?? true,
+      reminders: (d['reminders'] as bool?) ?? true,
+      updates: (d['updates'] as bool?) ?? true,
+      soundEnabled: (d['soundEnabled'] as bool?) ?? true,
     );
   }
 
   Map<String, dynamic> toMap() => {
-    'enableAll': enableAll,
-    'emailAlerts': emailAlerts,
-    'reservationAlerts': reservationAlerts,
-    'generalAlerts': generalAlerts,
+    'enabled': enabled,
+    'reminders': reminders,
+    'updates': updates,
+    'soundEnabled': soundEnabled,
     'updatedAt': FieldValue.serverTimestamp(),
   };
 
   NotificationSettings copyWith({
-    bool? enableAll,
-    bool? emailAlerts,
-    bool? reservationAlerts,
-    bool? generalAlerts,
+    bool? enabled,
+    bool? reminders,
+    bool? updates,
+    bool? soundEnabled,
   }) => NotificationSettings(
-    enableAll: enableAll ?? this.enableAll,
-    emailAlerts: emailAlerts ?? this.emailAlerts,
-    reservationAlerts: reservationAlerts ?? this.reservationAlerts,
-    generalAlerts: generalAlerts ?? this.generalAlerts,
+    enabled: enabled ?? this.enabled,
+    reminders: reminders ?? this.reminders,
+    updates: updates ?? this.updates,
+    soundEnabled: soundEnabled ?? this.soundEnabled,
   );
 }

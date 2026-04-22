@@ -3,9 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:mapbox_api/common/ui/components/app_styles.dart';
 import 'package:mapbox_api/common/ui/components/my_text.dart';
-import 'package:mapbox_api/common/ui/components/navy_header.dart';
+import 'package:mapbox_api/common/services/app_preferences_service.dart';
 import 'package:mapbox_api/features/core/providers/firebase_providers.dart'
     show currentUserProvider;
+import 'package:mapbox_api/features/core/providers/app_preferences_provider.dart';
 import 'package:mapbox_api/features/users/providers/user_providers.dart'
     show myNotificationSettingsStreamProvider, saveNotificationSettingsProvider;
 
@@ -16,9 +17,18 @@ class ConfigurationsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(currentUserProvider);
     final uid = user?.uid;
+    final isDark = context.isDarkMode;
+    final headerGradient =
+        isDark
+            ? const [
+              Color(0xFF111827),
+              Color(0xFF0F172A),
+              Color(0xFF0B1220),
+            ]
+            : const [AppColors.headerTop, AppColors.headerBottom];
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: context.appPageBackground,
       body: SafeArea(
         top: false,
         child: LayoutBuilder(
@@ -31,11 +41,11 @@ class ConfigurationsPage extends ConsumerWidget {
                     Container(
                       height: 300,
                       width: double.infinity,
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         gradient: LinearGradient(
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
-                          colors: [AppColors.headerTop, AppColors.headerBottom],
+                          colors: headerGradient,
                         ),
                       ),
                     ),
@@ -46,7 +56,8 @@ class ConfigurationsPage extends ConsumerWidget {
                         width: 92,
                         height: 92,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.12),
+                          color: (isDark ? Colors.white : Colors.white)
+                              .withValues(alpha: isDark ? 0.04 : 0.12),
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -58,7 +69,8 @@ class ConfigurationsPage extends ConsumerWidget {
                         width: 118,
                         height: 118,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.10),
+                          color: (isDark ? Colors.white : Colors.white)
+                              .withValues(alpha: isDark ? 0.03 : 0.10),
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -67,26 +79,60 @@ class ConfigurationsPage extends ConsumerWidget {
                       children: [
                         Stack(
                           children: [
-                            const NavyHeader(
+                            SizedBox(
                               height: 235,
-                              roundedBottom: false,
-                              children: [
-                                Icon(
-                                  Icons.settings_outlined,
-                                  color: Colors.white,
-                                  size: 52,
-                                ),
-                                SizedBox(height: 12),
-                                MyText(
-                                  text: 'Configuraciones',
-                                  variant: MyTextVariant.title,
-                                  customColor: Colors.white,
-                                  textAlign: TextAlign.center,
-                                  fontSize: 28,
-                                ),
-                                SizedBox(height: 6),
-                              ],
+                              width: double.infinity,
                             ),
+                            Positioned.fill(
+                              child: IgnorePointer(
+                                child: SafeArea(
+                                  bottom: false,
+                                  child: Padding(
+                                    padding: const EdgeInsets.fromLTRB(
+                                      24,
+                                      52,
+                                      24,
+                                      0,
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        Icon(
+                                          Icons.settings_outlined,
+                                          color: Colors.white,
+                                          size: 52,
+                                        ),
+                                        const SizedBox(height: 12),
+                                        const MyText(
+                                          text: 'Configuraciones',
+                                          variant: MyTextVariant.title,
+                                          customColor: Colors.white,
+                                          textAlign: TextAlign.center,
+                                          fontSize: 28,
+                                        ),
+                                        const SizedBox(height: 6),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            if (isDark)
+                              Positioned.fill(
+                                child: IgnorePointer(
+                                  child: DecoratedBox(
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topCenter,
+                                        end: Alignment.bottomCenter,
+                                        colors: [
+                                          Colors.black.withValues(alpha: 0.00),
+                                          Colors.black.withValues(alpha: 0.08),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
                             Positioned(
                               left: 8,
                               top: 10,
@@ -114,9 +160,9 @@ class ConfigurationsPage extends ConsumerWidget {
                           offset: const Offset(0, -22),
                           child: Container(
                             width: double.infinity,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFFF8FAFC),
-                              borderRadius: BorderRadius.only(
+                            decoration: BoxDecoration(
+                              color: context.appSectionBackground,
+                              borderRadius: const BorderRadius.only(
                                 topLeft: Radius.circular(34),
                                 topRight: Radius.circular(34),
                               ),
@@ -174,6 +220,7 @@ class _SettingsBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notifAsync = ref.watch(myNotificationSettingsStreamProvider);
+    final preferences = ref.watch(appPreferencesProvider);
 
     return notifAsync.when(
       loading:
@@ -191,58 +238,90 @@ class _SettingsBody extends ConsumerWidget {
             ),
           ),
       data: (data) {
-        final enabled = (data?['enabled'] as bool?) ?? true;
-        final reminders = (data?['reminders'] as bool?) ?? true;
-        final marketing = (data?['marketing'] as bool?) ?? false;
-        final updates = (data?['updates'] as bool?) ?? true;
+        final enabled =
+            (data?['enabled'] as bool?) ?? preferences.notificationsEnabled;
+        final reminders =
+            (data?['reminders'] as bool?) ??
+            preferences.reservationRemindersEnabled;
+        final updates =
+            (data?['updates'] as bool?) ?? preferences.appUpdatesEnabled;
+        final sound =
+            (data?['soundEnabled'] as bool?) ??
+            preferences.notificationSoundEnabled;
 
         Future<void> savePartial(Map<String, dynamic> values) async {
           await ref.read(saveNotificationSettingsProvider).call(uid, values);
         }
 
+        Future<void> saveNotificationToggle(
+          String key,
+          bool value,
+        ) async {
+          final controller = ref.read(appPreferencesProvider.notifier);
+          switch (key) {
+            case 'enabled':
+              await controller.setNotificationsEnabled(value);
+              break;
+            case 'reminders':
+              await controller.setReservationRemindersEnabled(value);
+              break;
+            case 'updates':
+              await controller.setAppUpdatesEnabled(value);
+              break;
+          }
+          await savePartial({key: value});
+        }
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Align(
+            Align(
               alignment: Alignment.centerLeft,
               child: MyText(
                 text: 'Preferencias de la app',
                 variant: MyTextVariant.title,
-                customColor: AppColors.headerBottom,
+                customColor:
+                    context.isDarkMode
+                        ? Colors.white
+                        : AppColors.headerBottom,
                 fontSize: 22,
               ),
             ),
             const SizedBox(height: 8),
-            const MyText(
+            MyText(
               text:
                   'Administra tus notificaciones y preferencias generales desde aquí.',
               variant: MyTextVariant.subtitle,
               fontSize: 13,
+              customColor: context.appTextSecondaryColor,
             ),
             const SizedBox(height: 24),
 
-            const Padding(
+            Padding(
               padding: EdgeInsets.symmetric(horizontal: 4),
               child: MyText(
                 text: 'Notificaciones',
                 variant: MyTextVariant.normal,
                 fontSize: 13,
+                customColor: context.appTextPrimaryColor,
               ),
             ),
             const SizedBox(height: 10),
 
             Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: context.appCardBackground,
                 borderRadius: BorderRadius.circular(24),
-                boxShadow: const [
+                boxShadow: [
                   BoxShadow(
-                    color: Color(0x12000000),
-                    blurRadius: 16,
-                    offset: Offset(0, 6),
+                    color: Colors.black.withValues(
+                      alpha: context.isDarkMode ? 0.22 : 0.07,
+                    ),
+                    blurRadius: context.isDarkMode ? 20 : 16,
+                    offset: const Offset(0, 6),
                   ),
                 ],
-                border: Border.all(color: const Color(0xFFE8EEF5)),
+                border: Border.all(color: context.appBorderColor),
               ),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
@@ -251,9 +330,9 @@ class _SettingsBody extends ConsumerWidget {
                     _SwitchActionItem(
                       icon: Icons.notifications_active_outlined,
                       title: 'Activadas',
-                      subtitle: 'Permitir notificaciones de la app',
+                      subtitle: 'Permitir alertas mientras usas la app',
                       value: enabled,
-                      onChanged: (v) => savePartial({'enabled': v}),
+                      onChanged: (v) => saveNotificationToggle('enabled', v),
                     ),
                     const _Divider(),
                     _SwitchActionItem(
@@ -261,7 +340,10 @@ class _SettingsBody extends ConsumerWidget {
                       title: 'Recordatorios',
                       subtitle: 'Antes de iniciar o terminar una reservación',
                       value: reminders,
-                      onChanged: (v) => savePartial({'reminders': v}),
+                      onChanged:
+                          enabled
+                              ? (v) => saveNotificationToggle('reminders', v)
+                              : null,
                     ),
                     const _Divider(),
                     _SwitchActionItem(
@@ -269,15 +351,26 @@ class _SettingsBody extends ConsumerWidget {
                       title: 'Actualizaciones',
                       subtitle: 'Cambios importantes y estado del servicio',
                       value: updates,
-                      onChanged: (v) => savePartial({'updates': v}),
+                      onChanged:
+                          enabled
+                              ? (v) => saveNotificationToggle('updates', v)
+                              : null,
                     ),
                     const _Divider(),
                     _SwitchActionItem(
-                      icon: Icons.local_offer_outlined,
-                      title: 'Promociones',
-                      subtitle: 'Ofertas y recomendaciones personalizadas',
-                      value: marketing,
-                      onChanged: (v) => savePartial({'marketing': v}),
+                      icon: Icons.volume_up_outlined,
+                      title: 'Sonido',
+                      subtitle: 'Reproducir sonido en notificaciones visibles',
+                      value: sound,
+                      onChanged:
+                          enabled
+                              ? (v) async {
+                                await ref
+                                    .read(appPreferencesProvider.notifier)
+                                    .setNotificationSoundEnabled(v);
+                                await savePartial({'soundEnabled': v});
+                              }
+                              : null,
                     ),
                   ],
                 ),
@@ -286,43 +379,41 @@ class _SettingsBody extends ConsumerWidget {
 
             const SizedBox(height: 18),
 
-            const Padding(
+            Padding(
               padding: EdgeInsets.symmetric(horizontal: 4),
               child: MyText(
                 text: 'Preferencias generales',
                 variant: MyTextVariant.normal,
                 fontSize: 13,
+                customColor: context.appTextPrimaryColor,
               ),
             ),
             const SizedBox(height: 10),
 
             Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: context.appCardBackground,
                 borderRadius: BorderRadius.circular(24),
-                boxShadow: const [
+                boxShadow: [
                   BoxShadow(
-                    color: Color(0x12000000),
-                    blurRadius: 16,
-                    offset: Offset(0, 6),
+                    color: Colors.black.withValues(
+                      alpha: context.isDarkMode ? 0.22 : 0.07,
+                    ),
+                    blurRadius: context.isDarkMode ? 20 : 16,
+                    offset: const Offset(0, 6),
                   ),
                 ],
-                border: Border.all(color: const Color(0xFFE8EEF5)),
+                border: Border.all(color: context.appBorderColor),
               ),
-              child: const Padding(
-                padding: EdgeInsets.all(10),
+              child: Padding(
+                padding: const EdgeInsets.all(10),
                 child: Column(
                   children: [
                     _ArrowActionItem(
-                      icon: Icons.translate_rounded,
-                      title: 'Idioma',
-                      subtitle: 'Español',
-                    ),
-                    SizedBox(height: 10),
-                    _ArrowActionItem(
                       icon: Icons.palette_outlined,
                       title: 'Tema',
-                      subtitle: 'Predeterminado del sistema',
+                      subtitle: _themeLabel(preferences.themePreference),
+                      onTap: () => _showThemePicker(context, ref),
                     ),
                   ],
                 ),
@@ -330,13 +421,14 @@ class _SettingsBody extends ConsumerWidget {
             ),
 
             const SizedBox(height: 18),
-            const Padding(
+            Padding(
               padding: EdgeInsets.symmetric(horizontal: 4),
               child: MyText(
                 text:
                     'Estos ajustes se guardan en tu cuenta y puedes cambiarlos cuando quieras.',
                 variant: MyTextVariant.bodyMuted,
                 fontSize: 12,
+                customColor: context.appTextSecondaryColor,
               ),
             ),
           ],
@@ -351,9 +443,9 @@ class _Divider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Padding(
+    return Padding(
       padding: EdgeInsets.symmetric(horizontal: 10),
-      child: Divider(height: 1, thickness: 1, color: Color(0xFFE8EEF5)),
+      child: Divider(height: 1, thickness: 1, color: context.appBorderColor),
     );
   }
 }
@@ -371,10 +463,19 @@ class _SwitchActionItem extends StatelessWidget {
   final String title;
   final String? subtitle;
   final bool value;
-  final ValueChanged<bool> onChanged;
+  final ValueChanged<bool>? onChanged;
 
   @override
   Widget build(BuildContext context) {
+    final textColor =
+        onChanged == null
+            ? context.appTextSecondaryColor.withValues(alpha: 0.7)
+            : context.appTextPrimaryColor;
+    final subtitleColor =
+        onChanged == null
+            ? context.appTextSecondaryColor.withValues(alpha: 0.7)
+            : context.appTextSecondaryColor;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
       child: Row(
@@ -382,12 +483,19 @@ class _SwitchActionItem extends StatelessWidget {
           Container(
             width: 40,
             height: 40,
-            decoration: const BoxDecoration(
-              color: Color(0xFFEAF3FF),
+            decoration: BoxDecoration(
+              color: context.appIconCircleColor,
               shape: BoxShape.circle,
             ),
             alignment: Alignment.center,
-            child: Icon(icon, size: 20, color: AppColors.headerBottom),
+            child: Icon(
+              icon,
+              size: 20,
+              color:
+                  onChanged == null
+                      ? context.appTextSecondaryColor
+                      : AppColors.headerBottom,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -396,9 +504,9 @@ class _SwitchActionItem extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 15,
-                    color: AppColors.textPrimary,
+                    color: textColor,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -406,9 +514,9 @@ class _SwitchActionItem extends StatelessWidget {
                   const SizedBox(height: 3),
                   Text(
                     subtitle!,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12.5,
-                      color: AppColors.textSecondary,
+                      color: subtitleColor,
                     ),
                   ),
                 ],
@@ -442,7 +550,7 @@ class _ArrowActionItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: const Color(0xFFF4F8FC),
+      color: context.appCardBackgroundSoft,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: onTap,
@@ -454,8 +562,8 @@ class _ArrowActionItem extends StatelessWidget {
               Container(
                 width: 40,
                 height: 40,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFEAF3FF),
+                decoration: BoxDecoration(
+                  color: context.appIconCircleColor,
                   shape: BoxShape.circle,
                 ),
                 alignment: Alignment.center,
@@ -468,9 +576,9 @@ class _ArrowActionItem extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14.8,
-                        color: AppColors.textPrimary,
+                        color: context.appTextPrimaryColor,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -478,18 +586,18 @@ class _ArrowActionItem extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         subtitle!,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12.5,
-                          color: AppColors.textSecondary,
+                          color: context.appTextSecondaryColor,
                         ),
                       ),
                     ],
                   ],
                 ),
               ),
-              const Icon(
+              Icon(
                 Icons.chevron_right_rounded,
-                color: AppColors.textSecondary,
+                color: context.appTextSecondaryColor,
               ),
             ],
           ),
@@ -497,4 +605,102 @@ class _ArrowActionItem extends StatelessWidget {
       ),
     );
   }
+}
+
+String _themeLabel(AppThemePreference preference) {
+  switch (preference) {
+    case AppThemePreference.system:
+      return 'Predeterminado del sistema';
+    case AppThemePreference.light:
+      return 'Claro';
+    case AppThemePreference.dark:
+      return 'Oscuro';
+  }
+}
+
+Future<void> _showThemePicker(BuildContext context, WidgetRef ref) async {
+  final current = ref.read(appPreferencesProvider).themePreference;
+
+  await showModalBottomSheet<void>(
+    context: context,
+    backgroundColor: Colors.transparent,
+    builder: (context) {
+      return Container(
+        decoration: BoxDecoration(
+          color: context.appCardBackground,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: context.appBorderColor,
+                  borderRadius: BorderRadius.circular(99),
+                ),
+              ),
+            ),
+            const SizedBox(height: 18),
+            Text(
+              'Selecciona un tema',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: context.appTextPrimaryColor,
+              ),
+            ),
+            const SizedBox(height: 14),
+            ...AppThemePreference.values.map((option) {
+              final selected = option == current;
+              return ListTile(
+                tileColor:
+                    selected
+                        ? AppColors.headerBottom.withValues(
+                          alpha: context.isDarkMode ? 0.16 : 0.08,
+                        )
+                        : Colors.transparent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(
+                  switch (option) {
+                    AppThemePreference.system => Icons.brightness_auto_rounded,
+                    AppThemePreference.light => Icons.light_mode_rounded,
+                    AppThemePreference.dark => Icons.dark_mode_rounded,
+                  },
+                  color:
+                      selected
+                          ? AppColors.headerBottom
+                          : context.appTextPrimaryColor,
+                ),
+                title: Text(
+                  _themeLabel(option),
+                  style: TextStyle(color: context.appTextPrimaryColor),
+                ),
+                trailing:
+                    selected
+                        ? const Icon(
+                          Icons.check_rounded,
+                          color: AppColors.headerBottom,
+                        )
+                        : null,
+                onTap: () async {
+                  await ref
+                      .read(appPreferencesProvider.notifier)
+                      .setThemePreference(option);
+                  if (context.mounted) Navigator.pop(context);
+                },
+              );
+            }),
+          ],
+        ),
+      );
+    },
+  );
 }
