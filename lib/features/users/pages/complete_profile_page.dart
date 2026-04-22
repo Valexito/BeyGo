@@ -13,6 +13,32 @@ import 'package:mapbox_api/features/users/providers/user_providers.dart';
 import 'package:mapbox_api/features/auth/providers/auth_providers.dart'
     show authActionsProvider;
 
+// ─── Country code model ────────────────────────────────────────────────────────
+class _CountryCode {
+  final String flag;
+  final String name;
+  final String code;
+  const _CountryCode(this.flag, this.name, this.code);
+}
+
+const _kCountryCodes = [
+  _CountryCode('🇬🇹', 'Guatemala', '+502'),
+  _CountryCode('🇲🇽', 'México', '+52'),
+  _CountryCode('🇺🇸', 'Estados Unidos', '+1'),
+  _CountryCode('🇸🇻', 'El Salvador', '+503'),
+  _CountryCode('🇭🇳', 'Honduras', '+504'),
+  _CountryCode('🇳🇮', 'Nicaragua', '+505'),
+  _CountryCode('🇨🇷', 'Costa Rica', '+506'),
+  _CountryCode('🇵🇦', 'Panamá', '+507'),
+  _CountryCode('🇨🇴', 'Colombia', '+57'),
+  _CountryCode('🇪🇸', 'España', '+34'),
+  _CountryCode('🇦🇷', 'Argentina', '+54'),
+  _CountryCode('🇨🇱', 'Chile', '+56'),
+  _CountryCode('🇵🇪', 'Perú', '+51'),
+  _CountryCode('🇻🇪', 'Venezuela', '+58'),
+  _CountryCode('🇧🇷', 'Brasil', '+55'),
+];
+
 class CompleteProfilePage extends ConsumerStatefulWidget {
   final User user;
   final bool isNewUser;
@@ -33,11 +59,13 @@ class CompleteProfilePage extends ConsumerStatefulWidget {
 class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
     with SingleTickerProviderStateMixin {
   final _nameController = TextEditingController();
-  final _phoneController = TextEditingController();
+  final _phoneNumberCtrl = TextEditingController();
 
   bool _isSaving = false;
   bool _isGoingBack = false;
   final List<_VehicleEntry> _vehicles = [];
+
+  _CountryCode _selectedCountry = _kCountryCodes.first;
 
   late final AnimationController _slideController;
   late final Animation<Offset> _slideAnim;
@@ -60,10 +88,6 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
     if ((u.displayName ?? '').trim().isNotEmpty) {
       _nameController.text = u.displayName!.trim();
     }
-    _phoneController.text =
-        (u.phoneNumber ?? '').trim().isNotEmpty
-            ? u.phoneNumber!.trim()
-            : '+502 ';
 
     _vehicles.add(_VehicleEntry());
   }
@@ -71,7 +95,7 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
   @override
   void dispose() {
     _nameController.dispose();
-    _phoneController.dispose();
+    _phoneNumberCtrl.dispose();
     for (final v in _vehicles) {
       v.dispose();
     }
@@ -104,18 +128,154 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
     return clean.length >= 4;
   }
 
-  /// Signs out only. AuthGate watches authStateChangesProvider and automatically
-  /// navigates back to AuthFlowPage when it receives the sign-out event.
-  /// No manual Navigator call here — that's what caused the race condition.
   Future<void> _goBack() async {
     if (_isGoingBack) return;
     setState(() => _isGoingBack = true);
     try {
       await ref.read(authActionsProvider).signOut();
-      // AuthGate handles routing from here.
     } catch (_) {
       if (mounted) setState(() => _isGoingBack = false);
     }
+  }
+
+  void _showCountryPicker() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.55,
+          minChildSize: 0.4,
+          maxChildSize: 0.75,
+          expand: false,
+          builder: (_, scrollCtrl) {
+            return Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+              ),
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                    child: Column(
+                      children: [
+                        Center(
+                          child: Container(
+                            width: 40,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade300,
+                              borderRadius: BorderRadius.circular(99),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        const Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Código de país',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF1E293B),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Divider(color: Colors.grey.shade100, height: 1),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: ListView.builder(
+                      controller: scrollCtrl,
+                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                      itemCount: _kCountryCodes.length,
+                      itemBuilder: (_, i) {
+                        final c = _kCountryCodes[i];
+                        final selected = c.code == _selectedCountry.code;
+                        return InkWell(
+                          onTap: () {
+                            setState(() => _selectedCountry = c);
+                            Navigator.pop(ctx);
+                          },
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            margin: const EdgeInsets.only(bottom: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              color:
+                                  selected
+                                      ? AppColors.headerBottom.withOpacity(0.07)
+                                      : Colors.transparent,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color:
+                                    selected
+                                        ? AppColors.headerBottom.withOpacity(
+                                          0.25,
+                                        )
+                                        : Colors.transparent,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Text(
+                                  c.flag,
+                                  style: const TextStyle(fontSize: 22),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    c.name,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color:
+                                          selected
+                                              ? AppColors.headerBottom
+                                              : const Color(0xFF3D4554),
+                                    ),
+                                  ),
+                                ),
+                                Text(
+                                  c.code,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color:
+                                        selected
+                                            ? AppColors.headerBottom
+                                            : const Color(0xFF6B7280),
+                                  ),
+                                ),
+                                if (selected) ...[
+                                  const SizedBox(width: 8),
+                                  Icon(
+                                    Icons.check_rounded,
+                                    color: AppColors.headerBottom,
+                                    size: 18,
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   Future<void> _save() async {
@@ -136,13 +296,14 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
     }
 
     final name = _nameController.text.trim();
-    final phone = _phoneController.text.trim();
+    final numberPart = _phoneNumberCtrl.text.trim();
+    final phone = '${_selectedCountry.code} $numberPart';
 
     if (name.isEmpty) {
       _showSnack('Ingresa tu nombre completo.');
       return;
     }
-    if (phone.isEmpty || phone == '+502' || phone == '+502 ') {
+    if (numberPart.isEmpty) {
       _showSnack('Ingresa tu número de teléfono.');
       return;
     }
@@ -205,7 +366,6 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
       }
 
       if (!mounted) return;
-      // Navigate to root — AuthGate will route to HomeSwitch since profile is complete.
       Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
     } catch (e) {
       if (!mounted) return;
@@ -218,9 +378,26 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
   void _showSnack(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(msg),
+        content: Row(
+          children: [
+            const Icon(
+              Icons.error_outline_rounded,
+              color: Colors.white,
+              size: 18,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                msg,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: const Color(0xFFDC2626),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        duration: const Duration(seconds: 4),
       ),
     );
   }
@@ -255,6 +432,7 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
             height: screen.height,
             child: Stack(
               children: [
+                // Gradient header
                 Container(
                   height: screen.height * 0.38,
                   width: double.infinity,
@@ -266,18 +444,10 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
                     ),
                   ),
                 ),
+                Positioned(top: 40, left: -20, child: _blob(90, 0.12)),
+                Positioned(top: -10, right: -10, child: _blob(120, 0.10)),
 
-                Positioned(
-                  top: 40,
-                  left: -20,
-                  child: _Circle(size: 90, opacity: 0.12),
-                ),
-                Positioned(
-                  top: -10,
-                  right: -10,
-                  child: _Circle(size: 120, opacity: 0.10),
-                ),
-
+                // Back button
                 Positioned(
                   top: 15,
                   left: 18,
@@ -300,6 +470,7 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
                   ),
                 ),
 
+                // Icon circle
                 Positioned(
                   top: screen.height * 0.10,
                   left: 28,
@@ -325,6 +496,7 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
                   ),
                 ),
 
+                // Content sheet — same style as SignUpPage
                 Positioned(
                   top: screen.height * 0.24,
                   left: 0,
@@ -354,7 +526,7 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
                                 letterSpacing: -0.5,
                               ),
                             ),
-                            const SizedBox(height: 6),
+                            const SizedBox(height: 4),
                             const Text(
                               'Agrega tus datos para habilitar todas las funciones.',
                               style: TextStyle(
@@ -363,26 +535,117 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
                               ),
                             ),
                             const SizedBox(height: 24),
+
+                            // ── Personal info ──────────────────────────────
                             _SectionHeader(
                               icon: Icons.person_outline_rounded,
                               title: 'Información personal',
                             ),
-                            const SizedBox(height: 12),
-                            MyTextField(
+                            const SizedBox(height: 14),
+
+                            const _FieldLabel('Nombre completo'),
+                            const SizedBox(height: 6),
+                            _Field(
                               controller: _nameController,
-                              hintText: 'Nombre completo',
-                              prefixIcon: Icons.person_outline,
-                              margin: EdgeInsets.zero,
+                              hint: 'Ej: Juan Carlos Pérez',
+                              icon: Icons.person_outline_rounded,
+                              validator:
+                                  (v) =>
+                                      (v?.trim().isEmpty ?? true)
+                                          ? 'Ingresa tu nombre'
+                                          : null,
                             ),
-                            const SizedBox(height: 12),
-                            MyTextField(
-                              controller: _phoneController,
-                              hintText: 'Número de teléfono',
-                              keyboardType: TextInputType.phone,
-                              prefixIcon: Icons.phone_outlined,
-                              margin: EdgeInsets.zero,
+                            const SizedBox(height: 16),
+
+                            const _FieldLabel('Teléfono'),
+                            const SizedBox(height: 6),
+                            // Phone field with country code picker
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(color: AppColors.borderSoft),
+                              ),
+                              child: Row(
+                                children: [
+                                  // Country code button
+                                  GestureDetector(
+                                    onTap: _showCountryPicker,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 14,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        border: Border(
+                                          right: BorderSide(
+                                            color: AppColors.borderSoft,
+                                          ),
+                                        ),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Text(
+                                            _selectedCountry.flag,
+                                            style: const TextStyle(
+                                              fontSize: 20,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            _selectedCountry.code,
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w700,
+                                              color: AppColors.headerBottom,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Icon(
+                                            Icons.keyboard_arrow_down_rounded,
+                                            size: 16,
+                                            color: AppColors.headerBottom
+                                                .withOpacity(0.6),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  // Number input
+                                  Expanded(
+                                    child: TextField(
+                                      controller: _phoneNumberCtrl,
+                                      keyboardType: TextInputType.phone,
+                                      inputFormatters: [
+                                        FilteringTextInputFormatter.allow(
+                                          RegExp(r'[0-9\s\-]'),
+                                        ),
+                                      ],
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF1E293B),
+                                      ),
+                                      decoration: const InputDecoration(
+                                        hintText: '5555 1234',
+                                        hintStyle: TextStyle(
+                                          fontSize: 13,
+                                          color: Color(0xFF8A94A6),
+                                        ),
+                                        border: InputBorder.none,
+                                        contentPadding: EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 14,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                             const SizedBox(height: 28),
+
+                            // ── Vehicles ───────────────────────────────────
                             Row(
                               children: [
                                 const Expanded(
@@ -436,6 +699,7 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
                               ),
                             ),
                             const SizedBox(height: 14),
+
                             ...List.generate(_vehicles.length, (i) {
                               return _VehicleCard(
                                 entry: _vehicles[i],
@@ -447,7 +711,9 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
                                 buildPlate: _buildPlate,
                               );
                             }),
+
                             const SizedBox(height: 32),
+
                             MyButton(
                               text: 'Guardar y continuar',
                               onTap: _save,
@@ -466,8 +732,132 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
       ),
     );
   }
+
+  Widget _blob(double size, double opacity) => Container(
+    width: size,
+    height: size,
+    decoration: BoxDecoration(
+      color: Colors.white.withOpacity(opacity),
+      shape: BoxShape.circle,
+    ),
+  );
 }
 
+// ─── Shared field widgets (SignUpPage style) ──────────────────────────────────
+
+class _SectionHeader extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  const _SectionHeader({required this.icon, required this.title});
+
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      Container(
+        width: 30,
+        height: 30,
+        decoration: BoxDecoration(
+          color: AppColors.headerBottom.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(9),
+        ),
+        child: Icon(icon, size: 16, color: AppColors.headerBottom),
+      ),
+      const SizedBox(width: 9),
+      Text(
+        title,
+        style: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w700,
+          color: Color(0xFF1E293B),
+        ),
+      ),
+    ],
+  );
+}
+
+class _FieldLabel extends StatelessWidget {
+  final String label;
+  const _FieldLabel(this.label);
+
+  @override
+  Widget build(BuildContext context) => Text(
+    label,
+    style: const TextStyle(
+      fontSize: 13,
+      fontWeight: FontWeight.w700,
+      color: Color(0xFF1E293B),
+    ),
+  );
+}
+
+class _Field extends StatelessWidget {
+  final TextEditingController controller;
+  final String hint;
+  final IconData icon;
+  final bool obscure;
+  final Widget? suffix;
+  final TextInputType? keyboardType;
+  final String? Function(String?)? validator;
+
+  const _Field({
+    required this.controller,
+    required this.hint,
+    required this.icon,
+    this.obscure = false,
+    this.suffix,
+    this.keyboardType,
+    this.validator,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      controller: controller,
+      obscureText: obscure,
+      keyboardType: keyboardType,
+      validator: validator,
+      style: const TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: Color(0xFF1E293B),
+      ),
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF8A94A6)),
+        prefixIcon: Icon(icon, size: 18, color: AppColors.headerBottom),
+        suffixIcon: suffix,
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: AppColors.borderSoft),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: AppColors.borderSoft),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: AppColors.headerBottom, width: 1.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Color(0xFFDC2626), width: 1.2),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Color(0xFFDC2626), width: 1.5),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Vehicle entry model ───────────────────────────────────────────────────────
 class _VehicleEntry {
   VehicleType type;
   final TextEditingController correlativeController;
@@ -478,6 +868,7 @@ class _VehicleEntry {
   void dispose() => correlativeController.dispose();
 }
 
+// ─── Vehicle card ──────────────────────────────────────────────────────────────
 class _VehicleCard extends StatefulWidget {
   final _VehicleEntry entry;
   final int index;
@@ -543,6 +934,7 @@ class _VehicleCardState extends State<_VehicleCard> {
       ),
       child: Column(
         children: [
+          // Card header
           Container(
             padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
             decoration: BoxDecoration(
@@ -625,10 +1017,12 @@ class _VehicleCardState extends State<_VehicleCard> {
               ],
             ),
           ),
+
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
             child: Column(
               children: [
+                // Type selector
                 Row(
                   children:
                       VehicleType.values.map((t) {
@@ -686,6 +1080,8 @@ class _VehicleCardState extends State<_VehicleCard> {
                       }).toList(),
                 ),
                 const SizedBox(height: 14),
+
+                // Correlative input
                 Container(
                   decoration: BoxDecoration(
                     color: const Color(0xFFF1F5F9),
@@ -749,6 +1145,8 @@ class _VehicleCardState extends State<_VehicleCard> {
                   ),
                 ),
                 const SizedBox(height: 10),
+
+                // Plate preview
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(
@@ -804,56 +1202,6 @@ class _VehicleCardState extends State<_VehicleCard> {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  const _SectionHeader({required this.icon, required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 30,
-          height: 30,
-          decoration: BoxDecoration(
-            color: AppColors.headerBottom.withOpacity(0.08),
-            borderRadius: BorderRadius.circular(9),
-          ),
-          child: Icon(icon, size: 16, color: AppColors.headerBottom),
-        ),
-        const SizedBox(width: 9),
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF1E293B),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _Circle extends StatelessWidget {
-  final double size;
-  final double opacity;
-  const _Circle({required this.size, required this.opacity});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(opacity),
-        shape: BoxShape.circle,
       ),
     );
   }

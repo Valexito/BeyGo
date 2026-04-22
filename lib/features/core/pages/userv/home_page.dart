@@ -28,6 +28,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   final _mapKey = GlobalKey<MapWidgetState>();
 
   GoogleMapController? _mapController;
+  LatLng? _userLocation;
   bool _locatingUser = false;
 
   static const double _minSheet = 0.18;
@@ -102,6 +103,10 @@ class _HomePageState extends ConsumerState<HomePage> {
               key: _mapKey,
               onMapTap: _minimizePanel,
               onMapCreated: (ctrl) => _mapController = ctrl,
+              onUserLocationChanged: (location) {
+                if (!mounted) return;
+                setState(() => _userLocation = location);
+              },
             ),
           ),
 
@@ -160,6 +165,7 @@ class _HomePageState extends ConsumerState<HomePage> {
           HomeBottomPanel(
             controller: _bottomCtrl,
             onPlaceSelected: _onPlaceSelected,
+            userLocation: _userLocation,
           ),
         ],
       ),

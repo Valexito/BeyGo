@@ -24,7 +24,15 @@ class MapWidget extends ConsumerStatefulWidget {
   /// Exposes the GoogleMapController to the parent once the map is ready.
   final void Function(GoogleMapController)? onMapCreated;
 
-  const MapWidget({super.key, this.onMapTap, this.onMapCreated});
+  /// Notifies the parent whenever we resolve the user's location.
+  final ValueChanged<LatLng>? onUserLocationChanged;
+
+  const MapWidget({
+    super.key,
+    this.onMapTap,
+    this.onMapCreated,
+    this.onUserLocationChanged,
+  });
 
   @override
   // ✅ PUBLIC state class — required so home_page.dart can do:
@@ -59,11 +67,14 @@ class MapWidgetState extends ConsumerState<MapWidget> {
       final pos = await getCurrentLocation();
       if (!mounted) return;
       setState(() => _currentPosition = pos);
+      widget.onUserLocationChanged?.call(pos);
       _mapController?.animateCamera(
         CameraUpdate.newCameraPosition(CameraPosition(target: pos, zoom: 15)),
       );
     } catch (_) {
-      if (mounted) setState(() => _currentPosition = _fallback);
+      if (!mounted) return;
+      setState(() => _currentPosition = _fallback);
+      widget.onUserLocationChanged?.call(_fallback);
     }
   }
 
