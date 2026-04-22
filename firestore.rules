@@ -248,6 +248,67 @@ service cloud.firestore {
               .hasOnly(['status', 'currentReservationId', 'updatedAt'])
           );
       }
+
+      match /walk_ins/{walkInId} {
+        allow read: if isParkingOwner(parkingId) || isAdmin();
+
+        allow create: if
+          (isParkingOwner(parkingId) || isAdmin())
+          && request.resource.data.keys().hasOnly([
+            'spaceId',
+            'spaceNumber',
+            'customerName',
+            'plate',
+            'enteredAt',
+            'pricePerHour',
+            'status',
+            'type',
+            'createdAt'
+          ])
+          && request.resource.data.spaceId is string
+          && request.resource.data.spaceNumber is int
+          && request.resource.data.customerName is string
+          && request.resource.data.plate is string
+          && request.resource.data.enteredAt is timestamp
+          && (
+            !request.resource.data.keys().hasAny(['pricePerHour']) ||
+            request.resource.data.pricePerHour == null ||
+            request.resource.data.pricePerHour is int ||
+            request.resource.data.pricePerHour is float
+          )
+          && request.resource.data.status == "active"
+          && request.resource.data.type == "walk_in";
+
+        allow update: if
+          (isParkingOwner(parkingId) || isAdmin())
+          && request.resource.data.diff(resource.data).changedKeys().hasOnly([
+            'status',
+            'exitAt',
+            'durationMinutes',
+            'amount',
+            'updatedAt'
+          ])
+          && (
+            !request.resource.data.keys().hasAny(['status']) ||
+            request.resource.data.status in ["active", "completed", "cancelled"]
+          )
+          && (
+            !request.resource.data.keys().hasAny(['exitAt']) ||
+            request.resource.data.exitAt == null ||
+            request.resource.data.exitAt is timestamp
+          )
+          && (
+            !request.resource.data.keys().hasAny(['durationMinutes']) ||
+            request.resource.data.durationMinutes is int
+          )
+          && (
+            !request.resource.data.keys().hasAny(['amount']) ||
+            request.resource.data.amount is int ||
+            request.resource.data.amount is float
+          );
+
+        allow delete: if false;
+      }
     }
 
     match /reservations/{resId} {

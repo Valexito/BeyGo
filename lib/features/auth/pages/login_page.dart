@@ -109,7 +109,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
     try {
       final signInGoogle = ref.read(signInWithGoogleProvider);
       final cred = await signInGoogle();
-      final user = (cred as UserCredential).user;
+      final user = cred.user;
       if (!mounted || user == null) return;
       await _routeAfterAuth(user);
     } catch (e) {
@@ -238,9 +238,13 @@ class _LoginPageState extends ConsumerState<LoginPage>
   Widget build(BuildContext context) {
     final screen = MediaQuery.of(context).size;
     final anyLoading = _loading || _googleLoading;
+    final headerGradient =
+        context.isDarkMode
+            ? const [Color(0xFF111827), Color(0xFF0F172A), Color(0xFF0B1220)]
+            : const [AppColors.headerTop, AppColors.headerBottom];
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F4F8),
+      backgroundColor: context.appPageBackground,
       body: SafeArea(
         top: false,
         child: SizedBox(
@@ -250,11 +254,11 @@ class _LoginPageState extends ConsumerState<LoginPage>
               Container(
                 height: screen.height * 0.42,
                 width: double.infinity,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [AppColors.headerTop, AppColors.headerBottom],
+                    colors: headerGradient,
                   ),
                 ),
               ),
@@ -280,10 +284,10 @@ class _LoginPageState extends ConsumerState<LoginPage>
                       width: 84,
                       height: 84,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.16),
+                        color: Colors.white.withValues(alpha: 0.16),
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.22),
+                          color: Colors.white.withValues(alpha: 0.22),
                           width: 1.4,
                         ),
                       ),
@@ -329,8 +333,8 @@ class _LoginPageState extends ConsumerState<LoginPage>
                 child: SlideTransition(
                   position: _slideAnim,
                   child: Container(
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFF8FAFC),
+                    decoration: BoxDecoration(
+                      color: context.appSectionBackground,
                       borderRadius: BorderRadius.only(
                         topLeft: Radius.circular(34),
                         topRight: Radius.circular(34),
@@ -351,11 +355,11 @@ class _LoginPageState extends ConsumerState<LoginPage>
                             ),
                           ),
                           const SizedBox(height: 4),
-                          const Text(
+                          Text(
                             'Accede a tu cuenta para continuar.',
                             style: TextStyle(
                               fontSize: 13,
-                              color: Color(0xFF8A94A6),
+                              color: context.appTextSecondaryColor,
                             ),
                           ),
 
@@ -403,11 +407,11 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              const Text(
+                              Text(
                                 'Recordarme',
                                 style: TextStyle(
                                   fontSize: 13,
-                                  color: AppColors.textSecondary,
+                                  color: context.appTextSecondaryColor,
                                 ),
                               ),
                               const Spacer(),
@@ -455,20 +459,20 @@ class _LoginPageState extends ConsumerState<LoginPage>
                           Row(
                             children: [
                               Expanded(
-                                child: Divider(color: Colors.grey.shade300),
+                                child: Divider(color: context.appBorderColor),
                               ),
-                              const Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 12),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 12),
                                 child: Text(
                                   'O continuar con',
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: AppColors.textSecondary,
+                                    color: context.appTextSecondaryColor,
                                   ),
                                 ),
                               ),
                               Expanded(
-                                child: Divider(color: Colors.grey.shade300),
+                                child: Divider(color: context.appBorderColor),
                               ),
                             ],
                           ),
@@ -508,9 +512,9 @@ class _LoginPageState extends ConsumerState<LoginPage>
                               onTap: anyLoading ? null : widget.onShowRegister,
                               child: RichText(
                                 text: TextSpan(
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 13,
-                                    color: AppColors.textSecondary,
+                                    color: context.appTextSecondaryColor,
                                   ),
                                   children: [
                                     const TextSpan(text: '¿No tienes cuenta? '),
@@ -568,12 +572,14 @@ class _SocialButton extends StatelessWidget {
         child: Container(
           height: 52,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: context.appCardBackground,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.borderSoft),
+            border: Border.all(color: context.appBorderColor),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
+                color: Colors.black.withValues(
+                  alpha: context.isDarkMode ? 0.16 : 0.04,
+                ),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -622,7 +628,7 @@ class _SocialButton extends StatelessWidget {
                           color:
                               isFacebook
                                   ? const Color(0xFF1877F2)
-                                  : const Color(0xFF3D4554),
+                                  : context.appTextPrimaryColor,
                         ),
                       ),
                     ],
@@ -643,10 +649,10 @@ class _FieldLabel extends StatelessWidget {
     children: [
       Text(
         label,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w700,
-          color: Color(0xFF1E293B),
+          color: context.appTextPrimaryColor,
         ),
       ),
       const SizedBox(height: 2),
@@ -664,7 +670,7 @@ class _Blob extends StatelessWidget {
     width: size,
     height: size,
     decoration: BoxDecoration(
-      color: Colors.white.withOpacity(opacity),
+      color: Colors.white.withValues(alpha: opacity),
       shape: BoxShape.circle,
     ),
   );

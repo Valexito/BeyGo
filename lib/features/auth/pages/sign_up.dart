@@ -151,9 +151,13 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
   @override
   Widget build(BuildContext context) {
     final screen = MediaQuery.of(context).size;
+    final headerGradient =
+        context.isDarkMode
+            ? const [Color(0xFF111827), Color(0xFF0F172A), Color(0xFF0B1220)]
+            : const [AppColors.headerTop, AppColors.headerBottom];
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F4F8),
+      backgroundColor: context.appPageBackground,
       body: SafeArea(
         top: false,
         child: SizedBox(
@@ -163,11 +167,11 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
               Container(
                 height: screen.height * 0.38,
                 width: double.infinity,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [AppColors.headerTop, AppColors.headerBottom],
+                    colors: headerGradient,
                   ),
                 ),
               ),
@@ -205,10 +209,10 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
                     width: 80,
                     height: 80,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.16),
+                      color: Colors.white.withValues(alpha: 0.16),
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: Colors.white.withOpacity(0.22),
+                        color: Colors.white.withValues(alpha: 0.22),
                         width: 1.4,
                       ),
                     ),
@@ -229,8 +233,8 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
                 child: SlideTransition(
                   position: _slideAnim,
                   child: Container(
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFF8FAFC),
+                    decoration: BoxDecoration(
+                      color: context.appSectionBackground,
                       borderRadius: BorderRadius.only(
                         topLeft: Radius.circular(34),
                         topRight: Radius.circular(34),
@@ -253,11 +257,11 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
                               ),
                             ),
                             const SizedBox(height: 4),
-                            const Text(
+                            Text(
                               'Confirmarás tu email y completarás tu perfil a continuación.',
                               style: TextStyle(
                                 fontSize: 13,
-                                color: Color(0xFF8A94A6),
+                                color: context.appTextSecondaryColor,
                               ),
                             ),
                             const SizedBox(height: 24),
@@ -330,10 +334,10 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
                               child: GestureDetector(
                                 onTap: _loading ? null : widget.onBackToLogin,
                                 child: RichText(
-                                  text: TextSpan(
-                                    style: const TextStyle(
+                                text: TextSpan(
+                                    style: TextStyle(
                                       fontSize: 13,
-                                      color: Color(0xFF8A94A6),
+                                      color: context.appTextSecondaryColor,
                                     ),
                                     children: [
                                       const TextSpan(
@@ -369,7 +373,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
     width: size,
     height: size,
     decoration: BoxDecoration(
-      color: Colors.white.withOpacity(opacity),
+      color: Colors.white.withValues(alpha: opacity),
       shape: BoxShape.circle,
     ),
   );
@@ -387,7 +391,7 @@ class _SectionHeader extends StatelessWidget {
         width: 30,
         height: 30,
         decoration: BoxDecoration(
-          color: AppColors.headerBottom.withOpacity(0.08),
+          color: AppColors.headerBottom.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(9),
         ),
         child: Icon(icon, size: 16, color: AppColors.headerBottom),
@@ -395,10 +399,10 @@ class _SectionHeader extends StatelessWidget {
       const SizedBox(width: 9),
       Text(
         title,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w700,
-          color: Color(0xFF1E293B),
+          color: context.appTextPrimaryColor,
         ),
       ),
     ],
@@ -412,10 +416,10 @@ class _FieldLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Text(
     label,
-    style: const TextStyle(
+    style: TextStyle(
       fontSize: 13,
       fontWeight: FontWeight.w700,
-      color: Color(0xFF1E293B),
+      color: context.appTextPrimaryColor,
     ),
   );
 }
@@ -446,29 +450,32 @@ class _Field extends StatelessWidget {
       obscureText: obscure,
       keyboardType: keyboardType,
       validator: validator,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 14,
         fontWeight: FontWeight.w600,
-        color: Color(0xFF1E293B),
+        color: context.appTextPrimaryColor,
       ),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF8A94A6)),
+        hintStyle: TextStyle(
+          fontSize: 13,
+          color: context.appTextSecondaryColor,
+        ),
         prefixIcon: Icon(icon, size: 18, color: AppColors.headerBottom),
         suffixIcon: suffix,
         filled: true,
-        fillColor: Colors.white,
+        fillColor: context.appInputBackgroundActive,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 14,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: AppColors.borderSoft),
+          borderSide: BorderSide(color: context.appBorderColor),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: AppColors.borderSoft),
+          borderSide: BorderSide(color: context.appBorderColor),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),

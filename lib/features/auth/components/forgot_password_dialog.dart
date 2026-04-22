@@ -66,16 +66,28 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = context.isDarkMode;
+    final cardColor = context.appCardBackground;
+    final headerGradient =
+        _sent
+            ? [const Color(0xFF16A34A), const Color(0xFF15803D)]
+            : isDark
+            ? const [Color(0xFF111827), Color(0xFF0F172A), Color(0xFF0B1220)]
+            : [AppColors.headerTop, AppColors.headerBottom];
+
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.symmetric(horizontal: 24),
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFFF8FAFC),
+          color: cardColor,
           borderRadius: BorderRadius.circular(28),
+          border: Border.all(color: context.appBorderColor),
           boxShadow: [
             BoxShadow(
-              color: AppColors.headerBottom.withOpacity(0.16),
+              color: AppColors.headerBottom.withValues(
+                alpha: isDark ? 0.20 : 0.16,
+              ),
               blurRadius: 28,
               offset: const Offset(0, 12),
             ),
@@ -92,10 +104,7 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors:
-                      _sent
-                          ? [const Color(0xFF16A34A), const Color(0xFF15803D)]
-                          : [AppColors.headerTop, AppColors.headerBottom],
+                  colors: headerGradient,
                 ),
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(28),
@@ -108,10 +117,10 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
                     width: 56,
                     height: 56,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.18),
+                      color: Colors.white.withValues(alpha: 0.18),
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: Colors.white.withOpacity(0.26),
+                        color: Colors.white.withValues(alpha: 0.26),
                         width: 1.2,
                       ),
                     ),
@@ -155,18 +164,21 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (!_sent) ...[
-                    const Text(
+                    Text(
                       'Correo electrónico',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF1E293B),
+                        color: context.appTextPrimaryColor,
                       ),
                     ),
                     const SizedBox(height: 4),
-                    const Text(
+                    Text(
                       'Ingresa el correo asociado a tu cuenta',
-                      style: TextStyle(fontSize: 11, color: Color(0xFF8A94A6)),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: context.appTextSecondaryColor,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     MyTextField(
@@ -190,14 +202,14 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
                       decoration: BoxDecoration(
                         color:
                             _sent
-                                ? const Color(0xFF16A34A).withOpacity(0.08)
-                                : const Color(0xFFDC2626).withOpacity(0.07),
+                                ? const Color(0xFF16A34A).withValues(alpha: 0.08)
+                                : const Color(0xFFDC2626).withValues(alpha: 0.07),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color:
                               _sent
-                                  ? const Color(0xFF16A34A).withOpacity(0.25)
-                                  : const Color(0xFFDC2626).withOpacity(0.20),
+                                  ? const Color(0xFF16A34A).withValues(alpha: 0.25)
+                                  : const Color(0xFFDC2626).withValues(alpha: 0.20),
                         ),
                       ),
                       child: Row(
@@ -253,14 +265,14 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
                                       : () => Navigator.pop(context),
                               style: OutlinedButton.styleFrom(
                                 side: BorderSide(
-                                  color: AppColors.headerBottom.withOpacity(
-                                    0.28,
+                                  color: AppColors.headerBottom.withValues(
+                                    alpha: 0.28,
                                   ),
                                 ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(16),
                                 ),
-                                backgroundColor: Colors.white,
+                                backgroundColor: context.appCardBackgroundSoft,
                               ),
                               child: Text(
                                 'Cancelar',

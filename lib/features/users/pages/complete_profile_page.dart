@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:mapbox_api/common/ui/components/app_styles.dart';
 import 'package:mapbox_api/common/ui/components/my_button.dart';
-import 'package:mapbox_api/common/ui/components/my_textfield.dart';
 import 'package:mapbox_api/common/ui/widgets/app_loading_screen.dart';
 import 'package:mapbox_api/features/users/models/vehicule.dart';
 import 'package:mapbox_api/features/users/providers/user_providers.dart';
@@ -211,14 +210,14 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
                             decoration: BoxDecoration(
                               color:
                                   selected
-                                      ? AppColors.headerBottom.withOpacity(0.07)
+                                      ? AppColors.headerBottom.withValues(alpha: 0.07)
                                       : Colors.transparent,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
                                 color:
                                     selected
-                                        ? AppColors.headerBottom.withOpacity(
-                                          0.25,
+                                        ? AppColors.headerBottom.withValues(
+                                          alpha: 0.25,
                                         )
                                         : Colors.transparent,
                               ),
@@ -420,12 +419,16 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
     }
 
     final screen = MediaQuery.of(context).size;
+    final headerGradient =
+        context.isDarkMode
+            ? const [Color(0xFF111827), Color(0xFF0F172A), Color(0xFF0B1220)]
+            : const [AppColors.headerTop, AppColors.headerBottom];
 
     return PopScope(
       canPop: false,
-      onPopInvoked: (_) => _goBack(),
+      onPopInvokedWithResult: (_, __) => _goBack(),
       child: Scaffold(
-        backgroundColor: const Color(0xFFF0F4F8),
+        backgroundColor: context.appPageBackground,
         body: SafeArea(
           top: false,
           child: SizedBox(
@@ -436,11 +439,11 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
                 Container(
                   height: screen.height * 0.38,
                   width: double.infinity,
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      colors: [AppColors.headerTop, AppColors.headerBottom],
+                      colors: headerGradient,
                     ),
                   ),
                 ),
@@ -480,10 +483,10 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
                       width: 80,
                       height: 80,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.16),
+                        color: Colors.white.withValues(alpha: 0.16),
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.22),
+                          color: Colors.white.withValues(alpha: 0.22),
                           width: 1.4,
                         ),
                       ),
@@ -505,8 +508,8 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
                   child: SlideTransition(
                     position: _slideAnim,
                     child: Container(
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFF8FAFC),
+                      decoration: BoxDecoration(
+                        color: context.appSectionBackground,
                         borderRadius: BorderRadius.only(
                           topLeft: Radius.circular(34),
                           topRight: Radius.circular(34),
@@ -527,11 +530,11 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
                               ),
                             ),
                             const SizedBox(height: 4),
-                            const Text(
+                            Text(
                               'Agrega tus datos para habilitar todas las funciones.',
                               style: TextStyle(
                                 fontSize: 13,
-                                color: Color(0xFF8A94A6),
+                                color: context.appTextSecondaryColor,
                               ),
                             ),
                             const SizedBox(height: 24),
@@ -562,9 +565,9 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
                             // Phone field with country code picker
                             Container(
                               decoration: BoxDecoration(
-                                color: Colors.white,
+                                color: context.appInputBackgroundActive,
                                 borderRadius: BorderRadius.circular(14),
-                                border: Border.all(color: AppColors.borderSoft),
+                                border: Border.all(color: context.appBorderColor),
                               ),
                               child: Row(
                                 children: [
@@ -579,7 +582,7 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
                                       decoration: BoxDecoration(
                                         border: Border(
                                           right: BorderSide(
-                                            color: AppColors.borderSoft,
+                                            color: context.appBorderColor,
                                           ),
                                         ),
                                       ),
@@ -605,7 +608,7 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
                                             Icons.keyboard_arrow_down_rounded,
                                             size: 16,
                                             color: AppColors.headerBottom
-                                                .withOpacity(0.6),
+                                                .withValues(alpha: 0.6),
                                           ),
                                         ],
                                       ),
@@ -621,19 +624,19 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
                                           RegExp(r'[0-9\s\-]'),
                                         ),
                                       ],
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.w600,
-                                        color: Color(0xFF1E293B),
+                                        color: context.appTextPrimaryColor,
                                       ),
-                                      decoration: const InputDecoration(
+                                      decoration: InputDecoration(
                                         hintText: '5555 1234',
                                         hintStyle: TextStyle(
                                           fontSize: 13,
-                                          color: Color(0xFF8A94A6),
+                                          color: context.appTextSecondaryColor,
                                         ),
                                         border: InputBorder.none,
-                                        contentPadding: EdgeInsets.symmetric(
+                                        contentPadding: const EdgeInsets.symmetric(
                                           horizontal: 12,
                                           vertical: 14,
                                         ),
@@ -664,7 +667,7 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
                                       ),
                                       decoration: BoxDecoration(
                                         color: AppColors.headerBottom
-                                            .withOpacity(0.08),
+                                            .withValues(alpha: 0.08),
                                         borderRadius: BorderRadius.circular(20),
                                       ),
                                       child: Row(
@@ -691,11 +694,11 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
                               ],
                             ),
                             const SizedBox(height: 4),
-                            const Text(
+                            Text(
                               'Solo ingresa el correlativo — el sistema agrega el prefijo automáticamente.',
                               style: TextStyle(
                                 fontSize: 11,
-                                color: Color(0xFF8A94A6),
+                                color: context.appTextSecondaryColor,
                               ),
                             ),
                             const SizedBox(height: 14),
@@ -737,7 +740,7 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
     width: size,
     height: size,
     decoration: BoxDecoration(
-      color: Colors.white.withOpacity(opacity),
+      color: Colors.white.withValues(alpha: opacity),
       shape: BoxShape.circle,
     ),
   );
@@ -757,7 +760,7 @@ class _SectionHeader extends StatelessWidget {
         width: 30,
         height: 30,
         decoration: BoxDecoration(
-          color: AppColors.headerBottom.withOpacity(0.08),
+          color: AppColors.headerBottom.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(9),
         ),
         child: Icon(icon, size: 16, color: AppColors.headerBottom),
@@ -765,10 +768,10 @@ class _SectionHeader extends StatelessWidget {
       const SizedBox(width: 9),
       Text(
         title,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w700,
-          color: Color(0xFF1E293B),
+          color: context.appTextPrimaryColor,
         ),
       ),
     ],
@@ -782,10 +785,10 @@ class _FieldLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Text(
     label,
-    style: const TextStyle(
+    style: TextStyle(
       fontSize: 13,
       fontWeight: FontWeight.w700,
-      color: Color(0xFF1E293B),
+      color: context.appTextPrimaryColor,
     ),
   );
 }
@@ -794,18 +797,12 @@ class _Field extends StatelessWidget {
   final TextEditingController controller;
   final String hint;
   final IconData icon;
-  final bool obscure;
-  final Widget? suffix;
-  final TextInputType? keyboardType;
   final String? Function(String?)? validator;
 
   const _Field({
     required this.controller,
     required this.hint,
     required this.icon,
-    this.obscure = false,
-    this.suffix,
-    this.keyboardType,
     this.validator,
   });
 
@@ -813,32 +810,32 @@ class _Field extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextFormField(
       controller: controller,
-      obscureText: obscure,
-      keyboardType: keyboardType,
       validator: validator,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 14,
         fontWeight: FontWeight.w600,
-        color: Color(0xFF1E293B),
+        color: context.appTextPrimaryColor,
       ),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF8A94A6)),
+        hintStyle: TextStyle(
+          fontSize: 13,
+          color: context.appTextSecondaryColor,
+        ),
         prefixIcon: Icon(icon, size: 18, color: AppColors.headerBottom),
-        suffixIcon: suffix,
         filled: true,
-        fillColor: Colors.white,
+        fillColor: context.appInputBackgroundActive,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 14,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: AppColors.borderSoft),
+          borderSide: BorderSide(color: context.appBorderColor),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: AppColors.borderSoft),
+          borderSide: BorderSide(color: context.appBorderColor),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
@@ -862,8 +859,9 @@ class _VehicleEntry {
   VehicleType type;
   final TextEditingController correlativeController;
 
-  _VehicleEntry({this.type = VehicleType.car, String initialCorrelative = ''})
-    : correlativeController = TextEditingController(text: initialCorrelative);
+  _VehicleEntry({String initialCorrelative = ''})
+    : type = VehicleType.car,
+      correlativeController = TextEditingController(text: initialCorrelative);
 
   void dispose() => correlativeController.dispose();
 }
@@ -915,18 +913,18 @@ class _VehicleCardState extends State<_VehicleCard> {
       duration: const Duration(milliseconds: 250),
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.appCardBackground,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color:
               widget.isPrimary
-                  ? AppColors.headerBottom.withOpacity(0.30)
-                  : AppColors.borderSoft,
+                  ? AppColors.headerBottom.withValues(alpha: 0.30)
+                  : context.appBorderColor,
           width: widget.isPrimary ? 1.5 : 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.headerBottom.withOpacity(0.05),
+            color: AppColors.headerBottom.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -940,8 +938,8 @@ class _VehicleCardState extends State<_VehicleCard> {
             decoration: BoxDecoration(
               color:
                   widget.isPrimary
-                      ? AppColors.headerBottom.withOpacity(0.05)
-                      : const Color(0xFFF8FAFC),
+                      ? AppColors.headerBottom.withValues(alpha: 0.05)
+                      : context.appCardBackgroundSoft,
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(20),
                 topRight: Radius.circular(20),
@@ -953,7 +951,7 @@ class _VehicleCardState extends State<_VehicleCard> {
                   width: 32,
                   height: 32,
                   decoration: BoxDecoration(
-                    color: AppColors.headerBottom.withOpacity(0.10),
+                    color: AppColors.headerBottom.withValues(alpha: 0.10),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
@@ -973,7 +971,7 @@ class _VehicleCardState extends State<_VehicleCard> {
                     color:
                         widget.isPrimary
                             ? AppColors.headerBottom
-                            : const Color(0xFF3D4554),
+                            : context.appTextPrimaryColor,
                   ),
                 ),
                 if (widget.isPrimary) ...[
@@ -984,7 +982,7 @@ class _VehicleCardState extends State<_VehicleCard> {
                       vertical: 2,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.headerBottom.withOpacity(0.10),
+                      color: AppColors.headerBottom.withValues(alpha: 0.10),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
@@ -1004,7 +1002,7 @@ class _VehicleCardState extends State<_VehicleCard> {
                     child: Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFDC2626).withOpacity(0.08),
+                        color: const Color(0xFFDC2626).withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Icon(
@@ -1043,7 +1041,7 @@ class _VehicleCardState extends State<_VehicleCard> {
                                 color:
                                     selected
                                         ? AppColors.headerBottom
-                                        : const Color(0xFFF1F5F9),
+                                        : context.appInputBackground,
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Column(
@@ -1058,7 +1056,7 @@ class _VehicleCardState extends State<_VehicleCard> {
                                     color:
                                         selected
                                             ? Colors.white
-                                            : const Color(0xFF6B7280),
+                                            : context.appTextSecondaryColor,
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
@@ -1069,7 +1067,7 @@ class _VehicleCardState extends State<_VehicleCard> {
                                       color:
                                           selected
                                               ? Colors.white
-                                              : const Color(0xFF6B7280),
+                                              : context.appTextSecondaryColor,
                                     ),
                                   ),
                                 ],
@@ -1084,7 +1082,7 @@ class _VehicleCardState extends State<_VehicleCard> {
                 // Correlative input
                 Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF1F5F9),
+                    color: context.appInputBackground,
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Row(
@@ -1120,17 +1118,17 @@ class _VehicleCardState extends State<_VehicleCard> {
                             ),
                             LengthLimitingTextInputFormatter(8),
                           ],
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF1E293B),
+                            color: context.appTextPrimaryColor,
                             letterSpacing: 2,
                           ),
                           decoration: InputDecoration(
                             hintText: '123ABC',
                             hintStyle: TextStyle(
                               fontSize: 16,
-                              color: Colors.grey.shade400,
+                              color: context.appTextSecondaryColor,
                               letterSpacing: 2,
                               fontWeight: FontWeight.w600,
                             ),
@@ -1154,10 +1152,10 @@ class _VehicleCardState extends State<_VehicleCard> {
                     vertical: 10,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.headerBottom.withOpacity(0.05),
+                    color: AppColors.headerBottom.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: AppColors.headerBottom.withOpacity(0.12),
+                      color: AppColors.headerBottom.withValues(alpha: 0.12),
                     ),
                   ),
                   child: Row(
@@ -1166,14 +1164,14 @@ class _VehicleCardState extends State<_VehicleCard> {
                       Icon(
                         Icons.credit_card_rounded,
                         size: 15,
-                        color: AppColors.headerBottom.withOpacity(0.6),
+                        color: AppColors.headerBottom.withValues(alpha: 0.6),
                       ),
                       const SizedBox(width: 8),
                       Text(
                         'Placa: ',
                         style: TextStyle(
                           fontSize: 12,
-                          color: AppColors.headerBottom.withOpacity(0.6),
+                          color: AppColors.headerBottom.withValues(alpha: 0.6),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -1192,9 +1190,9 @@ class _VehicleCardState extends State<_VehicleCard> {
                 const SizedBox(height: 8),
                 Text(
                   entry.type.hint,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 10,
-                    color: Color(0xFF8A94A6),
+                    color: context.appTextSecondaryColor,
                   ),
                   textAlign: TextAlign.center,
                 ),

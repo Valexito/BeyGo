@@ -6,39 +6,14 @@
 //
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mapbox_api/common/ui/components/app_styles.dart';
 import 'package:mapbox_api/common/ui/components/my_button.dart';
-import 'package:mapbox_api/common/ui/components/my_text.dart';
 import 'package:mapbox_api/features/core/roles/role_utils.dart';
-import 'package:mapbox_api/features/owner/widgets/app_header.dart';
 import 'package:mapbox_api/features/owner/providers/dashboard_providers.dart';
-
-// ─── Firestore helpers ────────────────────────────────────────────────────────
-
-Future<String?> _getOwnerParkingId() async {
-  final uid = FirebaseAuth.instance.currentUser?.uid;
-  if (uid == null) return null;
-  final snap =
-      await FirebaseFirestore.instance
-          .collection('parkings')
-          .where('ownerID', isEqualTo: uid)
-          .limit(1)
-          .get();
-  return snap.docs.isEmpty ? null : snap.docs.first.id;
-}
-
-Future<double?> _getParkingPricePerHour(String parkingId) async {
-  final doc =
-      await FirebaseFirestore.instance
-          .collection('parkings')
-          .doc(parkingId)
-          .get();
-  return (doc.data()?['pricePerHour'] as num?)?.toDouble();
-}
+import 'package:mapbox_api/features/owner/widgets/app_header.dart';
 
 // ─── Walk-in record model ─────────────────────────────────────────────────────
 
@@ -46,6 +21,7 @@ class _WalkIn {
   final String docId;
   final String spaceId;
   final int spaceNumber;
+  final String customerName;
   final String plate;
   final DateTime enteredAt;
   final double? pricePerHour;
@@ -54,6 +30,7 @@ class _WalkIn {
     required this.docId,
     required this.spaceId,
     required this.spaceNumber,
+    required this.customerName,
     required this.plate,
     required this.enteredAt,
     this.pricePerHour,
@@ -83,6 +60,7 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
   double? _pricePerHour;
   bool _loading = true;
   String? _error;
+  String? _boundParkingId;
 
   // Space data
   List<Map<String, dynamic>> _spaces = [];
@@ -91,11 +69,43 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
 
   // Timer that rebuilds every second to keep elapsed time live
   Timer? _ticker;
+  ProviderSubscription<AsyncValue<dynamic>>? _parkingSub;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _spacesSub;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _walkInsSub;
 
   @override
   void initState() {
     super.initState();
-    _init();
+    _parkingSub = ref.listenManual<AsyncValue<dynamic>>(ownerParkingProvider, (
+      _,
+      next,
+    ) {
+      next.whenData((parking) {
+        if (parking == null) {
+          _unbindStreams();
+          if (!mounted) return;
+          setState(() {
+            _parkingId = null;
+            _boundParkingId = null;
+            _spaces = [];
+            _walkIns.clear();
+            _pricePerHour = null;
+            _error = 'No se encontró tu parqueo.';
+            _loading = false;
+          });
+          return;
+        }
+        _bindParking(parking.id, parking.pricePerHour.toDouble());
+      });
+
+      if (next.hasError) {
+        if (!mounted) return;
+        setState(() {
+          _error = next.error.toString();
+          _loading = false;
+        });
+      }
+    });
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted && _walkIns.isNotEmpty) setState(() {});
     });
@@ -104,67 +114,108 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
   @override
   void dispose() {
     _ticker?.cancel();
+    _parkingSub?.close();
+    _unbindStreams();
     super.dispose();
   }
 
-  Future<void> _init() async {
-    try {
-      final pid = await _getOwnerParkingId();
-      if (pid == null) {
-        setState(() {
-          _error = 'No se encontró tu parqueo.';
-          _loading = false;
-        });
-        return;
-      }
-      final price = await _getParkingPricePerHour(pid);
-      final snap =
-          await FirebaseFirestore.instance
-              .collection('parkings')
-              .doc(pid)
-              .collection('spaces')
-              .orderBy('spaceNumber')
-              .get();
-
-      setState(() {
-        _parkingId = pid;
-        _pricePerHour = price;
-        _spaces = snap.docs.map((d) => {'id': d.id, ...d.data()}).toList();
-        _loading = false;
-      });
-
-      // Also load active walk-ins from Firestore (survive app restarts)
-      _loadActiveWalkIns(pid);
-    } catch (e) {
-      setState(() {
-        _error = e.toString();
-        _loading = false;
-      });
-    }
+  void _unbindStreams() {
+    _spacesSub?.cancel();
+    _walkInsSub?.cancel();
+    _spacesSub = null;
+    _walkInsSub = null;
   }
 
-  Future<void> _loadActiveWalkIns(String parkingId) async {
-    final snap =
-        await FirebaseFirestore.instance
-            .collection('parkings')
-            .doc(parkingId)
-            .collection('walk_ins')
-            .where('status', isEqualTo: 'active')
-            .get();
-
-    for (final doc in snap.docs) {
-      final d = doc.data();
-      final spaceId = d['spaceId'] as String? ?? '';
-      _walkIns[spaceId] = _WalkIn(
-        docId: doc.id,
-        spaceId: spaceId,
-        spaceNumber: (d['spaceNumber'] as num?)?.toInt() ?? 0,
-        plate: d['plate'] as String? ?? '',
-        enteredAt: (d['enteredAt'] as Timestamp).toDate(),
-        pricePerHour: (d['pricePerHour'] as num?)?.toDouble(),
-      );
+  void _bindParking(String parkingId, double pricePerHour) {
+    if (_boundParkingId == parkingId) {
+      if (!mounted) return;
+      setState(() {
+        _parkingId = parkingId;
+        _pricePerHour = pricePerHour;
+        _error = null;
+      });
+      return;
     }
-    if (mounted) setState(() {});
+
+    _unbindStreams();
+
+    if (!mounted) return;
+    setState(() {
+      _boundParkingId = parkingId;
+      _parkingId = parkingId;
+      _pricePerHour = pricePerHour;
+      _spaces = [];
+      _walkIns.clear();
+      _error = null;
+      _loading = true;
+    });
+
+    final db = FirebaseFirestore.instance;
+
+    _spacesSub = db
+        .collection('parkings')
+        .doc(parkingId)
+        .collection('spaces')
+        .orderBy('spaceNumber')
+        .snapshots()
+        .listen(
+          (snap) {
+            if (!mounted) return;
+            setState(() {
+              _spaces = snap.docs.map((d) => {'id': d.id, ...d.data()}).toList();
+              _loading = false;
+            });
+          },
+          onError: (Object error) {
+            if (!mounted) return;
+            setState(() {
+              _error = 'No se pudieron cargar los espacios: $error';
+              _loading = false;
+            });
+          },
+        );
+
+    _walkInsSub = db
+        .collection('parkings')
+        .doc(parkingId)
+        .collection('walk_ins')
+        .where('status', isEqualTo: 'active')
+        .snapshots()
+        .listen(
+          (snap) {
+            final next = <String, _WalkIn>{};
+            for (final doc in snap.docs) {
+              final d = doc.data();
+              final spaceId = d['spaceId'] as String? ?? '';
+              if (spaceId.isEmpty) continue;
+              next[spaceId] = _WalkIn(
+                docId: doc.id,
+                spaceId: spaceId,
+                spaceNumber: (d['spaceNumber'] as num?)?.toInt() ?? 0,
+                customerName: d['customerName'] as String? ?? 'Cliente',
+                plate: d['plate'] as String? ?? '',
+                enteredAt: (d['enteredAt'] as Timestamp).toDate(),
+                pricePerHour: (d['pricePerHour'] as num?)?.toDouble(),
+              );
+            }
+            if (!mounted) return;
+            setState(() {
+              _walkIns
+                ..clear()
+                ..addAll(next);
+            });
+          },
+          onError: (Object error) {
+            if (!mounted) return;
+            _showSnack(
+              'No se pudieron cargar los walk-ins activos. Verifica reglas de Firestore.',
+              isError: true,
+            );
+            setState(() {
+              _walkIns.clear();
+            });
+          },
+        );
   }
 
   // ── Assign walk-in ──────────────────────────────────────────────────────────
@@ -172,8 +223,12 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
     final spaceId = space['id'] as String;
     final spaceNumber = (space['spaceNumber'] as num?)?.toInt() ?? 0;
 
-    final plate = await _showPlateDialog(spaceNumber);
-    if (plate == null || plate.trim().isEmpty) return;
+    final payload = await _showWalkInDialog(spaceNumber);
+    if (payload == null) return;
+
+    final customerName = payload.name.trim();
+    final plate = payload.plate.trim().toUpperCase();
+    if (customerName.isEmpty || plate.isEmpty) return;
 
     try {
       final db = FirebaseFirestore.instance;
@@ -201,7 +256,8 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
       batch.set(walkInRef, {
         'spaceId': spaceId,
         'spaceNumber': spaceNumber,
-        'plate': plate.trim().toUpperCase(),
+        'customerName': customerName,
+        'plate': plate,
         'enteredAt': Timestamp.fromDate(now),
         'pricePerHour': _pricePerHour,
         'status': 'active',
@@ -220,16 +276,15 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
           docId: walkInRef.id,
           spaceId: spaceId,
           spaceNumber: spaceNumber,
-          plate: plate.trim().toUpperCase(),
+          customerName: customerName,
+          plate: plate,
           enteredAt: now,
           pricePerHour: _pricePerHour,
         );
       });
 
       if (mounted) {
-        _showSnack(
-          '✓ Espacio $spaceNumber asignado a ${plate.trim().toUpperCase()}',
-        );
+        _showSnack('✓ Espacio $spaceNumber asignado a $customerName');
       }
     } catch (e) {
       if (mounted) _showSnack('Error: $e', isError: true);
@@ -293,9 +348,10 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
 
   // ── Dialogs ─────────────────────────────────────────────────────────────────
 
-  Future<String?> _showPlateDialog(int spaceNumber) {
-    final ctrl = TextEditingController();
-    return showDialog<String>(
+  Future<_WalkInFormData?> _showWalkInDialog(int spaceNumber) {
+    final nameCtrl = TextEditingController();
+    final plateCtrl = TextEditingController();
+    return showDialog<_WalkInFormData>(
       context: context,
       barrierDismissible: false,
       builder:
@@ -377,6 +433,51 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
+                          'Nombre del cliente',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF1E293B),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: nameCtrl,
+                          autofocus: true,
+                          textCapitalization: TextCapitalization.words,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF0F172A),
+                          ),
+                          decoration: InputDecoration(
+                            hintText: 'Ej: Juan Pérez',
+                            hintStyle: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey.shade400,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            filled: true,
+                            fillColor: const Color(0xFFF1F5F9),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide.none,
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide(
+                                color: AppColors.headerBottom,
+                                width: 2,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        const Text(
                           'Placa del vehículo',
                           style: TextStyle(
                             fontSize: 13,
@@ -386,8 +487,7 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
                         ),
                         const SizedBox(height: 8),
                         TextField(
-                          controller: ctrl,
-                          autofocus: true,
+                          controller: plateCtrl,
                           textCapitalization: TextCapitalization.characters,
                           inputFormatters: [
                             FilteringTextInputFormatter.allow(
@@ -472,7 +572,14 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
                                 text: 'Asignar',
                                 height: 46,
                                 margin: EdgeInsets.zero,
-                                onTap: () => Navigator.pop(ctx, ctrl.text),
+                                onTap:
+                                    () => Navigator.pop(
+                                      ctx,
+                                      _WalkInFormData(
+                                        name: nameCtrl.text,
+                                        plate: plateCtrl.text,
+                                      ),
+                                    ),
                               ),
                             ),
                           ],
@@ -585,6 +692,12 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
                           child: Column(
                             children: [
                               _SummaryRow(
+                                icon: Icons.person_outline_rounded,
+                                label: 'Cliente',
+                                value: walkIn.customerName,
+                              ),
+                              const SizedBox(height: 10),
+                              _SummaryRow(
                                 icon: Icons.directions_car_rounded,
                                 label: 'Placa',
                                 value: walkIn.plate,
@@ -695,8 +808,6 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
   }
 
   void _showCheckoutSummary(_WalkIn walkIn, Duration elapsed, double amount) {
-    final h = elapsed.inHours;
-    final m = elapsed.inMinutes % 60;
     showDialog(
       context: context,
       builder:
@@ -772,7 +883,7 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                '${walkIn.plate}  •  ${h > 0 ? '${h}h ${m}m' : '${m}m'}',
+                                '${walkIn.customerName}  •  ${walkIn.plate}',
                                 style: TextStyle(
                                   fontSize: 13,
                                   color: Colors.grey.shade500,
@@ -927,6 +1038,17 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
                       // ── Spaces grid ───────────────────────────────────────────
                       SliverToBoxAdapter(
                         child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
+                          child: _QuickAssignCard(
+                            spaces: _spaces,
+                            walkIns: _walkIns,
+                            onAssign: (space) => _assignWalkIn(space),
+                          ),
+                        ),
+                      ),
+
+                      SliverToBoxAdapter(
+                        child: Padding(
                           padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
                           child: Row(
                             children: [
@@ -958,49 +1080,243 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
                         ),
                       ),
 
-                      SliverPadding(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 40),
-                        sliver: SliverGrid(
-                          delegate: SliverChildBuilderDelegate((_, i) {
-                            final space = _spaces[i];
-                            final spaceId = space['id'] as String;
-                            final status = space['status'] as String? ?? 'free';
-                            final number =
-                                (space['spaceNumber'] as num?)?.toInt() ??
-                                (i + 1);
-                            final walkIn = _walkIns[spaceId];
+                      if (_spaces.isEmpty)
+                        const SliverToBoxAdapter(
+                          child: Padding(
+                            padding: EdgeInsets.fromLTRB(16, 12, 16, 40),
+                            child: _EmptySpacesState(),
+                          ),
+                        )
+                      else
+                        SliverPadding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 40),
+                          sliver: SliverGrid(
+                            delegate: SliverChildBuilderDelegate((_, i) {
+                              final space = _spaces[i];
+                              final spaceId = space['id'] as String;
+                              final status = space['status'] as String? ?? 'free';
+                              final number =
+                                  (space['spaceNumber'] as num?)?.toInt() ??
+                                  (i + 1);
+                              final walkIn = _walkIns[spaceId];
 
-                            return _SpaceTile(
-                              number: number,
-                              status: status,
-                              isWalkIn: walkIn != null,
-                              walkIn: walkIn,
-                              elapsedLabel:
-                                  walkIn != null
-                                      ? _elapsedLabel(walkIn.elapsed)
-                                      : null,
-                              onTap:
-                                  status == 'free'
-                                      ? () => _assignWalkIn(space)
-                                      : walkIn != null
-                                      ? () => _checkoutWalkIn(walkIn)
-                                      : null,
-                            );
-                          }, childCount: _spaces.length),
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 3,
-                                mainAxisSpacing: 12,
-                                crossAxisSpacing: 12,
-                                childAspectRatio: 0.85,
-                              ),
+                              return _SpaceTile(
+                                number: number,
+                                status: status,
+                                isWalkIn: walkIn != null,
+                                walkIn: walkIn,
+                                elapsedLabel:
+                                    walkIn != null
+                                        ? _elapsedLabel(walkIn.elapsed)
+                                        : null,
+                                onTap:
+                                    status == 'free'
+                                        ? () => _assignWalkIn(space)
+                                        : walkIn != null
+                                        ? () => _checkoutWalkIn(walkIn)
+                                        : null,
+                              );
+                            }, childCount: _spaces.length),
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 3,
+                                  mainAxisSpacing: 12,
+                                  crossAxisSpacing: 12,
+                                  childAspectRatio: 0.85,
+                                ),
+                          ),
                         ),
-                      ),
                     ],
                   ),
                 ),
             ],
           ),
+    );
+  }
+}
+
+class _WalkInFormData {
+  final String name;
+  final String plate;
+
+  const _WalkInFormData({required this.name, required this.plate});
+}
+
+class _QuickAssignCard extends StatelessWidget {
+  final List<Map<String, dynamic>> spaces;
+  final Map<String, _WalkIn> walkIns;
+  final ValueChanged<Map<String, dynamic>> onAssign;
+
+  const _QuickAssignCard({
+    required this.spaces,
+    required this.walkIns,
+    required this.onAssign,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final freeSpaces =
+        spaces.where((s) => (s['status'] as String? ?? 'free') == 'free').toList()
+          ..sort(
+            (a, b) => ((a['spaceNumber'] as num?)?.toInt() ?? 0).compareTo(
+              (b['spaceNumber'] as num?)?.toInt() ?? 0,
+            ),
+          );
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.borderSoft),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.headerBottom.withOpacity(0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: AppColors.headerBottom.withOpacity(0.10),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.flash_on_rounded,
+                  color: AppColors.headerBottom,
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Asignación rápida',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'Selecciona un espacio libre para registrar un cliente presencial.',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Color(0xFF64748B),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          if (freeSpaces.isEmpty)
+            const Text(
+              'No hay espacios libres en este momento.',
+              style: TextStyle(
+                fontSize: 12,
+                color: Color(0xFF64748B),
+                fontWeight: FontWeight.w600,
+              ),
+            )
+          else
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children:
+                  freeSpaces.take(8).map((space) {
+                    final number = (space['spaceNumber'] as num?)?.toInt() ?? 0;
+                    return ActionChip(
+                      onPressed: () => onAssign(space),
+                      avatar: const Icon(
+                        Icons.local_parking_rounded,
+                        size: 16,
+                        color: AppColors.headerBottom,
+                      ),
+                      label: Text(
+                        'Espacio $number',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF1E293B),
+                        ),
+                      ),
+                      side: BorderSide(
+                        color: AppColors.headerBottom.withOpacity(0.16),
+                      ),
+                      backgroundColor: const Color(0xFFF8FAFC),
+                    );
+                  }).toList(),
+            ),
+          if (walkIns.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(
+              '${walkIns.length} cliente(s) presenciales activos ahora mismo.',
+              style: const TextStyle(
+                fontSize: 11,
+                color: Color(0xFF16A34A),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptySpacesState extends StatelessWidget {
+  const _EmptySpacesState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.borderSoft),
+      ),
+      child: const Column(
+        children: [
+          Icon(
+            Icons.local_parking_outlined,
+            size: 34,
+            color: Color(0xFF94A3B8),
+          ),
+          SizedBox(height: 10),
+          Text(
+            'Aún no hay espacios configurados',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+              color: Color(0xFF334155),
+            ),
+          ),
+          SizedBox(height: 4),
+          Text(
+            'Cuando existan espacios en tu parqueo, aparecerán aquí para asignarlos manualmente.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 12,
+              color: Color(0xFF64748B),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -1242,6 +1558,16 @@ class _SpaceTile extends StatelessWidget {
                   color: textColor.withOpacity(0.6),
                 ),
               ),
+              Text(
+                walkIn!.customerName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 8,
+                  fontWeight: FontWeight.w500,
+                  color: textColor.withOpacity(0.55),
+                ),
+              ),
             ],
             if (status == 'free') ...[
               const SizedBox(height: 2),
@@ -1316,7 +1642,7 @@ class _ActiveWalkInCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Espacio ${walkIn.spaceNumber}  •  ${walkIn.plate}',
+                  'Espacio ${walkIn.spaceNumber}  •  ${walkIn.customerName}',
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w700,

@@ -758,8 +758,8 @@ final ownerApproveReservationProvider =
     });
 
 /// Force-completes an active reservation as the owner.
-/// Cancels the reservation, frees the space, and stores the reason as evidence.
-/// NOTE: User strike must be applied via Cloud Function (future).
+/// Cancels the reservation, frees the space, stores the reason as evidence,
+/// and applies a strike to the user.
 final ownerForceCancelProvider = Provider<
   Future<void> Function({
     required Reservation reservation,
@@ -775,12 +775,14 @@ final ownerForceCancelProvider = Provider<
       reservation.parkingId,
       reservation.spaceNumber,
     );
+    final controlRef = _userReservationControlDoc(db, reservation.userId);
 
     final now = DateTime.now();
 
     await db.runTransaction((tx) async {
       final reservationSnap = await tx.get(reservationRef);
       final spaceSnap = await tx.get(spaceRef);
+      final controlSnap = await tx.get(controlRef);
 
       if (!reservationSnap.exists) {
         throw StateError('La reservación ya no existe.');
@@ -794,6 +796,16 @@ final ownerForceCancelProvider = Provider<
         throw StateError('La reservación no puede ser cancelada.');
       }
 
+      final controlData = controlSnap.data() as Map<String, dynamic>? ?? {};
+      final currentAttempts =
+          (controlData['cancelAttempts'] as num?)?.toInt() ?? 0;
+      final nextAttempts = currentAttempts + 1;
+      final limitReached = nextAttempts >= maxCancellationAttempts;
+      final restrictedUntil =
+          limitReached
+              ? now.add(const Duration(days: reservationCooldownDays))
+              : null;
+
       tx.update(reservationRef, {
         'state': 'cancelled',
         'endedAt': Timestamp.fromDate(now),
@@ -803,7 +815,35 @@ final ownerForceCancelProvider = Provider<
                 : reason.trim(),
         'cancellationPenaltyApplied': true,
         'providerApprovalStatus': 'approved',
+        'cancelAttempts': latest.cancelAttempts + 1,
+        'userCancelAttempts': nextAttempts,
+        'restrictedUntil':
+            restrictedUntil != null
+                ? Timestamp.fromDate(restrictedUntil)
+                : null,
       });
+
+      if (controlSnap.exists) {
+        tx.update(controlRef, {
+          'cancelAttempts': nextAttempts,
+          'restrictedUntil':
+              restrictedUntil != null
+                  ? Timestamp.fromDate(restrictedUntil)
+                  : null,
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+      } else {
+        tx.set(controlRef, {
+          'userId': reservation.userId,
+          'cancelAttempts': nextAttempts,
+          'restrictedUntil':
+              restrictedUntil != null
+                  ? Timestamp.fromDate(restrictedUntil)
+                  : null,
+          'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+      }
 
       final spaceData = spaceSnap.data() as Map<String, dynamic>? ?? {};
       final currentStatus =
