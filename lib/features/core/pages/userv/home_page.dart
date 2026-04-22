@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:mapbox_api/common/ui/components/app_styles.dart';
+import 'package:mapbox_api/common/ui/widgets/app_map_controls.dart';
 import 'package:mapbox_api/common/ui/widgets/app_drawer.dart';
 import 'package:mapbox_api/common/ui/widgets/home_bottom_panel.dart';
 import 'package:mapbox_api/features/core/components/map_widget.dart';
@@ -31,7 +32,9 @@ class _HomePageState extends ConsumerState<HomePage> {
   LatLng? _userLocation;
   bool _locatingUser = false;
 
-  static const double _minSheet = 0.18;
+  // Must match HomeBottomPanel.initialChildSize/minChildSize so the floating
+  // controls render in the correct position from the very first frame.
+  static const double _minSheet = 0.22;
   double _sheetFraction = _minSheet;
 
   @override
@@ -141,23 +144,11 @@ class _HomePageState extends ConsumerState<HomePage> {
             curve: Curves.easeOut,
             right: 12,
             bottom: controlsBottom,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _MapCtrlBtn(icon: Icons.add, onTap: _zoomIn),
-                const SizedBox(height: 6),
-                _MapCtrlBtn(icon: Icons.remove, onTap: _zoomOut),
-                const SizedBox(height: 10),
-                _MapCtrlBtn(
-                  icon:
-                      _locatingUser
-                          ? Icons.location_searching_rounded
-                          : Icons.my_location_rounded,
-                  onTap: _centerOnUser,
-                  loading: _locatingUser,
-                  accent: true,
-                ),
-              ],
+            child: AppMapControls(
+              onZoomIn: _zoomIn,
+              onZoomOut: _zoomOut,
+              onMyLocation: _centerOnUser,
+              loadingMyLocation: _locatingUser,
             ),
           ),
 
@@ -197,54 +188,6 @@ class _TopBtn extends StatelessWidget {
         ],
       ),
       child: Icon(icon, size: 20, color: AppColors.headerBottom),
-    ),
-  );
-}
-
-class _MapCtrlBtn extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-  final bool loading;
-  final bool accent;
-
-  const _MapCtrlBtn({
-    required this.icon,
-    required this.onTap,
-    this.loading = false,
-    this.accent = false,
-  });
-
-  @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: loading ? null : onTap,
-    child: Container(
-      width: 42,
-      height: 42,
-      decoration: BoxDecoration(
-        color: accent ? AppColors.headerBottom : Colors.white,
-        borderRadius: BorderRadius.circular(13),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.10),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child:
-          loading
-              ? Padding(
-                padding: const EdgeInsets.all(11),
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: accent ? Colors.white : AppColors.headerBottom,
-                ),
-              )
-              : Icon(
-                icon,
-                size: 20,
-                color: accent ? Colors.white : AppColors.headerBottom,
-              ),
     ),
   );
 }

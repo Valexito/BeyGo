@@ -11,6 +11,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import 'package:mapbox_api/common/ui/components/app_styles.dart';
 import 'package:mapbox_api/common/ui/components/my_button.dart';
+import 'package:mapbox_api/common/ui/widgets/app_map_controls.dart';
 import 'package:mapbox_api/features/reservations/components/route_bottom_info_card.dart';
 import 'package:mapbox_api/features/reservations/providers/directions_providers.dart';
 import 'package:mapbox_api/features/reservations/providers/location_providers.dart';
@@ -232,20 +233,10 @@ class _RouteViewPageState extends ConsumerState<RouteViewPage> {
                     Positioned(
                       right: 14,
                       bottom: 290,
-                      child: Column(
-                        children: [
-                          _MapCtrlBtn(icon: Icons.add, onTap: () => _zoom(1)),
-                          const SizedBox(height: 8),
-                          _MapCtrlBtn(
-                            icon: Icons.remove,
-                            onTap: () => _zoom(-1),
-                          ),
-                          const SizedBox(height: 8),
-                          _MapCtrlBtn(
-                            icon: Icons.my_location_rounded,
-                            onTap: () => _recenter(origin),
-                          ),
-                        ],
+                      child: AppMapControls(
+                        onZoomIn: () => _zoom(1),
+                        onZoomOut: () => _zoom(-1),
+                        onMyLocation: () => _recenter(origin),
                       ),
                     ),
                   ],
@@ -503,36 +494,6 @@ class _RouteHeader extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// ─── Map control button ────────────────────────────────────────────────────
-class _MapCtrlBtn extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-  const _MapCtrlBtn({required this.icon, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.10),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Icon(icon, size: 20, color: AppColors.headerBottom),
       ),
     );
   }

@@ -8,14 +8,13 @@
 //  • Consistent UI with the rest of the app
 // ─────────────────────────────────────────────────────────────────────────────
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:http/http.dart' as http;
+import 'package:mapbox_api/common/services/google_places_service.dart';
 import 'package:mapbox_api/common/ui/components/app_styles.dart';
 import 'package:mapbox_api/common/ui/components/my_button.dart';
 import 'package:mapbox_api/common/ui/components/navy_header.dart';
-import 'package:mapbox_api/common/env/env.dart';
+import 'package:mapbox_api/common/ui/widgets/app_map_controls.dart';
 
 class MapPickerPage extends StatefulWidget {
   /// Optional initial position. Defaults to Xela, Guatemala.
@@ -33,6 +32,7 @@ class MapPickerPage extends StatefulWidget {
 }
 
 class _MapPickerPageState extends State<MapPickerPage> {
+  final GooglePlacesService _placesService = GooglePlacesService();
   GoogleMapController? _mapController;
   LatLng? _selectedPosition;
 
@@ -70,43 +70,24 @@ class _MapPickerPageState extends State<MapPickerPage> {
     }
     _debounce = Timer(const Duration(milliseconds: 350), () async {
       try {
-        final apiKey = Env.googleMapsKey;
-        final uri = Uri.https(
-          'maps.googleapis.com',
-          '/maps/api/place/autocomplete/json',
-          {
-            'input': value.trim(),
-            'key': apiKey,
-            'language': 'es',
-            'types': 'geocode|establishment',
-          },
+        final predictions = await _placesService.autocomplete(
+          input: value.trim(),
+          locationBias: _selectedPosition ?? widget.initialPosition,
         );
-
-        final res = await http.get(uri).timeout(const Duration(seconds: 5));
-
         if (!mounted) return;
-
-        if (res.statusCode == 200) {
-          final data = json.decode(res.body) as Map<String, dynamic>;
-          final predictions = (data['predictions'] as List?) ?? [];
-          setState(() {
-            _suggestions =
-                predictions
-                    .map(
-                      (p) => _Suggestion(
-                        placeId: p['place_id'] ?? '',
-                        mainText:
-                            p['structured_formatting']?['main_text'] ??
-                            p['description'] ??
-                            '',
-                        secondaryText:
-                            p['structured_formatting']?['secondary_text'] ?? '',
-                      ),
-                    )
-                    .toList();
-            _showSuggestions = _suggestions.isNotEmpty;
-          });
-        }
+        setState(() {
+          _suggestions =
+              predictions
+                  .map(
+                    (p) => _Suggestion(
+                      placeId: p.placeId,
+                      mainText: p.mainText,
+                      secondaryText: p.secondaryText,
+                    ),
+                  )
+                  .toList();
+          _showSuggestions = _suggestions.isNotEmpty;
+        });
       } catch (_) {}
     });
   }
@@ -119,33 +100,16 @@ class _MapPickerPageState extends State<MapPickerPage> {
     });
 
     try {
-      final apiKey = Env.googleMapsKey;
-      final uri = Uri.https(
-        'maps.googleapis.com',
-        '/maps/api/place/details/json',
-        {'place_id': s.placeId, 'key': apiKey, 'fields': 'geometry'},
-      );
-
-      final res = await http.get(uri).timeout(const Duration(seconds: 5));
+      final target = await _placesService.fetchPlaceLocation(s.placeId);
       if (!mounted) return;
-
-      if (res.statusCode == 200) {
-        final data = json.decode(res.body) as Map<String, dynamic>;
-        final loc =
-            data['result']?['geometry']?['location'] as Map<String, dynamic>?;
-        if (loc != null) {
-          final target = LatLng(
-            (loc['lat'] as num).toDouble(),
-            (loc['lng'] as num).toDouble(),
-          );
-          setState(() => _selectedPosition = target);
-          _mapController?.animateCamera(
-            CameraUpdate.newCameraPosition(
-              CameraPosition(target: target, zoom: 16),
-            ),
-          );
-          _searchCtrl.text = s.mainText;
-        }
+      if (target != null) {
+        setState(() => _selectedPosition = target);
+        _mapController?.animateCamera(
+          CameraUpdate.newCameraPosition(
+            CameraPosition(target: target, zoom: 16),
+          ),
+        );
+        _searchCtrl.text = s.mainText;
       }
     } catch (_) {}
   }
@@ -311,26 +275,14 @@ class _MapPickerPageState extends State<MapPickerPage> {
                 Positioned(
                   right: 12,
                   bottom: 120,
-                  child: Column(
-                    children: [
-                      _MapBtn(
-                        icon: Icons.add_rounded,
-                        onTap:
-                            () => _mapController?.animateCamera(
-                              CameraUpdate.zoomIn(),
-                            ),
-                        topRadius: true,
-                      ),
-                      Container(height: 1, color: AppColors.borderSoft),
-                      _MapBtn(
-                        icon: Icons.remove_rounded,
-                        onTap:
-                            () => _mapController?.animateCamera(
-                              CameraUpdate.zoomOut(),
-                            ),
-                        bottomRadius: true,
-                      ),
-                    ],
+                  child: AppMapControls(
+                    onZoomIn:
+                        () =>
+                            _mapController?.animateCamera(CameraUpdate.zoomIn()),
+                    onZoomOut:
+                        () => _mapController?.animateCamera(
+                          CameraUpdate.zoomOut(),
+                        ),
                   ),
                 ),
 
@@ -466,46 +418,6 @@ class _SearchBar extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide.none,
           ),
-        ),
-      ),
-    );
-  }
-}
-
-// ─── Map button ─────────────────────────────────────────────────────────────
-class _MapBtn extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-  final bool topRadius;
-  final bool bottomRadius;
-
-  const _MapBtn({
-    required this.icon,
-    required this.onTap,
-    this.topRadius = false,
-    this.bottomRadius = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final r = BorderRadius.only(
-      topLeft: topRadius ? const Radius.circular(14) : Radius.zero,
-      topRight: topRadius ? const Radius.circular(14) : Radius.zero,
-      bottomLeft: bottomRadius ? const Radius.circular(14) : Radius.zero,
-      bottomRight: bottomRadius ? const Radius.circular(14) : Radius.zero,
-    );
-
-    return Material(
-      color: Colors.white,
-      borderRadius: r,
-      elevation: topRadius && bottomRadius ? 3 : 0,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: r,
-        child: SizedBox(
-          width: 44,
-          height: 44,
-          child: Icon(icon, size: 20, color: AppColors.textPrimary),
         ),
       ),
     );

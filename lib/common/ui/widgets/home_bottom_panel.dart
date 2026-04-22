@@ -1,11 +1,9 @@
 // lib/features/core/widgets/home_bottom_panel.dart
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:mapbox_api/common/services/google_places_service.dart';
 import 'package:mapbox_api/common/ui/components/app_styles.dart' show AppColors;
-import 'package:mapbox_api/common/env/env.dart';
 import 'package:mapbox_api/features/core/services/recent_searches.dart';
 
 class HomeBottomPanel extends StatefulWidget {
@@ -37,6 +35,7 @@ class HomeBottomPanel extends StatefulWidget {
 }
 
 class _HomeBottomPanelState extends State<HomeBottomPanel> {
+  final GooglePlacesService _placesService = GooglePlacesService();
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _focus = FocusNode();
 
@@ -112,74 +111,35 @@ class _HomeBottomPanelState extends State<HomeBottomPanel> {
     if (input.isEmpty) return;
     setState(() => _searching = true);
     try {
-      final apiKey = Env.googleMapsKey;
-
-      final params = <String, String>{
-        'input': input,
-        'key': apiKey,
-        'language': 'es',
-        'types': 'establishment|geocode',
-        'components': 'country:gt',
-        'region': 'gt',
-      };
-
-      // Restrict to Guatemala and bias results around the user's real location.
       final loc = widget.userLocation;
-      if (loc != null) {
-        params['location'] = '${loc.latitude},${loc.longitude}';
-        params['radius'] = '$_nearbyRadiusMeters';
-      }
-
       debugPrint(
         '[Places] input="$input" '
         'location=${loc?.latitude},${loc?.longitude} '
-        'radius=${loc != null ? _nearbyRadiusMeters : 'none'} '
-        'components=${params['components']}',
+        'radius=${loc != null ? _nearbyRadiusMeters : 'none'} country=gt',
       );
 
-      final uri = Uri.https(
-        'maps.googleapis.com',
-        '/maps/api/place/autocomplete/json',
-        params,
+      final suggestions = await _placesService.autocomplete(
+        input: input,
+        locationBias: loc,
+        radiusMeters: loc != null ? _nearbyRadiusMeters : null,
       );
-
-      final res = await http.get(uri).timeout(const Duration(seconds: 6));
       if (!mounted) return;
-
-      if (res.statusCode == 200) {
-        final data = json.decode(res.body) as Map<String, dynamic>;
-        final status = data['status'] as String? ?? '';
-        if (status != 'OK' && status != 'ZERO_RESULTS') {
-          debugPrint(
-            '[Places] Error: $status — ${data['error_message'] ?? ''}',
-          );
-        }
-        final predictions = (data['predictions'] as List?) ?? [];
-        setState(() {
-          _suggestions =
-              predictions.map((p) {
-                final sf = p['structured_formatting'] as Map<String, dynamic>?;
-                final types = (p['types'] as List?)?.cast<String>() ?? [];
-                return _PlaceSuggestion(
-                  placeId: p['place_id'] ?? '',
-                  mainText:
-                      (sf?['main_text'] as String?) ?? (p['description'] ?? ''),
-                  secondaryText: (sf?['secondary_text'] as String?) ?? '',
-                  fullText: p['description'] ?? '',
-                  types: types,
-                );
-              }).toList();
-          _searching = false;
-        });
-        debugPrint(
-          '[Places] status=$status predictions=${_suggestions.length}',
-        );
-      } else {
-        setState(() {
-          _suggestions = [];
-          _searching = false;
-        });
-      }
+      setState(() {
+        _suggestions =
+            suggestions
+                .map(
+                  (s) => _PlaceSuggestion(
+                    placeId: s.placeId,
+                    mainText: s.mainText,
+                    secondaryText: s.secondaryText,
+                    fullText: s.fullText,
+                    types: s.types,
+                  ),
+                )
+                .toList();
+        _searching = false;
+      });
+      debugPrint('[Places] predictions=${_suggestions.length}');
     } catch (e) {
       debugPrint('[Places] Exception: $e');
       if (!mounted) return;
@@ -224,33 +184,21 @@ class _HomeBottomPanelState extends State<HomeBottomPanel> {
     FocusScope.of(context).unfocus();
     _animateTo(_minSize);
     try {
-      final apiKey = Env.googleMapsKey;
-      final uri =
-          Uri.https('maps.googleapis.com', '/maps/api/place/details/json', {
-            'place_id': suggestion.placeId,
-            'key': apiKey,
-            'fields': 'geometry,name,formatted_address',
-          });
-      final res = await http.get(uri).timeout(const Duration(seconds: 6));
+      final loc = await _placesService.fetchPlaceLocation(suggestion.placeId);
       if (!mounted) return;
-      if (res.statusCode == 200) {
-        final data = json.decode(res.body) as Map<String, dynamic>;
-        final loc =
-            data['result']?['geometry']?['location'] as Map<String, dynamic>?;
-        if (loc != null) {
-          final lat = (loc['lat'] as num).toDouble();
-          final lng = (loc['lng'] as num).toDouble();
-          widget.onPlaceSelected(LatLng(lat, lng));
-          await RecentSearches.add(
-            RecentItem(
-              name: suggestion.mainText,
-              address: suggestion.fullText,
-              lat: lat,
-              lng: lng,
-            ),
-          );
-          await _loadRecents();
-        }
+      if (loc != null) {
+        final lat = loc.latitude;
+        final lng = loc.longitude;
+        widget.onPlaceSelected(LatLng(lat, lng));
+        await RecentSearches.add(
+          RecentItem(
+            name: suggestion.mainText,
+            address: suggestion.fullText,
+            lat: lat,
+            lng: lng,
+          ),
+        );
+        await _loadRecents();
       }
     } catch (_) {}
     _searchController.clear();
