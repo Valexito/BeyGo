@@ -749,21 +749,21 @@ class _SpaceTile extends StatelessWidget {
 
     final Color iconColor =
         occupied
-            ? const Color(0xFF6B7280)
+            ? context.appTextSecondaryColor
             : requested
             ? const Color(0xFFF59E0B)
             : selected
             ? Colors.white
-            : AppColors.textPrimary;
+            : context.appTextPrimaryColor;
 
     final Color labelColor =
         occupied
-            ? const Color(0xFF6B7280)
+            ? context.appTextSecondaryColor
             : requested
             ? const Color(0xFFF59E0B)
             : selected
             ? Colors.white
-            : AppColors.textPrimary;
+            : context.appTextPrimaryColor;
 
     return Opacity(
       opacity: occupied ? 0.9 : 1,

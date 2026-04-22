@@ -265,14 +265,24 @@ class _ReportProblemPageState extends ConsumerState<ReportProblemPage> {
                                       DropdownButtonFormField<String>(
                                         value: _selectedReportType,
                                         isExpanded: true,
+                                        dropdownColor: context.appCardBackground,
+                                        style: TextStyle(
+                                          color: context.appTextPrimaryColor,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                         decoration: InputDecoration(
                                           hintText: 'Tipo de reporte',
+                                          hintStyle: TextStyle(
+                                            color: context.appTextSecondaryColor,
+                                            fontSize: 13,
+                                          ),
                                           prefixIcon: const Icon(
                                             Icons.category_outlined,
                                             color: AppColors.headerBottom,
                                           ),
                                           filled: true,
-                                          fillColor: AppColors.formFieldBg,
+                                          fillColor: context.appInputBackground,
                                           contentPadding:
                                               const EdgeInsets.symmetric(
                                                 horizontal: 16,
@@ -286,7 +296,14 @@ class _ReportProblemPageState extends ConsumerState<ReportProblemPage> {
                                                 .map(
                                                   (e) => DropdownMenuItem(
                                                     value: e,
-                                                    child: Text(e),
+                                                    child: Text(
+                                                      e,
+                                                      style: TextStyle(
+                                                        color:
+                                                            context
+                                                                .appTextPrimaryColor,
+                                                      ),
+                                                    ),
                                                   ),
                                                 )
                                                 .toList(),

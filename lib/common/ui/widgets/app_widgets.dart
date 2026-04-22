@@ -72,17 +72,27 @@ class AppDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final headerColor =
         danger ? const Color(0xFFDC2626) : AppColors.headerBottom;
+    final isDark = context.isDarkMode;
+    final cardColor = context.appCardBackground;
+    final bodyTextColor = context.appTextSecondaryColor;
+    final headerGradient =
+        danger
+            ? [const Color(0xFFEF4444), const Color(0xFFDC2626)]
+            : isDark
+            ? const [Color(0xFF111827), Color(0xFF0F172A), Color(0xFF0B1220)]
+            : _gradientColors;
 
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.symmetric(horizontal: 28),
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFFF8FAFC),
+          color: cardColor,
           borderRadius: BorderRadius.circular(28),
+          border: Border.all(color: context.appBorderColor),
           boxShadow: [
             BoxShadow(
-              color: headerColor.withOpacity(0.18),
+              color: headerColor.withValues(alpha: isDark ? 0.20 : 0.18),
               blurRadius: 28,
               offset: const Offset(0, 12),
             ),
@@ -99,7 +109,7 @@ class AppDialog extends StatelessWidget {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: _gradientColors,
+                  colors: headerGradient,
                 ),
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(28),
@@ -112,10 +122,10 @@ class AppDialog extends StatelessWidget {
                     width: 58,
                     height: 58,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.18),
+                      color: Colors.white.withValues(alpha: 0.18),
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: Colors.white.withOpacity(0.26),
+                        color: Colors.white.withValues(alpha: 0.26),
                         width: 1.2,
                       ),
                     ),
@@ -156,9 +166,9 @@ class AppDialog extends StatelessWidget {
                   Text(
                     message,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
-                      color: Color(0xFF5A6478),
+                      color: bodyTextColor,
                       height: 1.5,
                     ),
                   ),
@@ -177,15 +187,15 @@ class AppDialog extends StatelessWidget {
                               onPressed: onCancel,
                               style: OutlinedButton.styleFrom(
                                 side: BorderSide(
-                                  color: AppColors.headerBottom.withOpacity(
-                                    0.28,
+                                  color: AppColors.headerBottom.withValues(
+                                    alpha: 0.28,
                                   ),
                                   width: 1.2,
                                 ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(16),
                                 ),
-                                backgroundColor: Colors.white,
+                                backgroundColor: context.appCardBackgroundSoft,
                               ),
                               child: Text(
                                 cancelText,

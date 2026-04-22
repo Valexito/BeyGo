@@ -15,6 +15,7 @@ import 'package:mapbox_api/common/ui/widgets/app_drawer.dart';
 import 'package:mapbox_api/common/ui/widgets/home_bottom_panel.dart';
 import 'package:mapbox_api/features/core/components/map_widget.dart';
 import 'package:mapbox_api/features/core/providers/app_preferences_provider.dart';
+import 'package:mapbox_api/features/core/pages/userv/configurations_page.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -194,18 +195,19 @@ class _TopBtn extends StatelessWidget {
           ),
         ],
       ),
-      child: Icon(icon, size: 20, color: AppColors.headerBottom),
+      child: Icon(icon, size: 20, color: context.appTextPrimaryColor),
     ),
   );
 }
 
-class _SettingsSheet extends StatelessWidget {
+class _SettingsSheet extends ConsumerWidget {
   const _SettingsSheet({required this.themePreference});
 
   final AppThemePreference themePreference;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final preferences = ref.watch(appPreferencesProvider);
     return Container(
       decoration: BoxDecoration(
         color: context.appCardBackground,
@@ -235,19 +237,25 @@ class _SettingsSheet extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           _Tile(
-            icon: Icons.language_outlined,
-            label: 'Idioma',
-            subtitle: 'Español',
-          ),
-          _Tile(
             icon: Icons.brightness_6_outlined,
             label: 'Tema',
-            subtitle: _themeLabel(themePreference),
+            subtitle: _themeLabel(preferences.themePreference),
+            onTap: () => _showHomeThemePicker(context, ref),
           ),
           _Tile(
             icon: Icons.notifications_outlined,
             label: 'Notificaciones',
-            subtitle: 'Activadas',
+            subtitle:
+                preferences.notificationsEnabled ? 'Activadas' : 'Desactivadas',
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const ConfigurationsPage(),
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -258,55 +266,64 @@ class _SettingsSheet extends StatelessWidget {
 class _Tile extends StatelessWidget {
   final IconData icon;
   final String label, subtitle;
+  final VoidCallback? onTap;
   const _Tile({
     required this.icon,
     required this.label,
     required this.subtitle,
+    this.onTap,
   });
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 10),
-    child: Row(
-      children: [
-        Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            color: context.appIconCircleColor,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(icon, size: 18, color: AppColors.headerBottom),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: context.appTextPrimaryColor,
-                ),
+  Widget build(BuildContext context) => Material(
+    color: Colors.transparent,
+    child: InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: context.appIconCircleColor,
+                borderRadius: BorderRadius.circular(10),
               ),
-              Text(
-                subtitle,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: context.appTextSecondaryColor,
-                ),
+              child: Icon(icon, size: 18, color: AppColors.headerBottom),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: context.appTextPrimaryColor,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: context.appTextSecondaryColor,
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              size: 18,
+              color: context.appTextSecondaryColor,
+            ),
+          ],
         ),
-        Icon(
-          Icons.chevron_right_rounded,
-          size: 18,
-          color: context.appTextSecondaryColor,
-        ),
-      ],
+      ),
     ),
   );
 }
@@ -320,4 +337,97 @@ String _themeLabel(AppThemePreference preference) {
     case AppThemePreference.dark:
       return 'Oscuro';
   }
+}
+
+Future<void> _showHomeThemePicker(BuildContext context, WidgetRef ref) async {
+  final current = ref.read(appPreferencesProvider).themePreference;
+
+  await showModalBottomSheet<void>(
+    context: context,
+    backgroundColor: Colors.transparent,
+    builder: (sheetContext) {
+      return Container(
+        decoration: BoxDecoration(
+          color: sheetContext.appCardBackground,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          border: Border.all(color: sheetContext.appBorderColor),
+        ),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: sheetContext.appBorderColor,
+                  borderRadius: BorderRadius.circular(99),
+                ),
+              ),
+            ),
+            const SizedBox(height: 18),
+            Text(
+              'Selecciona un tema',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: sheetContext.appTextPrimaryColor,
+              ),
+            ),
+            const SizedBox(height: 14),
+            ...AppThemePreference.values.map((option) {
+              final selected = option == current;
+              return ListTile(
+                tileColor:
+                    selected
+                        ? AppColors.headerBottom.withValues(
+                          alpha: sheetContext.isDarkMode ? 0.16 : 0.08,
+                        )
+                        : Colors.transparent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(
+                  switch (option) {
+                    AppThemePreference.system => Icons.brightness_auto_rounded,
+                    AppThemePreference.light => Icons.light_mode_rounded,
+                    AppThemePreference.dark => Icons.dark_mode_rounded,
+                  },
+                  color:
+                      selected
+                          ? AppColors.headerBottom
+                          : sheetContext.appTextPrimaryColor,
+                ),
+                title: Text(
+                  _themeLabel(option),
+                  style: TextStyle(color: sheetContext.appTextPrimaryColor),
+                ),
+                trailing:
+                    selected
+                        ? const Icon(
+                          Icons.check_rounded,
+                          color: AppColors.headerBottom,
+                        )
+                        : null,
+                onTap: () async {
+                  await ref
+                      .read(appPreferencesProvider.notifier)
+                      .setThemePreference(option);
+                  if (sheetContext.mounted) {
+                    Navigator.pop(sheetContext);
+                  }
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                  }
+                },
+              );
+            }),
+          ],
+        ),
+      );
+    },
+  );
 }

@@ -820,17 +820,21 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage>
                                           vertical: 14,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: Colors.white,
+                                          color: context.appCardBackgroundSoft,
                                           borderRadius: BorderRadius.circular(
                                             16,
                                           ),
                                           border: Border.all(
-                                            color: AppColors.borderSoft,
+                                            color: context.appBorderColor,
                                           ),
                                           boxShadow: [
                                             BoxShadow(
-                                              color: AppColors.headerBottom
-                                                  .withValues(alpha: 0.04),
+                                              color: Colors.black.withValues(
+                                                alpha:
+                                                    context.isDarkMode
+                                                        ? 0.14
+                                                        : 0.04,
+                                              ),
                                               blurRadius: 8,
                                               offset: const Offset(0, 2),
                                             ),
@@ -854,7 +858,7 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage>
                                               ),
                                             ),
                                             const SizedBox(width: 12),
-                                            const Expanded(
+                                            Expanded(
                                               child: Column(
                                                 crossAxisAlignment:
                                                     CrossAxisAlignment.start,
@@ -865,7 +869,9 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage>
                                                       fontSize: 14,
                                                       fontWeight:
                                                           FontWeight.w700,
-                                                      color: Color(0xFF1E293B),
+                                                      color:
+                                                          context
+                                                              .appTextPrimaryColor,
                                                     ),
                                                   ),
                                                   SizedBox(height: 2),
@@ -873,7 +879,9 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage>
                                                     'Agrega, edita o elimina tus vehículos',
                                                     style: TextStyle(
                                                       fontSize: 11,
-                                                      color: Color(0xFF8A94A6),
+                                                      color:
+                                                          context
+                                                              .appTextSecondaryColor,
                                                     ),
                                                   ),
                                                 ],
@@ -881,7 +889,8 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage>
                                             ),
                                             Icon(
                                               Icons.chevron_right_rounded,
-                                              color: Colors.grey.shade400,
+                                              color:
+                                                  context.appTextSecondaryColor,
                                               size: 20,
                                             ),
                                           ],

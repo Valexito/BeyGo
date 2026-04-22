@@ -104,11 +104,11 @@ class _EditVehiclesPageState extends State<EditVehiclesPage> {
             insetPadding: const EdgeInsets.symmetric(horizontal: 28),
             child: Container(
               decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
+                color: context.appCardBackground,
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.12),
+                    color: Colors.black.withValues(alpha: 0.12),
                     blurRadius: 24,
                     offset: const Offset(0, 8),
                   ),
@@ -133,7 +133,7 @@ class _EditVehiclesPageState extends State<EditVehiclesPage> {
                           width: 50,
                           height: 50,
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.18),
+                            color: Colors.white.withValues(alpha: 0.18),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(
@@ -176,8 +176,8 @@ class _EditVehiclesPageState extends State<EditVehiclesPage> {
                                   onPressed: () => Navigator.pop(ctx, false),
                                   style: OutlinedButton.styleFrom(
                                     side: BorderSide(
-                                      color: AppColors.headerBottom.withOpacity(
-                                        0.3,
+                                      color: AppColors.headerBottom.withValues(
+                                        alpha: 0.3,
                                       ),
                                     ),
                                     shape: RoundedRectangleBorder(
@@ -323,8 +323,14 @@ class _EditVehiclesPageState extends State<EditVehiclesPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = context.isDarkMode;
+    final headerGradient =
+        isDark
+            ? const [Color(0xFF111827), Color(0xFF0F172A), Color(0xFF0B1220)]
+            : const [AppColors.headerTop, AppColors.headerBottom];
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F4F8),
+      backgroundColor: context.appPageBackground,
       body: SafeArea(
         bottom: false,
         top: false,
@@ -332,11 +338,11 @@ class _EditVehiclesPageState extends State<EditVehiclesPage> {
           children: [
             // ── Gradient header ──
             Container(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [AppColors.headerTop, AppColors.headerBottom],
+                  colors: headerGradient,
                 ),
               ),
               child: SafeArea(
@@ -385,16 +391,18 @@ class _EditVehiclesPageState extends State<EditVehiclesPage> {
                                   decoration: BoxDecoration(
                                     gradient: LinearGradient(
                                       colors: [
-                                        AppColors.headerBottom.withOpacity(
-                                          0.08,
+                                        AppColors.headerBottom.withValues(
+                                          alpha: 0.08,
                                         ),
-                                        AppColors.headerTop.withOpacity(0.04),
+                                        AppColors.headerTop.withValues(
+                                          alpha: 0.04,
+                                        ),
                                       ],
                                     ),
                                     borderRadius: BorderRadius.circular(16),
                                     border: Border.all(
-                                      color: AppColors.headerBottom.withOpacity(
-                                        0.20,
+                                      color: AppColors.headerBottom.withValues(
+                                        alpha: 0.20,
                                       ),
                                       width: 1.2,
                                     ),
@@ -406,7 +414,7 @@ class _EditVehiclesPageState extends State<EditVehiclesPage> {
                                         height: 34,
                                         decoration: BoxDecoration(
                                           color: AppColors.headerBottom
-                                              .withOpacity(0.12),
+                                              .withValues(alpha: 0.12),
                                           shape: BoxShape.circle,
                                         ),
                                         child: Icon(
@@ -416,7 +424,7 @@ class _EditVehiclesPageState extends State<EditVehiclesPage> {
                                         ),
                                       ),
                                       const SizedBox(width: 12),
-                                      const Expanded(
+                                      Expanded(
                                         child: Column(
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
@@ -426,7 +434,8 @@ class _EditVehiclesPageState extends State<EditVehiclesPage> {
                                               style: TextStyle(
                                                 fontSize: 12,
                                                 fontWeight: FontWeight.w700,
-                                                color: Color(0xFF1E293B),
+                                                color:
+                                                    context.appTextPrimaryColor,
                                               ),
                                             ),
                                             SizedBox(height: 2),
@@ -434,7 +443,9 @@ class _EditVehiclesPageState extends State<EditVehiclesPage> {
                                               'Solo ingresa el número/letras — el prefijo (P, M, C) se agrega automáticamente.',
                                               style: TextStyle(
                                                 fontSize: 11,
-                                                color: Color(0xFF5A6478),
+                                                color:
+                                                    context
+                                                        .appTextSecondaryColor,
                                               ),
                                             ),
                                           ],
@@ -455,11 +466,11 @@ class _EditVehiclesPageState extends State<EditVehiclesPage> {
                                         vertical: 13,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: Colors.white,
+                                        color: context.appCardBackground,
                                         borderRadius: BorderRadius.circular(16),
                                         border: Border.all(
                                           color: AppColors.headerBottom
-                                              .withOpacity(0.25),
+                                              .withValues(alpha: 0.25),
                                           width: 1.4,
                                         ),
                                       ),
@@ -472,7 +483,7 @@ class _EditVehiclesPageState extends State<EditVehiclesPage> {
                                             height: 28,
                                             decoration: BoxDecoration(
                                               color: AppColors.headerBottom
-                                                  .withOpacity(0.10),
+                                                  .withValues(alpha: 0.10),
                                               shape: BoxShape.circle,
                                             ),
                                             child: Icon(
@@ -518,15 +529,17 @@ class _EditVehiclesPageState extends State<EditVehiclesPage> {
                                             Icons.directions_car_outlined,
                                             size: 48,
                                             color: AppColors.headerBottom
-                                                .withOpacity(0.3),
+                                                .withValues(alpha: 0.3),
                                           ),
                                           const SizedBox(height: 12),
-                                          const Text(
+                                          Text(
                                             'No hay vehículos registrados',
                                             style: TextStyle(
                                               fontSize: 15,
                                               fontWeight: FontWeight.w600,
-                                              color: Color(0xFF6B7280),
+                                              color:
+                                                  context
+                                                      .appTextSecondaryColor,
                                             ),
                                           ),
                                         ],
@@ -540,7 +553,7 @@ class _EditVehiclesPageState extends State<EditVehiclesPage> {
                           // ── Save button ──
                           Container(
                             padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                            color: Colors.white,
+                            color: context.appSectionBackground,
                             child: MyButton(
                               text:
                                   _saving ? 'Guardando...' : 'Guardar cambios',
@@ -633,18 +646,20 @@ class _VehicleCardState extends State<_VehicleCard> {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.appCardBackground,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color:
               widget.isPrimary
-                  ? AppColors.headerBottom.withOpacity(0.30)
-                  : AppColors.borderSoft,
+                  ? AppColors.headerBottom.withValues(alpha: 0.30)
+                  : context.appBorderColor,
           width: widget.isPrimary ? 1.5 : 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.headerBottom.withOpacity(0.05),
+            color: Colors.black.withValues(
+              alpha: context.isDarkMode ? 0.16 : 0.05,
+            ),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -658,8 +673,8 @@ class _VehicleCardState extends State<_VehicleCard> {
             decoration: BoxDecoration(
               color:
                   widget.isPrimary
-                      ? AppColors.headerBottom.withOpacity(0.05)
-                      : const Color(0xFFF8FAFC),
+                      ? AppColors.headerBottom.withValues(alpha: 0.05)
+                      : context.appCardBackgroundSoft,
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(20),
                 topRight: Radius.circular(20),
@@ -671,7 +686,7 @@ class _VehicleCardState extends State<_VehicleCard> {
                   width: 32,
                   height: 32,
                   decoration: BoxDecoration(
-                    color: AppColors.headerBottom.withOpacity(0.10),
+                    color: AppColors.headerBottom.withValues(alpha: 0.10),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
@@ -695,7 +710,7 @@ class _VehicleCardState extends State<_VehicleCard> {
                     color:
                         widget.isPrimary
                             ? AppColors.headerBottom
-                            : const Color(0xFF3D4554),
+                            : context.appTextPrimaryColor,
                   ),
                 ),
                 if (widget.isPrimary) ...[
@@ -706,7 +721,7 @@ class _VehicleCardState extends State<_VehicleCard> {
                       vertical: 2,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.headerBottom.withOpacity(0.10),
+                      color: AppColors.headerBottom.withValues(alpha: 0.10),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
@@ -725,7 +740,7 @@ class _VehicleCardState extends State<_VehicleCard> {
                   child: Container(
                     padding: const EdgeInsets.all(7),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFDC2626).withOpacity(0.08),
+                      color: const Color(0xFFDC2626).withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(9),
                     ),
                     child: const Icon(
@@ -765,7 +780,7 @@ class _VehicleCardState extends State<_VehicleCard> {
                                 color:
                                     selected
                                         ? AppColors.headerBottom
-                                        : const Color(0xFFF1F5F9),
+                                        : context.appInputBackground,
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Column(
@@ -780,7 +795,7 @@ class _VehicleCardState extends State<_VehicleCard> {
                                     color:
                                         selected
                                             ? Colors.white
-                                            : const Color(0xFF6B7280),
+                                            : context.appTextSecondaryColor,
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
@@ -791,7 +806,7 @@ class _VehicleCardState extends State<_VehicleCard> {
                                       color:
                                           selected
                                               ? Colors.white
-                                              : const Color(0xFF6B7280),
+                                              : context.appTextSecondaryColor,
                                     ),
                                   ),
                                 ],
@@ -807,7 +822,7 @@ class _VehicleCardState extends State<_VehicleCard> {
                 // Correlative input
                 Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF1F5F9),
+                    color: context.appInputBackground,
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Row(
@@ -843,17 +858,17 @@ class _VehicleCardState extends State<_VehicleCard> {
                             ),
                             LengthLimitingTextInputFormatter(8),
                           ],
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF1E293B),
+                            color: context.appTextPrimaryColor,
                             letterSpacing: 2,
                           ),
                           decoration: InputDecoration(
                             hintText: '123ABC',
                             hintStyle: TextStyle(
                               fontSize: 16,
-                              color: Colors.grey.shade400,
+                              color: context.appTextSecondaryColor,
                               letterSpacing: 2,
                               fontWeight: FontWeight.w600,
                             ),
@@ -878,10 +893,10 @@ class _VehicleCardState extends State<_VehicleCard> {
                     vertical: 10,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.headerBottom.withOpacity(0.05),
+                    color: AppColors.headerBottom.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: AppColors.headerBottom.withOpacity(0.12),
+                      color: AppColors.headerBottom.withValues(alpha: 0.12),
                     ),
                   ),
                   child: Row(
@@ -890,14 +905,14 @@ class _VehicleCardState extends State<_VehicleCard> {
                       Icon(
                         Icons.credit_card_rounded,
                         size: 14,
-                        color: AppColors.headerBottom.withOpacity(0.5),
+                        color: AppColors.headerBottom.withValues(alpha: 0.5),
                       ),
                       const SizedBox(width: 8),
                       Text(
                         'Placa: ',
                         style: TextStyle(
                           fontSize: 12,
-                          color: AppColors.headerBottom.withOpacity(0.6),
+                          color: AppColors.headerBottom.withValues(alpha: 0.6),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -917,9 +932,9 @@ class _VehicleCardState extends State<_VehicleCard> {
                 const SizedBox(height: 8),
                 Text(
                   entry.type.hint,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 10,
-                    color: Color(0xFF8A94A6),
+                    color: context.appTextSecondaryColor,
                   ),
                   textAlign: TextAlign.center,
                 ),

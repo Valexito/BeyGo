@@ -1,5 +1,4 @@
 // lib/features/core/pages/userv/become_owner_page.dart
-import 'dart:typed_data';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -128,8 +127,8 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
             expand: false,
             builder:
                 (_, scrollCtrl) => Container(
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
+                  decoration: BoxDecoration(
+                    color: context.appCardBackground,
                     borderRadius: BorderRadius.vertical(
                       top: Radius.circular(28),
                     ),
@@ -145,25 +144,25 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
                                 width: 40,
                                 height: 4,
                                 decoration: BoxDecoration(
-                                  color: Colors.grey.shade300,
+                                  color: context.appBorderColor,
                                   borderRadius: BorderRadius.circular(99),
                                 ),
                               ),
                             ),
                             const SizedBox(height: 14),
-                            const Align(
+                            Align(
                               alignment: Alignment.centerLeft,
                               child: Text(
                                 'Código de país',
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w700,
-                                  color: Color(0xFF1E293B),
+                                  color: context.appTextPrimaryColor,
                                 ),
                               ),
                             ),
                             const SizedBox(height: 10),
-                            Divider(color: Colors.grey.shade100, height: 1),
+                            Divider(color: context.appBorderColor, height: 1),
                           ],
                         ),
                       ),
@@ -190,8 +189,8 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
                                 decoration: BoxDecoration(
                                   color:
                                       selected
-                                          ? AppColors.headerBottom.withOpacity(
-                                            0.07,
+                                          ? AppColors.headerBottom.withValues(
+                                            alpha: 0.08,
                                           )
                                           : Colors.transparent,
                                   borderRadius: BorderRadius.circular(12),
@@ -199,8 +198,9 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
                                     color:
                                         selected
                                             ? AppColors.headerBottom
-                                                .withOpacity(0.25)
-                                            : Colors.transparent,
+                                                .withValues(alpha: 0.25)
+                                            : context.appBorderColor
+                                                .withValues(alpha: 0.18),
                                   ),
                                 ),
                                 child: Row(
@@ -219,7 +219,8 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
                                           color:
                                               selected
                                                   ? AppColors.headerBottom
-                                                  : const Color(0xFF3D4554),
+                                                  : context
+                                                      .appTextPrimaryColor,
                                         ),
                                       ),
                                     ),
@@ -231,7 +232,8 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
                                         color:
                                             selected
                                                 ? AppColors.headerBottom
-                                                : const Color(0xFF6B7280),
+                                                : context
+                                                    .appTextSecondaryColor,
                                       ),
                                     ),
                                     if (selected) ...[
@@ -363,7 +365,7 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
         icon: Icons.check_circle_outline_rounded,
         title: '¡Solicitud enviada!',
         message:
-            'Tu solicitud fue enviada correctamente. El equipo la revisará antes de aprobarte como proveedor.',
+            'Gracias por tu solicitud. Nuestro equipo revisará tu información y se comunicará contigo por correo o teléfono para continuar el proceso.',
         showCancel: false,
         confirmText: 'Entendido',
       );
@@ -430,9 +432,17 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
   @override
   Widget build(BuildContext context) {
     final screen = MediaQuery.of(context).size;
+    final headerGradient = LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors:
+          context.isDarkMode
+              ? const [Color(0xFF111827), Color(0xFF0F172A), Color(0xFF0B1220)]
+              : const [AppColors.headerTop, AppColors.headerBottom],
+    );
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F4F8),
+      backgroundColor: context.appPageBackground,
       body: SafeArea(
         top: false,
         child: SizedBox(
@@ -443,12 +453,8 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
               Container(
                 height: screen.height * 0.38,
                 width: double.infinity,
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [AppColors.headerTop, AppColors.headerBottom],
-                  ),
+                decoration: BoxDecoration(
+                  gradient: headerGradient,
                 ),
               ),
 
@@ -506,10 +512,10 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
                     width: 80,
                     height: 80,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.16),
+                      color: Colors.white.withValues(alpha: 0.16),
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: Colors.white.withOpacity(0.22),
+                        color: Colors.white.withValues(alpha: 0.22),
                         width: 1.4,
                       ),
                     ),
@@ -531,8 +537,8 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
                 child: SlideTransition(
                   position: _slideAnim,
                   child: Container(
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFF8FAFC),
+                    decoration: BoxDecoration(
+                      color: context.appSectionBackground,
                       borderRadius: BorderRadius.only(
                         topLeft: Radius.circular(34),
                         topRight: Radius.circular(34),
@@ -555,11 +561,11 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
                               ),
                             ),
                             const SizedBox(height: 4),
-                            const Text(
+                            Text(
                               'Completa tu información, sube tus documentos y envía tu solicitud para revisión.',
                               style: TextStyle(
                                 fontSize: 13,
-                                color: Color(0xFF8A94A6),
+                                color: context.appTextSecondaryColor,
                               ),
                             ),
 
@@ -749,16 +755,16 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
                             TextFormField(
                               controller: _description,
                               maxLines: 3,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 14,
-                                color: Color(0xFF1E293B),
+                                color: context.appTextPrimaryColor,
                               ),
                               decoration: InputDecoration(
                                 hintText:
                                     'Ej: Parqueo techado, seguridad 24h...',
-                                hintStyle: const TextStyle(
+                                hintStyle: TextStyle(
                                   fontSize: 13,
-                                  color: Color(0xFF8A94A6),
+                                  color: context.appTextSecondaryColor,
                                 ),
                                 prefixIcon: const Padding(
                                   padding: EdgeInsets.only(bottom: 40),
@@ -769,7 +775,7 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
                                   ),
                                 ),
                                 filled: true,
-                                fillColor: Colors.white,
+                                fillColor: context.appInputBackgroundActive,
                                 contentPadding: const EdgeInsets.symmetric(
                                   horizontal: 16,
                                   vertical: 14,
@@ -777,13 +783,13 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(14),
                                   borderSide: BorderSide(
-                                    color: AppColors.borderSoft,
+                                    color: context.appBorderColor,
                                   ),
                                 ),
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(14),
                                   borderSide: BorderSide(
-                                    color: AppColors.borderSoft,
+                                    color: context.appBorderColor,
                                   ),
                                 ),
                                 focusedBorder: OutlineInputBorder(
@@ -882,11 +888,11 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
                               title: 'Fotos del parqueo',
                             ),
                             const SizedBox(height: 4),
-                            const Text(
+                            Text(
                               'Mínimo 3 fotos — muestra el interior, exterior y acceso.',
                               style: TextStyle(
                                 fontSize: 11,
-                                color: Color(0xFF8A94A6),
+                                color: context.appTextSecondaryColor,
                               ),
                             ),
                             const SizedBox(height: 12),
@@ -907,11 +913,11 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
                               title: 'Documentos requeridos',
                             ),
                             const SizedBox(height: 4),
-                            const Text(
+                            Text(
                               'Sube fotos claras de cada documento.',
                               style: TextStyle(
                                 fontSize: 11,
-                                color: Color(0xFF8A94A6),
+                                color: context.appTextSecondaryColor,
                               ),
                             ),
                             const SizedBox(height: 14),
@@ -948,18 +954,18 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
                               decoration: BoxDecoration(
                                 color:
                                     _accept
-                                        ? AppColors.headerBottom.withOpacity(
-                                          0.06,
+                                        ? AppColors.headerBottom.withValues(
+                                          alpha: 0.08,
                                         )
-                                        : Colors.white,
+                                        : context.appCardBackground,
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
                                   color:
                                       _accept
-                                          ? AppColors.headerBottom.withOpacity(
-                                            0.25,
+                                          ? AppColors.headerBottom.withValues(
+                                            alpha: 0.25,
                                           )
-                                          : AppColors.borderSoft,
+                                          : context.appBorderColor,
                                 ),
                               ),
                               child: Row(
@@ -977,12 +983,12 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
                                       borderRadius: BorderRadius.circular(5),
                                     ),
                                   ),
-                                  const Expanded(
+                                  Expanded(
                                     child: Text(
                                       'Acepto enviar mis datos para revisión del equipo de Parking App.',
                                       style: TextStyle(
                                         fontSize: 13,
-                                        color: Color(0xFF3D4554),
+                                        color: context.appTextPrimaryColor,
                                       ),
                                     ),
                                   ),
@@ -1008,6 +1014,58 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
                   ),
                 ),
               ),
+              if (_sending)
+                Positioned.fill(
+                  child: Container(
+                    color: Colors.black.withValues(alpha: 0.44),
+                    child: Center(
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 28),
+                        padding: const EdgeInsets.all(22),
+                        decoration: BoxDecoration(
+                          color: context.appCardBackground,
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(color: context.appBorderColor),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.20),
+                              blurRadius: 24,
+                              offset: const Offset(0, 12),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const CircularProgressIndicator(
+                              color: AppColors.headerBottom,
+                            ),
+                            const SizedBox(height: 18),
+                            Text(
+                              'Procesando tu información',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                                color: context.appTextPrimaryColor,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Estamos subiendo tus fotos y documentos, validando tus datos y preparando tu solicitud. Espera un momento...',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 13,
+                                height: 1.45,
+                                color: context.appTextSecondaryColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
@@ -1033,7 +1091,7 @@ class _SectionHeader extends StatelessWidget {
           width: 30,
           height: 30,
           decoration: BoxDecoration(
-            color: AppColors.headerBottom.withOpacity(0.08),
+            color: AppColors.headerBottom.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(9),
           ),
           child: Icon(icon, size: 16, color: AppColors.headerBottom),
@@ -1041,10 +1099,10 @@ class _SectionHeader extends StatelessWidget {
         const SizedBox(width: 9),
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF1E293B),
+            color: context.appTextPrimaryColor,
           ),
         ),
       ],
@@ -1063,16 +1121,16 @@ class _FieldLabel extends StatelessWidget {
     children: [
       Text(
         label,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w700,
-          color: Color(0xFF1E293B),
+          color: context.appTextPrimaryColor,
         ),
       ),
       const SizedBox(height: 2),
       Text(
         hint,
-        style: const TextStyle(fontSize: 11, color: Color(0xFF8A94A6)),
+        style: TextStyle(fontSize: 11, color: context.appTextSecondaryColor),
       ),
     ],
   );
@@ -1082,7 +1140,6 @@ class _FormField extends StatelessWidget {
   final TextEditingController controller;
   final String hint;
   final IconData icon;
-  final bool obscure;
   final TextInputType? keyboardType;
   final String? Function(String?)? validator;
   final List<TextInputFormatter>? inputFormatters;
@@ -1091,7 +1148,6 @@ class _FormField extends StatelessWidget {
     required this.controller,
     required this.hint,
     required this.icon,
-    this.obscure = false,
     this.keyboardType,
     this.validator,
     this.inputFormatters,
@@ -1101,32 +1157,34 @@ class _FormField extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextFormField(
       controller: controller,
-      obscureText: obscure,
       keyboardType: keyboardType,
       validator: validator,
       inputFormatters: inputFormatters,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 14,
         fontWeight: FontWeight.w600,
-        color: Color(0xFF1E293B),
+        color: context.appTextPrimaryColor,
       ),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF8A94A6)),
+        hintStyle: TextStyle(
+          fontSize: 13,
+          color: context.appTextSecondaryColor,
+        ),
         prefixIcon: Icon(icon, size: 18, color: AppColors.headerBottom),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: context.appInputBackgroundActive,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 14,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: AppColors.borderSoft),
+          borderSide: BorderSide(color: context.appBorderColor),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: AppColors.borderSoft),
+          borderSide: BorderSide(color: context.appBorderColor),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
@@ -1156,9 +1214,9 @@ class _PhoneField extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.appInputBackgroundActive,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.borderSoft),
+        border: Border.all(color: context.appBorderColor),
       ),
       child: Row(
         children: [
@@ -1167,7 +1225,9 @@ class _PhoneField extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
               decoration: BoxDecoration(
-                border: Border(right: BorderSide(color: AppColors.borderSoft)),
+                border: Border(
+                  right: BorderSide(color: context.appBorderColor),
+                ),
               ),
               child: Row(
                 children: [
@@ -1188,7 +1248,7 @@ class _PhoneField extends StatelessWidget {
                   Icon(
                     Icons.keyboard_arrow_down_rounded,
                     size: 16,
-                    color: AppColors.headerBottom.withOpacity(0.6),
+                    color: AppColors.headerBottom.withValues(alpha: 0.6),
                   ),
                 ],
               ),
@@ -1201,16 +1261,19 @@ class _PhoneField extends StatelessWidget {
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'[0-9\s\-]')),
               ],
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF1E293B),
+                color: context.appTextPrimaryColor,
               ),
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: '5555 1234',
-                hintStyle: TextStyle(fontSize: 13, color: Color(0xFF8A94A6)),
+                hintStyle: TextStyle(
+                  fontSize: 13,
+                  color: context.appTextSecondaryColor,
+                ),
                 border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(
+                contentPadding: const EdgeInsets.symmetric(
                   horizontal: 12,
                   vertical: 14,
                 ),
@@ -1241,12 +1304,12 @@ class _TimeButton extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(14),
-      child: Container(
+        child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.appCardBackground,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.borderSoft),
+          border: Border.all(color: context.appBorderColor),
         ),
         child: Row(
           children: [
@@ -1258,17 +1321,17 @@ class _TimeButton extends StatelessWidget {
                 children: [
                   Text(
                     label,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 10,
-                      color: Color(0xFF8A94A6),
+                      color: context.appTextSecondaryColor,
                     ),
                   ),
                   Text(
                     time,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF1E293B),
+                      color: context.appTextPrimaryColor,
                     ),
                   ),
                 ],
@@ -1277,7 +1340,7 @@ class _TimeButton extends StatelessWidget {
             Icon(
               Icons.edit_outlined,
               size: 14,
-              color: AppColors.headerBottom.withOpacity(0.5),
+              color: AppColors.headerBottom.withValues(alpha: 0.5),
             ),
           ],
         ),
@@ -1310,7 +1373,10 @@ class _CancellationSelector extends StatelessWidget {
                   vertical: 10,
                 ),
                 decoration: BoxDecoration(
-                  color: selected ? AppColors.headerBottom : Colors.white,
+                  color:
+                      selected
+                          ? AppColors.headerBottom
+                          : context.appCardBackground,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color:
@@ -1324,7 +1390,10 @@ class _CancellationSelector extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: selected ? Colors.white : const Color(0xFF6B7280),
+                    color:
+                        selected
+                            ? Colors.white
+                            : context.appTextSecondaryColor,
                   ),
                 ),
               ),
@@ -1343,13 +1412,13 @@ class _MapPickButton extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 18),
-        decoration: BoxDecoration(
-          color: Colors.white,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 18),
+          decoration: BoxDecoration(
+            color: context.appCardBackground,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: AppColors.headerBottom.withOpacity(0.25),
+              color: AppColors.headerBottom.withValues(alpha: 0.25),
             width: 1.4,
           ),
         ),
@@ -1360,7 +1429,7 @@ class _MapPickButton extends StatelessWidget {
               width: 34,
               height: 34,
               decoration: BoxDecoration(
-                color: AppColors.headerBottom.withOpacity(0.10),
+                color: AppColors.headerBottom.withValues(alpha: 0.10),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -1401,9 +1470,11 @@ class _MapPickedCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: AppColors.headerBottom.withOpacity(0.06),
+        color: AppColors.headerBottom.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.headerBottom.withOpacity(0.20)),
+        border: Border.all(
+          color: AppColors.headerBottom.withValues(alpha: 0.20),
+        ),
       ),
       child: Row(
         children: [
@@ -1411,7 +1482,7 @@ class _MapPickedCard extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: AppColors.headerBottom.withOpacity(0.12),
+              color: AppColors.headerBottom.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -1435,9 +1506,9 @@ class _MapPickedCard extends StatelessWidget {
                 ),
                 Text(
                   '${lat.toStringAsFixed(5)}, ${lng.toStringAsFixed(5)}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
-                    color: Color(0xFF5A6478),
+                    color: context.appTextSecondaryColor,
                   ),
                 ),
               ],
@@ -1514,10 +1585,10 @@ class _ParkingImagesGrid extends StatelessWidget {
               width: 90,
               height: 90,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: context.appCardBackground,
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                  color: AppColors.headerBottom.withOpacity(0.25),
+                  color: AppColors.headerBottom.withValues(alpha: 0.25),
                   width: 1.4,
                 ),
               ),
@@ -1534,7 +1605,7 @@ class _ParkingImagesGrid extends StatelessWidget {
                     '${images.length}/10',
                     style: TextStyle(
                       fontSize: 10,
-                      color: AppColors.headerBottom.withOpacity(0.7),
+                      color: AppColors.headerBottom.withValues(alpha: 0.7),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -1570,10 +1641,10 @@ class _DocUploadCard extends StatelessWidget {
         child: Container(
           height: 100,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: context.appCardBackground,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: AppColors.borderSoft,
+              color: context.appBorderColor,
               style: BorderStyle.solid,
             ),
           ),
@@ -1584,7 +1655,7 @@ class _DocUploadCard extends StatelessWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: AppColors.headerBottom.withOpacity(0.08),
+                  color: AppColors.headerBottom.withValues(alpha: 0.08),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(icon, size: 20, color: AppColors.headerBottom),
@@ -1596,15 +1667,18 @@ class _DocUploadCard extends StatelessWidget {
                 children: [
                   Text(
                     label,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF1E293B),
+                      color: context.appTextPrimaryColor,
                     ),
                   ),
-                  const Text(
+                  Text(
                     'Toca para subir foto',
-                    style: TextStyle(fontSize: 11, color: Color(0xFF8A94A6)),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: context.appTextSecondaryColor,
+                    ),
                   ),
                 ],
               ),
@@ -1635,7 +1709,7 @@ class _DocUploadCard extends StatelessWidget {
                 topLeft: Radius.circular(16),
                 topRight: Radius.circular(16),
               ),
-              color: Colors.black.withOpacity(0.35),
+              color: Colors.black.withValues(alpha: 0.35),
             ),
             child: Text(
               label,
@@ -1677,7 +1751,7 @@ class _Blob extends StatelessWidget {
     width: size,
     height: size,
     decoration: BoxDecoration(
-      color: Colors.white.withOpacity(opacity),
+      color: Colors.white.withValues(alpha: opacity),
       shape: BoxShape.circle,
     ),
   );

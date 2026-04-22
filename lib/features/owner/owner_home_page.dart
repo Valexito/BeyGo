@@ -6,6 +6,7 @@ import 'package:mapbox_api/features/owner/owner_reservations_page.dart';
 import 'package:mapbox_api/features/owner/owner_requests_page.dart';
 import 'package:mapbox_api/features/owner/owner_settings_page.dart';
 import 'package:mapbox_api/features/owner/owner_history_page.dart';
+import 'package:mapbox_api/features/owner/owner_walking_page.dart';
 import 'package:mapbox_api/features/owner/providers/dashboard_providers.dart';
 import 'package:mapbox_api/features/core/roles/role_utils.dart';
 import 'package:mapbox_api/features/reservations/models/reservation.dart';
@@ -26,6 +27,7 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
     _TabItem('Reservas', Icons.receipt_long_outlined),
     _TabItem('Historial', Icons.history_rounded),
     _TabItem('Ajustes', Icons.settings_outlined),
+    _TabItem('Walk-in', Icons.directions_walk_rounded),
   ];
 
   @override
@@ -38,6 +40,7 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
           const OwnerReservationsPage(),
           const OwnerHistoryPage(),
           const OwnerSettingsPage(),
+          const OwnerWalkInPage(),
         ];
 
         return Scaffold(

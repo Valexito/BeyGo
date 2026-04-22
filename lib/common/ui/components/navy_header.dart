@@ -77,12 +77,22 @@ class AppGradientHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = context.isDarkMode;
+    final headerGradient =
+        isDark
+            ? const [
+              Color(0xFF111827),
+              Color(0xFF0F172A),
+              Color(0xFF0B1220),
+            ]
+            : const [AppColors.headerTop, AppColors.headerBottom];
+
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [AppColors.headerTop, AppColors.headerBottom],
+          colors: headerGradient,
         ),
       ),
       child: Stack(
@@ -95,7 +105,7 @@ class AppGradientHeader extends StatelessWidget {
               width: 130,
               height: 130,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.09),
+                color: Colors.white.withValues(alpha: isDark ? 0.05 : 0.09),
                 shape: BoxShape.circle,
               ),
             ),
@@ -107,7 +117,7 @@ class AppGradientHeader extends StatelessWidget {
               width: 90,
               height: 90,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.07),
+                color: Colors.white.withValues(alpha: isDark ? 0.04 : 0.07),
                 shape: BoxShape.circle,
               ),
             ),
@@ -193,10 +203,10 @@ class AppGradientHeader extends StatelessWidget {
                           width: 72,
                           height: 72,
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.16),
+                            color: Colors.white.withValues(alpha: 0.16),
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: Colors.white.withOpacity(0.24),
+                              color: Colors.white.withValues(alpha: 0.24),
                               width: 1.4,
                             ),
                           ),
@@ -268,7 +278,7 @@ class NavyHeader extends StatelessWidget {
               width: 160,
               height: 160,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.10),
+                color: Colors.white.withValues(alpha: 0.10),
                 shape: BoxShape.circle,
               ),
             ),
@@ -280,7 +290,7 @@ class NavyHeader extends StatelessWidget {
               width: 110,
               height: 110,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.08),
+                color: Colors.white.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
             ),

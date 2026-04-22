@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:mapbox_api/common/services/google_places_service.dart';
 import 'package:mapbox_api/common/ui/components/app_styles.dart';
+import 'package:mapbox_api/common/ui/components/google_map_styles.dart';
 import 'package:mapbox_api/common/ui/components/my_button.dart';
 import 'package:mapbox_api/common/ui/components/navy_header.dart';
 import 'package:mapbox_api/common/ui/widgets/app_map_controls.dart';
@@ -171,6 +172,9 @@ class _MapPickerPageState extends State<MapPickerPage> {
                   myLocationButtonEnabled: false,
                   zoomControlsEnabled: false,
                   mapToolbarEnabled: false,
+                  style: GoogleMapStyles.forBrightness(
+                    Theme.of(context).brightness,
+                  ),
                 ),
 
                 // ── Search bar ──
@@ -202,7 +206,9 @@ class _MapPickerPageState extends State<MapPickerPage> {
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: AppColors.headerBottom.withOpacity(0.12),
+                                color: AppColors.headerBottom.withValues(
+                                  alpha: 0.12,
+                                ),
                                 blurRadius: 16,
                                 offset: const Offset(0, 4),
                               ),
@@ -322,7 +328,9 @@ class _MapPickerPageState extends State<MapPickerPage> {
                         border: Border.all(color: context.appBorderColor),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.headerBottom.withOpacity(0.08),
+                            color: AppColors.headerBottom.withValues(
+                              alpha: 0.08,
+                            ),
                             blurRadius: 12,
                             offset: const Offset(0, 4),
                           ),
@@ -380,7 +388,7 @@ class _SearchBar extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppColors.headerBottom.withOpacity(0.12),
+            color: AppColors.headerBottom.withValues(alpha: 0.12),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
