@@ -1022,6 +1022,14 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
 
   @override
   Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    final crossAxisCount =
+        width >= 520
+            ? 5
+            : width >= 390
+            ? 4
+            : 3;
+
     return OwnerOnly(
       builder:
           (_) => Column(
@@ -1195,11 +1203,11 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
                               );
                             }, childCount: _spaces.length),
                             gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 3,
-                                  mainAxisSpacing: 8,
-                                  crossAxisSpacing: 8,
-                                  childAspectRatio: 1.16,
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: crossAxisCount,
+                                  mainAxisSpacing: 12,
+                                  crossAxisSpacing: 12,
+                                  childAspectRatio: 1.02,
                                 ),
                           ),
                         ),
@@ -1548,115 +1556,110 @@ class _SpaceTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Color bg, border, iconColor, textColor;
-    IconData icon;
-    String label;
+    final decoration =
+        status == 'occupied' && !isWalkIn
+            ? BoxDecoration(
+              color: const Color(0xFFFEF2F2),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFEF4444), width: 1.2),
+            )
+            : isWalkIn
+            ? BoxDecoration(
+              color: AppColors.headerBottom.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.headerBottom, width: 1.3),
+            )
+            : BoxDecoration(
+              color: const Color(0xFFF0FDF4),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFF22C55E), width: 1.2),
+            );
 
-    if (status == 'free') {
-      bg = const Color(0xFFF0FDF4);
-      border = const Color(0xFF16A34A);
-      iconColor = const Color(0xFF16A34A);
-      textColor = const Color(0xFF16A34A);
-      icon = Icons.directions_car_filled_rounded;
-      label = 'Libre';
-    } else if (isWalkIn) {
-      bg = AppColors.headerBottom.withOpacity(0.06);
-      border = AppColors.headerBottom;
-      iconColor = AppColors.headerBottom;
-      textColor = AppColors.headerBottom;
-      icon = Icons.directions_car_filled_rounded;
-      label = 'Manual';
-    } else {
-      bg = const Color(0xFFFEF2F2);
-      border = const Color(0xFFDC2626);
-      iconColor = const Color(0xFFDC2626);
-      textColor = const Color(0xFFDC2626);
-      icon = Icons.directions_car_filled_rounded;
-      label = 'Ocupado';
-    }
+    final Color iconColor =
+        status == 'occupied' && !isWalkIn
+            ? const Color(0xFFDC2626)
+            : isWalkIn
+            ? AppColors.headerBottom
+            : const Color(0xFF16A34A);
 
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 220),
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: border.withOpacity(0.4), width: 1.5),
-          boxShadow: [
-            BoxShadow(
-              color: border.withOpacity(0.08),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Space number
-            Text(
-              '$number',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w900,
-                color: textColor,
-                height: 1,
-              ),
-            ),
-            const SizedBox(height: 5),
-            // Icon
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: iconColor.withOpacity(0.12),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, size: 16, color: iconColor),
-            ),
-            const SizedBox(height: 5),
-            // Label / elapsed
-            Text(
-              isWalkIn && elapsedLabel != null ? elapsedLabel! : label,
-              style: TextStyle(
-                fontSize: isWalkIn ? 9 : 10,
-                fontWeight: FontWeight.w700,
-                color: textColor,
-              ),
-            ),
-            if (isWalkIn && walkIn != null) ...[
-              const SizedBox(height: 2),
-              Text(
-                walkIn!.plate,
-                style: TextStyle(
-                  fontSize: 9,
-                  fontWeight: FontWeight.w600,
-                  color: textColor.withOpacity(0.6),
+    final Color labelColor = iconColor;
+
+    final String title =
+        isWalkIn && elapsedLabel != null ? elapsedLabel! : 'Espacio $number';
+
+    final String subtitle =
+        status == 'occupied' && !isWalkIn
+            ? 'Ocupado'
+            : isWalkIn
+            ? (walkIn?.plate ?? 'Manual')
+            : 'Libre';
+
+    final String? footer =
+        isWalkIn
+            ? walkIn?.customerName
+            : status == 'free'
+            ? null
+            : null;
+
+    return Opacity(
+      opacity: status == 'occupied' && !isWalkIn ? 0.92 : 1,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: onTap,
+          child: Container(
+            decoration: decoration,
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.directions_car_outlined,
+                  size: 18,
+                  color: iconColor,
                 ),
-              ),
-              Text(
-                walkIn!.customerName,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 8,
-                  fontWeight: FontWeight.w500,
-                  color: textColor.withOpacity(0.55),
+                const SizedBox(height: 4),
+                Text(
+                  title,
+                  maxLines: 2,
+                  textAlign: TextAlign.center,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: labelColor,
+                    fontSize: isWalkIn ? 10 : 10.5,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
-            ],
-            if (status == 'free') ...[
-              const SizedBox(height: 2),
-              Text(
-                'Toca para asignar',
-                style: TextStyle(
-                  fontSize: 8,
-                  color: textColor.withOpacity(0.5),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  maxLines: 1,
+                  textAlign: TextAlign.center,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: labelColor.withOpacity(0.85),
+                    fontSize: 9,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-            ],
-          ],
+                if (footer != null) ...[
+                  const SizedBox(height: 1),
+                  Text(
+                    footer,
+                    maxLines: 1,
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: labelColor.withOpacity(0.72),
+                      fontSize: 7.5,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
         ),
       ),
     );
