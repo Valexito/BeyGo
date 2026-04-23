@@ -128,13 +128,17 @@ class _OwnerHistoryPageState extends ConsumerState<OwnerHistoryPage> {
       lastDate: DateTime.now(),
       initialDateRange: _dateRange,
       builder: (ctx, child) {
+        final isDark = Theme.of(ctx).brightness == Brightness.dark;
         return Theme(
           data: Theme.of(ctx).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: AppColors.headerBottom,
-              onPrimary: Colors.white,
-              surface: Colors.white,
-            ),
+            colorScheme: (isDark
+                    ? const ColorScheme.dark()
+                    : const ColorScheme.light())
+                .copyWith(
+                  primary: AppColors.headerBottom,
+                  onPrimary: Colors.white,
+                  surface: isDark ? const Color(0xFF111827) : Colors.white,
+                ),
           ),
           child: child!,
         );
@@ -149,8 +153,8 @@ class _OwnerHistoryPageState extends ConsumerState<OwnerHistoryPage> {
       backgroundColor: Colors.transparent,
       builder: (ctx) {
         return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
+          decoration: BoxDecoration(
+            color: ctx.appCardBackground,
             borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
           ),
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
@@ -164,16 +168,17 @@ class _OwnerHistoryPageState extends ConsumerState<OwnerHistoryPage> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
+                    color: ctx.appBorderColor,
                     borderRadius: BorderRadius.circular(99),
                   ),
                 ),
               ),
               const SizedBox(height: 18),
-              const MyText(
+              MyText(
                 text: 'Filtrar por estado',
                 variant: MyTextVariant.bodyBold,
                 fontSize: 16,
+                customColor: ctx.appTextPrimaryColor,
               ),
               const SizedBox(height: 14),
               ..._StateFilter.values.map((f) {
@@ -192,13 +197,13 @@ class _OwnerHistoryPageState extends ConsumerState<OwnerHistoryPage> {
                     decoration: BoxDecoration(
                       color:
                           selected
-                              ? f.color.withOpacity(0.10)
-                              : const Color(0xFFF8FAFC),
+                              ? f.color.withValues(alpha: 0.10)
+                              : ctx.appCardBackgroundSoft,
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
                         color:
                             selected
-                                ? f.color.withOpacity(0.35)
+                                ? f.color.withValues(alpha: 0.35)
                                 : Colors.transparent,
                         width: 1.5,
                       ),
@@ -220,7 +225,7 @@ class _OwnerHistoryPageState extends ConsumerState<OwnerHistoryPage> {
                             variant: MyTextVariant.bodyBold,
                             fontSize: 14,
                             customColor:
-                                selected ? f.color : const Color(0xFF3D4554),
+                                selected ? f.color : ctx.appTextPrimaryColor,
                           ),
                         ),
                         if (selected)
@@ -244,6 +249,7 @@ class _OwnerHistoryPageState extends ConsumerState<OwnerHistoryPage> {
         _stateFilter != _StateFilter.all ||
         _dateRange != null ||
         _searchQuery.isNotEmpty;
+    final isDark = context.isDarkMode;
 
     return OwnerOnly(
       builder: (_) {
@@ -265,11 +271,14 @@ class _OwnerHistoryPageState extends ConsumerState<OwnerHistoryPage> {
                     // Search field
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: context.appCardBackground,
                         borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: context.appBorderColor),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.headerBottom.withOpacity(0.10),
+                            color: Colors.black.withValues(
+                              alpha: isDark ? 0.18 : 0.10,
+                            ),
                             blurRadius: 16,
                             offset: const Offset(0, 4),
                           ),
@@ -278,19 +287,21 @@ class _OwnerHistoryPageState extends ConsumerState<OwnerHistoryPage> {
                       child: TextField(
                         controller: _searchController,
                         onChanged: (v) => setState(() => _searchQuery = v),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
-                          color: Color(0xFF3D4554),
+                          color: context.appTextPrimaryColor,
                         ),
                         decoration: InputDecoration(
                           hintText: 'Buscar por No., usuario, placa...',
                           hintStyle: TextStyle(
                             fontSize: 13,
-                            color: Colors.grey.shade400,
+                            color: context.appTextSecondaryColor,
                           ),
                           prefixIcon: Icon(
                             Icons.search_rounded,
-                            color: AppColors.headerBottom.withOpacity(0.6),
+                            color: AppColors.headerBottom.withValues(
+                              alpha: 0.6,
+                            ),
                             size: 20,
                           ),
                           suffixIcon:
@@ -299,7 +310,7 @@ class _OwnerHistoryPageState extends ConsumerState<OwnerHistoryPage> {
                                     icon: Icon(
                                       Icons.close_rounded,
                                       size: 18,
-                                      color: Colors.grey.shade400,
+                                      color: context.appTextSecondaryColor,
                                     ),
                                     onPressed: () {
                                       _searchController.clear();
@@ -308,7 +319,7 @@ class _OwnerHistoryPageState extends ConsumerState<OwnerHistoryPage> {
                                   )
                                   : null,
                           filled: true,
-                          fillColor: Colors.white,
+                          fillColor: context.appCardBackground,
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
                             vertical: 14,
@@ -371,7 +382,7 @@ class _OwnerHistoryPageState extends ConsumerState<OwnerHistoryPage> {
                               decoration: BoxDecoration(
                                 color: const Color(
                                   0xFFDC2626,
-                                ).withOpacity(0.08),
+                                ).withValues(alpha: 0.08),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: const MyText(
@@ -458,11 +469,16 @@ class _FilterChip extends StatelessWidget {
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: active ? activeColor.withOpacity(0.10) : Colors.white,
+          color:
+              active
+                  ? activeColor.withValues(alpha: 0.10)
+                  : context.appCardBackground,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color:
-                active ? activeColor.withOpacity(0.40) : Colors.grey.shade200,
+                active
+                    ? activeColor.withValues(alpha: 0.40)
+                    : context.appBorderColor,
             width: 1.4,
           ),
           boxShadow:
@@ -470,7 +486,9 @@ class _FilterChip extends StatelessWidget {
                   ? []
                   : [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
+                      color: Colors.black.withValues(
+                        alpha: context.isDarkMode ? 0.14 : 0.04,
+                      ),
                       blurRadius: 6,
                       offset: const Offset(0, 2),
                     ),
@@ -482,7 +500,7 @@ class _FilterChip extends StatelessWidget {
             Icon(
               icon,
               size: 14,
-              color: active ? activeColor : Colors.grey.shade500,
+              color: active ? activeColor : context.appTextSecondaryColor,
             ),
             const SizedBox(width: 6),
             ConstrainedBox(
@@ -493,7 +511,7 @@ class _FilterChip extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: active ? activeColor : const Color(0xFF5A6478),
+                  color: active ? activeColor : context.appTextPrimaryColor,
                 ),
               ),
             ),
@@ -539,12 +557,14 @@ class _OwnerHistoryCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.appCardBackground,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.borderSoft),
+        border: Border.all(color: context.appBorderColor),
         boxShadow: [
           BoxShadow(
-            color: AppColors.headerBottom.withOpacity(0.05),
+            color: Colors.black.withValues(
+              alpha: context.isDarkMode ? 0.18 : 0.05,
+            ),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -580,10 +600,10 @@ class _OwnerHistoryCard extends StatelessWidget {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: stateColor.withOpacity(0.22),
+                    color: stateColor.withValues(alpha: 0.22),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: Colors.white.withOpacity(0.30),
+                      color: Colors.white.withValues(alpha: 0.30),
                       width: 1,
                     ),
                   ),
@@ -685,9 +705,11 @@ class _OwnerHistoryCard extends StatelessWidget {
                       vertical: 10,
                     ),
                     decoration: BoxDecoration(
-                      color: stateColor.withOpacity(0.06),
+                      color: stateColor.withValues(alpha: 0.06),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: stateColor.withOpacity(0.15)),
+                      border: Border.all(
+                        color: stateColor.withValues(alpha: 0.15),
+                      ),
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -789,8 +811,8 @@ class _MiniInfo extends StatelessWidget {
         Container(
           width: 28,
           height: 28,
-          decoration: const BoxDecoration(
-            color: AppColors.iconCircle,
+          decoration: BoxDecoration(
+            color: context.appIconCircleColor,
             shape: BoxShape.circle,
           ),
           child: Icon(icon, size: 14, color: AppColors.headerBottom),
@@ -802,9 +824,9 @@ class _MiniInfo extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 10,
-                  color: Color(0xFF8A94A6),
+                  color: context.appTextSecondaryColor,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -814,7 +836,7 @@ class _MiniInfo extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
-                  color: valueColor ?? const Color(0xFF6B7280),
+                  color: valueColor ?? context.appTextPrimaryColor,
                 ),
               ),
             ],
@@ -849,11 +871,14 @@ class _OwnerEmptyState extends StatelessWidget {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: context.appCardBackground,
                 shape: BoxShape.circle,
+                border: Border.all(color: context.appBorderColor),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.headerBottom.withOpacity(0.08),
+                    color: Colors.black.withValues(
+                      alpha: context.isDarkMode ? 0.18 : 0.08,
+                    ),
                     blurRadius: 20,
                     offset: const Offset(0, 8),
                   ),

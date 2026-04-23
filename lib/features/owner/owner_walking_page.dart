@@ -192,17 +192,13 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
           (snap) {
             final spaces =
                 snap.docs.map((d) {
-                  final data = d.data();
-                  final parsedNumber =
-                      (data['spaceNumber'] as num?)?.toInt() ??
-                      int.tryParse(d.id) ??
-                      0;
-                  return {
-                    'id': d.id,
-                    ...data,
-                    'spaceNumber': parsedNumber,
-                  };
-                }).toList()
+                    final data = d.data();
+                    final parsedNumber =
+                        (data['spaceNumber'] as num?)?.toInt() ??
+                        int.tryParse(d.id) ??
+                        0;
+                    return {'id': d.id, ...data, 'spaceNumber': parsedNumber};
+                  }).toList()
                   ..sort(
                     (a, b) => ((a['spaceNumber'] as int?) ?? 0).compareTo(
                       (b['spaceNumber'] as int?) ?? 0,
@@ -420,7 +416,7 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
                 borderRadius: BorderRadius.circular(28),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.headerBottom.withOpacity(0.18),
+                    color: AppColors.headerBottom.withValues(alpha: 0.18),
                     blurRadius: 32,
                     offset: const Offset(0, 12),
                   ),
@@ -450,10 +446,10 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
                           width: 52,
                           height: 52,
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.18),
+                            color: Colors.white.withValues(alpha: 0.18),
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: Colors.white.withOpacity(0.25),
+                              color: Colors.white.withValues(alpha: 0.25),
                               width: 1.2,
                             ),
                           ),
@@ -476,7 +472,7 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
                         Text(
                           'Espacio No. $spaceNumber',
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.75),
+                            color: Colors.white.withValues(alpha: 0.75),
                             fontSize: 13,
                           ),
                         ),
@@ -603,8 +599,8 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
                                   onPressed: () => Navigator.pop(ctx),
                                   style: OutlinedButton.styleFrom(
                                     side: BorderSide(
-                                      color: AppColors.headerBottom.withOpacity(
-                                        0.35,
+                                      color: AppColors.headerBottom.withValues(
+                                        alpha: 0.35,
                                       ),
                                     ),
                                     shape: RoundedRectangleBorder(
@@ -670,7 +666,7 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
                 borderRadius: BorderRadius.circular(28),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.headerBottom.withOpacity(0.18),
+                    color: AppColors.headerBottom.withValues(alpha: 0.18),
                     blurRadius: 32,
                     offset: const Offset(0, 12),
                   ),
@@ -699,10 +695,10 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
                           width: 52,
                           height: 52,
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.18),
+                            color: Colors.white.withValues(alpha: 0.18),
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: Colors.white.withOpacity(0.25),
+                              color: Colors.white.withValues(alpha: 0.25),
                               width: 1.2,
                             ),
                           ),
@@ -725,7 +721,7 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
                         Text(
                           'Espacio No. ${walkIn.spaceNumber}',
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.75),
+                            color: Colors.white.withValues(alpha: 0.75),
                             fontSize: 13,
                           ),
                         ),
@@ -733,7 +729,7 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
                         Text(
                           'No. ${walkIn.reservationNumber}',
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.82),
+                            color: Colors.white.withValues(alpha: 0.82),
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
                           ),
@@ -824,8 +820,8 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
                                   onPressed: () => Navigator.pop(ctx, false),
                                   style: OutlinedButton.styleFrom(
                                     side: BorderSide(
-                                      color: AppColors.headerBottom.withOpacity(
-                                        0.35,
+                                      color: AppColors.headerBottom.withValues(
+                                        alpha: 0.35,
                                       ),
                                     ),
                                     shape: RoundedRectangleBorder(
@@ -927,7 +923,7 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
                         Text(
                           'No. ${walkIn.reservationNumber}',
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.82),
+                            color: Colors.white.withValues(alpha: 0.82),
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
                           ),
@@ -947,7 +943,9 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
                             color: const Color(0xFFF0FDF4),
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: const Color(0xFF16A34A).withOpacity(0.2),
+                              color: const Color(
+                                0xFF16A34A,
+                              ).withValues(alpha: 0.2),
                             ),
                           ),
                           child: Column(
@@ -1157,7 +1155,7 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
                                 '${_spaces.length} total',
                                 style: TextStyle(
                                   fontSize: 11,
-                                  color: Colors.grey.shade400,
+                                  color: context.appTextSecondaryColor,
                                 ),
                               ),
                             ],
@@ -1179,7 +1177,8 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
                             delegate: SliverChildBuilderDelegate((_, i) {
                               final space = _spaces[i];
                               final spaceId = space['id'] as String;
-                              final status = space['status'] as String? ?? 'free';
+                              final status =
+                                  space['status'] as String? ?? 'free';
                               final number =
                                   (space['spaceNumber'] as num?)?.toInt() ??
                                   (i + 1);
@@ -1241,7 +1240,9 @@ class _QuickAssignCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final freeSpaces =
-        spaces.where((s) => (s['status'] as String? ?? 'free') == 'free').toList()
+        spaces
+            .where((s) => (s['status'] as String? ?? 'free') == 'free')
+            .toList()
           ..sort(
             (a, b) => ((a['spaceNumber'] as num?)?.toInt() ?? 0).compareTo(
               (b['spaceNumber'] as num?)?.toInt() ?? 0,
@@ -1251,12 +1252,14 @@ class _QuickAssignCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.appCardBackground,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.borderSoft),
+        border: Border.all(color: context.appBorderColor),
         boxShadow: [
           BoxShadow(
-            color: AppColors.headerBottom.withOpacity(0.05),
+            color: Colors.black.withValues(
+              alpha: context.isDarkMode ? 0.18 : 0.05,
+            ),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -1271,7 +1274,7 @@ class _QuickAssignCard extends StatelessWidget {
                 width: 34,
                 height: 34,
                 decoration: BoxDecoration(
-                  color: AppColors.headerBottom.withOpacity(0.10),
+                  color: AppColors.headerBottom.withValues(alpha: 0.10),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
@@ -1281,7 +1284,7 @@ class _QuickAssignCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 10),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -1290,15 +1293,15 @@ class _QuickAssignCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w800,
-                        color: Color(0xFF0F172A),
+                        color: context.appTextPrimaryColor,
                       ),
                     ),
-                    SizedBox(height: 2),
+                    const SizedBox(height: 2),
                     Text(
                       'Selecciona un espacio libre para registrar un cliente presencial.',
                       style: TextStyle(
                         fontSize: 11,
-                        color: Color(0xFF64748B),
+                        color: context.appTextSecondaryColor,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -1333,15 +1336,15 @@ class _QuickAssignCard extends StatelessWidget {
                       ),
                       label: Text(
                         'Espacio $number',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.w700,
-                          color: Color(0xFF1E293B),
+                          color: context.appTextPrimaryColor,
                         ),
                       ),
                       side: BorderSide(
-                        color: AppColors.headerBottom.withOpacity(0.16),
+                        color: AppColors.headerBottom.withValues(alpha: 0.16),
                       ),
-                      backgroundColor: const Color(0xFFF8FAFC),
+                      backgroundColor: context.appCardBackgroundSoft,
                     );
                   }).toList(),
             ),
@@ -1371,33 +1374,33 @@ class _EmptySpacesState extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.appCardBackground,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.borderSoft),
+        border: Border.all(color: context.appBorderColor),
       ),
-      child: const Column(
+      child: Column(
         children: [
           Icon(
             Icons.local_parking_outlined,
             size: 34,
-            color: Color(0xFF94A3B8),
+            color: context.appTextSecondaryColor,
           ),
-          SizedBox(height: 10),
+          const SizedBox(height: 10),
           Text(
             'Aún no hay espacios configurados',
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w800,
-              color: Color(0xFF334155),
+              color: context.appTextPrimaryColor,
             ),
           ),
-          SizedBox(height: 4),
+          const SizedBox(height: 4),
           Text(
             'Cuando existan espacios en tu parqueo, aparecerán aquí para asignarlos manualmente.',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 12,
-              color: Color(0xFF64748B),
+              color: context.appTextSecondaryColor,
             ),
           ),
         ],
@@ -1427,12 +1430,14 @@ class _StatsBanner extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.appCardBackground,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.borderSoft),
+        border: Border.all(color: context.appBorderColor),
         boxShadow: [
           BoxShadow(
-            color: AppColors.headerBottom.withOpacity(0.08),
+            color: Colors.black.withValues(
+              alpha: context.isDarkMode ? 0.20 : 0.08,
+            ),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -1514,9 +1519,9 @@ class _BannerStat extends StatelessWidget {
         const SizedBox(height: 3),
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 10,
-            color: Color(0xFF8A94A6),
+            color: context.appTextSecondaryColor,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -1530,7 +1535,7 @@ class _VertDivider extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     width: 1,
     height: 44,
-    color: AppColors.borderSoft,
+    color: context.appBorderColor,
     margin: const EdgeInsets.symmetric(horizontal: 8),
   );
 }
@@ -1559,18 +1564,27 @@ class _SpaceTile extends StatelessWidget {
     final decoration =
         status == 'occupied' && !isWalkIn
             ? BoxDecoration(
-              color: const Color(0xFFFEF2F2),
+              color:
+                  context.isDarkMode
+                      ? const Color(0xFF2A1619)
+                      : const Color(0xFFFEF2F2),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: const Color(0xFFEF4444), width: 1.2),
             )
             : isWalkIn
             ? BoxDecoration(
-              color: AppColors.headerBottom.withOpacity(0.08),
+              color:
+                  context.isDarkMode
+                      ? AppColors.headerBottom.withValues(alpha: 0.18)
+                      : AppColors.headerBottom.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: AppColors.headerBottom, width: 1.3),
             )
             : BoxDecoration(
-              color: const Color(0xFFF0FDF4),
+              color:
+                  context.isDarkMode
+                      ? const Color(0xFF12261A)
+                      : const Color(0xFFF0FDF4),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: const Color(0xFF22C55E), width: 1.2),
             );
@@ -1614,11 +1628,7 @@ class _SpaceTile extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.directions_car_outlined,
-                  size: 18,
-                  color: iconColor,
-                ),
+                Icon(Icons.directions_car_outlined, size: 18, color: iconColor),
                 const SizedBox(height: 4),
                 Text(
                   title,
@@ -1638,7 +1648,7 @@ class _SpaceTile extends StatelessWidget {
                   textAlign: TextAlign.center,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: labelColor.withOpacity(0.85),
+                    color: labelColor.withValues(alpha: 0.85),
                     fontSize: 9,
                     fontWeight: FontWeight.w600,
                   ),
@@ -1651,7 +1661,7 @@ class _SpaceTile extends StatelessWidget {
                     textAlign: TextAlign.center,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: labelColor.withOpacity(0.72),
+                      color: labelColor.withValues(alpha: 0.72),
                       fontSize: 7.5,
                       fontWeight: FontWeight.w500,
                     ),
@@ -1688,12 +1698,14 @@ class _ActiveWalkInCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.appCardBackground,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.borderSoft),
+        border: Border.all(color: context.appBorderColor),
         boxShadow: [
           BoxShadow(
-            color: AppColors.headerBottom.withOpacity(0.06),
+            color: Colors.black.withValues(
+              alpha: context.isDarkMode ? 0.18 : 0.06,
+            ),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -1753,7 +1765,7 @@ class _ActiveWalkInCard extends StatelessWidget {
                     vertical: 3,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.20),
+                    color: Colors.white.withValues(alpha: 0.20),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -1781,7 +1793,7 @@ class _ActiveWalkInCard extends StatelessWidget {
                         'Tiempo transcurrido',
                         style: TextStyle(
                           fontSize: 10,
-                          color: Colors.grey.shade400,
+                          color: context.appTextSecondaryColor,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -1807,7 +1819,7 @@ class _ActiveWalkInCard extends StatelessWidget {
                           'Estimado',
                           style: TextStyle(
                             fontSize: 10,
-                            color: Colors.grey.shade400,
+                            color: context.appTextSecondaryColor,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
