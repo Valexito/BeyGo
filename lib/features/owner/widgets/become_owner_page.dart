@@ -260,12 +260,17 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
 
   // ── Image pickers ───────────────────────────────────────────────────────────
   Future<void> _pickParkingImages() async {
+    final remaining = 3 - _parkingImages.length;
+    if (remaining <= 0) {
+      _showSnack('Solo puedes subir hasta 3 fotos del parqueo.');
+      return;
+    }
+
     final picked = await _picker.pickMultiImage(
       imageQuality: 85,
       maxWidth: 1920,
     );
     if (picked.isNotEmpty) {
-      final remaining = 10 - _parkingImages.length;
       final bytes = await Future.wait(
         picked.take(remaining).map((i) => i.readAsBytes()),
       );
@@ -889,7 +894,7 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Mínimo 3 fotos — muestra el interior, exterior y acceso.',
+                              'Máximo 3 fotos — muestra el interior, exterior y acceso.',
                               style: TextStyle(
                                 fontSize: 11,
                                 color: context.appTextSecondaryColor,
@@ -1578,7 +1583,7 @@ class _ParkingImagesGrid extends StatelessWidget {
             ],
           ),
         ),
-        if (images.length < 10)
+        if (images.length < 3)
           GestureDetector(
             onTap: onAdd,
             child: Container(
@@ -1602,7 +1607,7 @@ class _ParkingImagesGrid extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${images.length}/10',
+                    '${images.length}/3',
                     style: TextStyle(
                       fontSize: 10,
                       color: AppColors.headerBottom.withValues(alpha: 0.7),
@@ -1610,6 +1615,17 @@ class _ParkingImagesGrid extends StatelessWidget {
                     ),
                   ),
                 ],
+              ),
+            ),
+          ),
+        if (images.length >= 3)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              'Llegaste al máximo de 3 fotos. Elimina una para agregar otra.',
+              style: TextStyle(
+                fontSize: 11,
+                color: context.appTextSecondaryColor,
               ),
             ),
           ),

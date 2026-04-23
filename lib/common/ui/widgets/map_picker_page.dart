@@ -10,6 +10,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:mapbox_api/common/services/geolocator.dart';
 import 'package:mapbox_api/common/services/google_places_service.dart';
 import 'package:mapbox_api/common/ui/components/app_styles.dart';
 import 'package:mapbox_api/common/ui/components/google_map_styles.dart';
@@ -43,6 +44,7 @@ class _MapPickerPageState extends State<MapPickerPage> {
   List<_Suggestion> _suggestions = [];
   Timer? _debounce;
   bool _showSuggestions = false;
+  bool _locating = false;
 
   static final LatLng _defaultCenter = const LatLng(14.8349, -91.5186); // Xela
 
@@ -126,6 +128,29 @@ class _MapPickerPageState extends State<MapPickerPage> {
   void _confirm() {
     if (_selectedPosition != null) {
       Navigator.pop(context, _selectedPosition);
+    }
+  }
+
+  Future<void> _goToCurrentLocation() async {
+    if (_locating) return;
+    setState(() => _locating = true);
+    try {
+      final loc = await getCurrentLocation();
+      if (!mounted) return;
+      setState(() {
+        _selectedPosition = loc;
+        _showSuggestions = false;
+      });
+      await _mapController?.animateCamera(
+        CameraUpdate.newCameraPosition(CameraPosition(target: loc, zoom: 16)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No pudimos obtener tu ubicación: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _locating = false);
     }
   }
 
@@ -294,6 +319,8 @@ class _MapPickerPageState extends State<MapPickerPage> {
                         () => _mapController?.animateCamera(
                           CameraUpdate.zoomOut(),
                         ),
+                    onMyLocation: _goToCurrentLocation,
+                    loadingMyLocation: _locating,
                   ),
                 ),
 

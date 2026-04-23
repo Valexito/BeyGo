@@ -22,6 +22,8 @@ class OwnerParkingDocument {
   String get address => (data['address'] as String? ?? '').trim();
   String get description => (data['descripcion'] as String? ?? '').trim();
   int get spaces => (data['spaces'] as num?)?.toInt() ?? 0;
+  double get lat => (data['lat'] as num?)?.toDouble() ?? 0;
+  double get lng => (data['lng'] as num?)?.toDouble() ?? 0;
   int get pricePerHour =>
       ((data['pricePerHour'] as num?) ?? (data['price'] as num?) ?? 0).toInt();
   bool get autoApproveReservations =>

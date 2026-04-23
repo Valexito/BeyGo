@@ -342,6 +342,7 @@ class _OwnerSettingsPageState extends ConsumerState<OwnerSettingsPage> {
   Future<void> _logout(BuildContext context) async {
     final confirmed = await showDialog<bool>(
       context: context,
+      useRootNavigator: true,
       barrierDismissible: true,
       builder:
           (ctx) => Dialog(
@@ -349,137 +350,117 @@ class _OwnerSettingsPageState extends ConsumerState<OwnerSettingsPage> {
             insetPadding: const EdgeInsets.symmetric(horizontal: 28),
             child: Container(
               decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
+                color: ctx.appCardBackground,
                 borderRadius: BorderRadius.circular(28),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.headerBottom.withValues(alpha: 0.16),
+                    color: Colors.black.withValues(
+                      alpha: ctx.isDarkMode ? 0.28 : 0.12,
+                    ),
                     blurRadius: 28,
                     offset: const Offset(0, 12),
                   ),
                 ],
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [Color(0xFFDC2626), Color(0xFFB91C1C)],
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 58,
+                      height: 58,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFDC2626).withValues(alpha: 0.10),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: const Color(
+                            0xFFDC2626,
+                          ).withValues(alpha: 0.20),
+                          width: 1.2,
+                        ),
                       ),
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(28),
-                        topRight: Radius.circular(28),
+                      child: const Icon(
+                        Icons.logout_rounded,
+                        color: Color(0xFFDC2626),
+                        size: 26,
                       ),
                     ),
-                    child: Column(
+                    const SizedBox(height: 12),
+                    Text(
+                      'Cerrar sesión',
+                      style: TextStyle(
+                        color: ctx.appTextPrimaryColor,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '¿Seguro que deseas cerrar sesión?',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: ctx.appTextSecondaryColor,
+                      ),
+                    ),
+                    const SizedBox(height: 22),
+                    Row(
                       children: [
-                        Container(
-                          width: 54,
-                          height: 54,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.16),
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.24),
-                              width: 1.2,
+                        Expanded(
+                          child: SizedBox(
+                            height: 46,
+                            child: OutlinedButton(
+                              onPressed: () => Navigator.pop(ctx, false),
+                              style: OutlinedButton.styleFrom(
+                                side: BorderSide(
+                                  color: ctx.appBorderColor,
+                                  width: 1.2,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                backgroundColor: ctx.appCardBackground,
+                              ),
+                              child: Text(
+                                'Cancelar',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  color: ctx.appTextPrimaryColor,
+                                  fontSize: 14,
+                                ),
+                              ),
                             ),
                           ),
-                          child: const Icon(
-                            Icons.logout_rounded,
-                            color: Colors.white,
-                            size: 26,
-                          ),
                         ),
-                        const SizedBox(height: 10),
-                        const Text(
-                          'Cerrar sesión',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 17,
-                            fontWeight: FontWeight.w700,
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: SizedBox(
+                            height: 46,
+                            child: ElevatedButton(
+                              onPressed: () => Navigator.pop(ctx, true),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFDC2626),
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                              ),
+                              child: const Text(
+                                'Salir',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ],
                     ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-                    child: Column(
-                      children: [
-                        const Text(
-                          '¿Seguro que deseas cerrar sesión?',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Color(0xFF5A6478),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: SizedBox(
-                                height: 46,
-                                child: OutlinedButton(
-                                  onPressed: () => Navigator.pop(ctx, false),
-                                  style: OutlinedButton.styleFrom(
-                                    side: BorderSide(
-                                      color: AppColors.headerBottom.withValues(
-                                        alpha: 0.35,
-                                      ),
-                                      width: 1.2,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                    backgroundColor: Colors.white,
-                                  ),
-                                  child: const Text(
-                                    'Cancelar',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                      color: AppColors.headerBottom,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: SizedBox(
-                                height: 46,
-                                child: ElevatedButton(
-                                  onPressed: () => Navigator.pop(ctx, true),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFFDC2626),
-                                    foregroundColor: Colors.white,
-                                    elevation: 0,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                  ),
-                                  child: const Text(
-                                    'Salir',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -490,7 +471,10 @@ class _OwnerSettingsPageState extends ConsumerState<OwnerSettingsPage> {
       await ref.read(authActionsProvider).signOut();
     } catch (_) {}
     if (!mounted) return;
-    Navigator.pushNamedAndRemoveUntil(context, '/auth', (_) => false);
+    Navigator.of(
+      context,
+      rootNavigator: true,
+    ).pushNamedAndRemoveUntil('/auth', (_) => false);
   }
 
   void _toast(String msg) {
@@ -586,67 +570,13 @@ class _OwnerSettingsPageState extends ConsumerState<OwnerSettingsPage> {
       return;
     }
 
-    final reasonCtrl = TextEditingController();
-    final confirmed = await showDialog<bool>(
+    final reason = await showDialog<String>(
       context: context,
-      builder:
-          (ctx) => AlertDialog(
-            backgroundColor: ctx.appCardBackground,
-            title: Text(
-              'Solicitar eliminación',
-              style: TextStyle(color: ctx.appTextPrimaryColor),
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Tu solicitud quedará pendiente de revisión del equipo. Indica el motivo para continuar.',
-                  style: TextStyle(color: ctx.appTextSecondaryColor),
-                ),
-                const SizedBox(height: 14),
-                TextField(
-                  controller: reasonCtrl,
-                  maxLines: 4,
-                  style: TextStyle(color: ctx.appTextPrimaryColor),
-                  decoration: InputDecoration(
-                    hintText: 'Ej: cerraré operaciones definitivamente',
-                    hintStyle: TextStyle(color: ctx.appTextSecondaryColor),
-                    filled: true,
-                    fillColor: ctx.appInputBackground,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide(color: ctx.appBorderColor),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide(color: ctx.appBorderColor),
-                    ),
-                    focusedBorder: const OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(16)),
-                      borderSide: BorderSide(color: AppColors.headerBottom),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Cancelar'),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('Enviar'),
-              ),
-            ],
-          ),
+      builder: (_) => const _DeleteParkingRequestDialog(),
     );
 
-    final reason = reasonCtrl.text.trim();
-    reasonCtrl.dispose();
-
-    if (confirmed != true) return;
-    if (reason.isEmpty) {
+    if (reason == null) return;
+    if (reason.trim().isEmpty) {
       _toast('Necesitas indicar el motivo de la solicitud.');
       return;
     }
@@ -654,7 +584,7 @@ class _OwnerSettingsPageState extends ConsumerState<OwnerSettingsPage> {
     try {
       await ref
           .read(submitParkingDeletionRequestProvider)
-          .call(parking: parking, reason: reason);
+          .call(parking: parking, reason: reason.trim());
       if (!mounted) return;
       _toast('Solicitud enviada. El equipo revisará tu caso.');
     } catch (e) {
@@ -1039,6 +969,80 @@ class _ThemeOptionTile extends StatelessWidget {
                 color: AppColors.headerBottom,
               )
               : null,
+    );
+  }
+}
+
+class _DeleteParkingRequestDialog extends StatefulWidget {
+  const _DeleteParkingRequestDialog();
+
+  @override
+  State<_DeleteParkingRequestDialog> createState() =>
+      _DeleteParkingRequestDialogState();
+}
+
+class _DeleteParkingRequestDialogState
+    extends State<_DeleteParkingRequestDialog> {
+  final _reasonCtrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _reasonCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: context.appCardBackground,
+      title: Text(
+        'Solicitar eliminación',
+        style: TextStyle(color: context.appTextPrimaryColor),
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'Tu solicitud quedará pendiente de revisión del equipo. Indica el motivo para continuar.',
+            style: TextStyle(color: context.appTextSecondaryColor),
+          ),
+          const SizedBox(height: 14),
+          TextField(
+            controller: _reasonCtrl,
+            maxLines: 4,
+            autofocus: true,
+            style: TextStyle(color: context.appTextPrimaryColor),
+            decoration: InputDecoration(
+              hintText: 'Ej: cerraré operaciones definitivamente',
+              hintStyle: TextStyle(color: context.appTextSecondaryColor),
+              filled: true,
+              fillColor: context.appInputBackground,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: context.appBorderColor),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: context.appBorderColor),
+              ),
+              focusedBorder: const OutlineInputBorder(
+                borderRadius: BorderRadius.all(Radius.circular(16)),
+                borderSide: BorderSide(color: AppColors.headerBottom),
+              ),
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancelar'),
+        ),
+        ElevatedButton(
+          onPressed: () => Navigator.pop(context, _reasonCtrl.text),
+          child: const Text('Enviar'),
+        ),
+      ],
     );
   }
 }

@@ -3,9 +3,12 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mapbox_api/common/ui/components/app_styles.dart';
 import 'package:mapbox_api/common/ui/components/my_button.dart';
+import 'package:mapbox_api/common/ui/widgets/app_country_picker.dart';
+import 'package:mapbox_api/common/ui/widgets/map_picker_page.dart';
 import 'package:mapbox_api/features/owner/providers/owner_management_providers.dart';
 import 'package:mapbox_api/features/owner/widgets/app_header.dart';
 import 'package:mapbox_api/features/reservations/providers/parking_service_provider.dart';
@@ -30,6 +33,9 @@ class _EditOwnerParkingPageState extends ConsumerState<EditOwnerParkingPage> {
 
   TimeOfDay _open = const TimeOfDay(hour: 8, minute: 0);
   TimeOfDay _close = const TimeOfDay(hour: 18, minute: 0);
+  AppCountryCode _selectedCountry = AppCountryCodes.defaultCode;
+  LatLng? _pickedLocation;
+  List<String> _existingPhotos = [];
   final List<XFile> _newImages = [];
   bool _initialized = false;
   bool _saving = false;
@@ -102,7 +108,7 @@ class _EditOwnerParkingPageState extends ConsumerState<EditOwnerParkingPage> {
                 child: Form(
                   key: _formKey,
                   child: ListView(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
+                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 28),
                     children: [
                       _SectionCard(
                         title: 'Información principal',
@@ -111,14 +117,14 @@ class _EditOwnerParkingPageState extends ConsumerState<EditOwnerParkingPage> {
                             controller: _nameCtrl,
                             label: 'Nombre del parqueo',
                             hint: 'Ej: Parqueo Central Xela',
-                            icon: Icons.local_parking_rounded,
+                            icon: Icons.apartment_rounded,
                             validator:
                                 (value) =>
                                     (value == null || value.trim().isEmpty)
                                         ? 'Ingresa el nombre del parqueo'
                                         : null,
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 10),
                           _InputField(
                             controller: _addressCtrl,
                             label: 'Dirección',
@@ -130,47 +136,33 @@ class _EditOwnerParkingPageState extends ConsumerState<EditOwnerParkingPage> {
                                         ? 'Ingresa una dirección'
                                         : null,
                           ),
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _InputField(
-                                  controller: _phoneCtrl,
-                                  label: 'Teléfono',
-                                  hint: '5555 1234',
-                                  icon: Icons.phone_outlined,
-                                  keyboardType: TextInputType.phone,
-                                  validator:
-                                      (value) =>
-                                          (value == null ||
-                                                  value.trim().isEmpty)
-                                              ? 'Ingresa un teléfono'
-                                              : null,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: _InputField(
-                                  controller: _priceCtrl,
-                                  label: 'Precio por hora',
-                                  hint: '15',
-                                  icon: Icons.payments_outlined,
-                                  keyboardType: TextInputType.number,
-                                  inputFormatters: [
-                                    FilteringTextInputFormatter.digitsOnly,
-                                  ],
-                                  validator: (value) {
-                                    final parsed = int.tryParse(value ?? '');
-                                    if (parsed == null || parsed < 0) {
-                                      return 'Inválido';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                              ),
-                            ],
+                          const SizedBox(height: 10),
+                          _FieldLabel(label: 'Teléfono de contacto'),
+                          const SizedBox(height: 7),
+                          AppPhoneField(
+                            selectedCountry: _selectedCountry,
+                            numberController: _phoneCtrl,
+                            onPickCountry: _showCountryPicker,
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 10),
+                          _InputField(
+                            controller: _priceCtrl,
+                            label: 'Precio por hora',
+                            hint: '15',
+                            icon: Icons.payments_outlined,
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                            ],
+                            validator: (value) {
+                              final parsed = int.tryParse(value ?? '');
+                              if (parsed == null || parsed < 0) {
+                                return 'Inválido';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 10),
                           _InputField(
                             controller: _spacesCtrl,
                             label: 'Cantidad de espacios',
@@ -188,7 +180,7 @@ class _EditOwnerParkingPageState extends ConsumerState<EditOwnerParkingPage> {
                               return null;
                             },
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 10),
                           _InputField(
                             controller: _descriptionCtrl,
                             label: 'Descripción',
@@ -198,7 +190,19 @@ class _EditOwnerParkingPageState extends ConsumerState<EditOwnerParkingPage> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 18),
+                      const SizedBox(height: 14),
+                      _SectionCard(
+                        title: 'Ubicación en mapa',
+                        subtitle:
+                            'Actualiza el punto que verán los usuarios al buscar tu parqueo.',
+                        children: [
+                          _LocationCard(
+                            location: _pickedLocation,
+                            onTap: () => _pickLocation(parking),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
                       _SectionCard(
                         title: 'Horario publicado',
                         subtitle:
@@ -225,18 +229,24 @@ class _EditOwnerParkingPageState extends ConsumerState<EditOwnerParkingPage> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 18),
+                      const SizedBox(height: 14),
                       _SectionCard(
                         title: 'Fotos del parqueo',
                         subtitle:
-                            'Puedes sumar nuevas fotos sin perder las actuales.',
+                            'Máximo 3 fotos. Puedes reemplazarlas cuando quieras.',
                         children: [
                           Wrap(
                             spacing: 10,
                             runSpacing: 10,
                             children: [
-                              for (final photo in parking.photos)
-                                _NetworkImageChip(url: photo),
+                              for (final photo in _existingPhotos)
+                                _NetworkImageChip(
+                                  url: photo,
+                                  onRemove:
+                                      () => setState(
+                                        () => _existingPhotos.remove(photo),
+                                      ),
+                                ),
                               for (final image in _newImages)
                                 _LocalImageChip(
                                   path: image.path,
@@ -245,12 +255,23 @@ class _EditOwnerParkingPageState extends ConsumerState<EditOwnerParkingPage> {
                                         () => _newImages.remove(image),
                                       ),
                                 ),
-                              _AddImageChip(onTap: _pickImages),
+                              if (_totalPhotos < 3)
+                                _AddImageChip(onTap: _pickImages),
                             ],
                           ),
+                          if (_totalPhotos >= 3) ...[
+                            const SizedBox(height: 10),
+                            Text(
+                              'Llegaste al máximo de 3 fotos. Elimina una para agregar otra.',
+                              style: TextStyle(
+                                color: context.appTextSecondaryColor,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
                         ],
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 20),
                       MyButton(
                         text: _saving ? 'Guardando...' : 'Guardar cambios',
                         loading: _saving,
@@ -272,7 +293,9 @@ class _EditOwnerParkingPageState extends ConsumerState<EditOwnerParkingPage> {
     _initialized = true;
 
     _nameCtrl.text = parking.name;
-    _phoneCtrl.text = parking.phone;
+    final parsedPhone = AppCountryCode.parse(parking.phone);
+    _selectedCountry = parsedPhone.country;
+    _phoneCtrl.text = parsedPhone.number;
     _addressCtrl.text = parking.address;
     _spacesCtrl.text = parking.spaces > 0 ? '${parking.spaces}' : '';
     _priceCtrl.text =
@@ -282,6 +305,41 @@ class _EditOwnerParkingPageState extends ConsumerState<EditOwnerParkingPage> {
     final hours = parking.businessHours;
     _open = _parseTime(hours['open']) ?? _open;
     _close = _parseTime(hours['close']) ?? _close;
+    if (parking.lat != 0 && parking.lng != 0) {
+      _pickedLocation = LatLng(parking.lat, parking.lng);
+    }
+    _existingPhotos = parking.photos.take(3).toList();
+  }
+
+  int get _totalPhotos => _existingPhotos.length + _newImages.length;
+
+  Future<void> _showCountryPicker() async {
+    final picked = await AppCountryPicker.show(
+      context,
+      selected: _selectedCountry,
+    );
+    if (picked == null || !mounted) return;
+    setState(() => _selectedCountry = picked);
+  }
+
+  Future<void> _pickLocation(OwnerParkingDocument parking) async {
+    final initial =
+        _pickedLocation ??
+        (parking.lat != 0 && parking.lng != 0
+            ? LatLng(parking.lat, parking.lng)
+            : null);
+    final result = await Navigator.push<LatLng>(
+      context,
+      MaterialPageRoute(
+        builder:
+            (_) => MapPickerPage(
+              title: 'Editar ubicación',
+              initialPosition: initial,
+            ),
+      ),
+    );
+    if (result == null || !mounted) return;
+    setState(() => _pickedLocation = result);
   }
 
   Future<void> _pickTime({required bool isOpen}) async {
@@ -300,9 +358,16 @@ class _EditOwnerParkingPageState extends ConsumerState<EditOwnerParkingPage> {
   }
 
   Future<void> _pickImages() async {
+    final remaining = 3 - _totalPhotos;
+    if (remaining <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Solo puedes tener hasta 3 fotos.')),
+      );
+      return;
+    }
     final images = await _picker.pickMultiImage(imageQuality: 82);
     if (images.isEmpty || !mounted) return;
-    setState(() => _newImages.addAll(images));
+    setState(() => _newImages.addAll(images.take(remaining)));
   }
 
   Future<void> _save(OwnerParkingDocument parking) async {
@@ -314,13 +379,16 @@ class _EditOwnerParkingPageState extends ConsumerState<EditOwnerParkingPage> {
         ownerID: parking.data['ownerID'] as String? ?? '',
         parkingId: parking.id,
         name: _nameCtrl.text.trim(),
-        phone: _phoneCtrl.text.trim(),
+        phone: _selectedCountry.combine(_phoneCtrl.text),
         address: _addressCtrl.text.trim(),
         spaces: int.parse(_spacesCtrl.text.trim()),
         description: _descriptionCtrl.text.trim(),
         pricePerHour: int.tryParse(_priceCtrl.text.trim()) ?? 0,
         openTime: _formatTime(_open),
         closeTime: _formatTime(_close),
+        lat: _pickedLocation?.latitude,
+        lng: _pickedLocation?.longitude,
+        existingPhotos: _existingPhotos,
         newImages: _newImages,
       );
 
@@ -357,6 +425,98 @@ class _EditOwnerParkingPageState extends ConsumerState<EditOwnerParkingPage> {
   }
 }
 
+class _FieldLabel extends StatelessWidget {
+  const _FieldLabel({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      label,
+      style: TextStyle(
+        color: context.appTextPrimaryColor,
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+      ),
+    );
+  }
+}
+
+class _LocationCard extends StatelessWidget {
+  const _LocationCard({
+    required this.location,
+    required this.onTap,
+  });
+
+  final LatLng? location;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasLocation = location != null;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: context.appInputBackground,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: context.appBorderColor),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: AppColors.headerBottom.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Icon(
+                Icons.map_outlined,
+                color: AppColors.headerBottom,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    hasLocation ? 'Ubicación seleccionada' : 'Seleccionar ubicación',
+                    style: TextStyle(
+                      color: context.appTextPrimaryColor,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    hasLocation
+                        ? '${location!.latitude.toStringAsFixed(5)}, ${location!.longitude.toStringAsFixed(5)}'
+                        : 'Toca para buscar o marcar el parqueo en el mapa',
+                    style: TextStyle(
+                      color: context.appTextSecondaryColor,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: context.appTextSecondaryColor,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _SectionCard extends StatelessWidget {
   const _SectionCard({
     required this.title,
@@ -371,16 +531,18 @@ class _SectionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
       decoration: BoxDecoration(
         color: context.appCardBackground,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: context.appBorderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: context.isDarkMode ? 0.18 : 0.06),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
+            color: Colors.black.withValues(
+              alpha: context.isDarkMode ? 0.16 : 0.045,
+            ),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -391,7 +553,7 @@ class _SectionCard extends StatelessWidget {
             title,
             style: TextStyle(
               color: context.appTextPrimaryColor,
-              fontSize: 15,
+              fontSize: 13.5,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -401,11 +563,11 @@ class _SectionCard extends StatelessWidget {
               subtitle!,
               style: TextStyle(
                 color: context.appTextSecondaryColor,
-                fontSize: 12,
+                fontSize: 11,
               ),
             ),
           ],
-          const SizedBox(height: 14),
+          const SizedBox(height: 10),
           ...children,
         ],
       ),
@@ -443,11 +605,11 @@ class _InputField extends StatelessWidget {
           label,
           style: TextStyle(
             color: context.appTextPrimaryColor,
-            fontSize: 12,
+            fontSize: 11.5,
             fontWeight: FontWeight.w600,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         TextFormField(
           controller: controller,
           validator: validator,
@@ -460,17 +622,21 @@ class _InputField extends StatelessWidget {
             hintStyle: TextStyle(color: context.appTextSecondaryColor),
             prefixIcon: Icon(icon, color: AppColors.headerBottom, size: 18),
             filled: true,
-            fillColor: context.appInputBackground,
+            fillColor: context.appInputBackgroundActive,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 12,
+            ),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(14),
               borderSide: BorderSide(color: context.appBorderColor),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(14),
               borderSide: BorderSide(color: context.appBorderColor),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(14),
               borderSide: const BorderSide(color: AppColors.headerBottom),
             ),
           ),
@@ -558,8 +724,8 @@ class _AddImageChip extends StatelessWidget {
         width: 92,
         height: 92,
         decoration: BoxDecoration(
-          color: context.appInputBackground,
-          borderRadius: BorderRadius.circular(18),
+        color: context.appInputBackground,
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: context.appBorderColor),
         ),
         child: Column(
@@ -582,19 +748,19 @@ class _AddImageChip extends StatelessWidget {
 }
 
 class _NetworkImageChip extends StatelessWidget {
-  const _NetworkImageChip({required this.url});
+  const _NetworkImageChip({
+    required this.url,
+    required this.onRemove,
+  });
 
   final String url;
+  final VoidCallback onRemove;
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(18),
-      child: SizedBox(
-        width: 92,
-        height: 92,
-        child: Image.network(url, fit: BoxFit.cover),
-      ),
+    return _PhotoFrame(
+      onRemove: onRemove,
+      child: Image.network(url, fit: BoxFit.cover),
     );
   }
 }
@@ -610,38 +776,65 @@ class _LocalImageChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return _PhotoFrame(
+      onRemove: onRemove,
+      child: Image.file(
+        File(path),
+        fit: BoxFit.cover,
+        errorBuilder:
+            (_, __, ___) => Container(
+              color: context.appInputBackground,
+              alignment: Alignment.center,
+              child: const Icon(Icons.image_outlined),
+            ),
+      ),
+    );
+  }
+}
+
+class _PhotoFrame extends StatelessWidget {
+  const _PhotoFrame({
+    required this.child,
+    required this.onRemove,
+  });
+
+  final Widget child;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
     return Stack(
+      clipBehavior: Clip.none,
       children: [
         ClipRRect(
-          borderRadius: BorderRadius.circular(18),
-          child: SizedBox(
-            width: 92,
-            height: 92,
-            child: Image.file(
-              File(path),
-              fit: BoxFit.cover,
-              errorBuilder:
-                  (_, __, ___) => Container(
-                    color: context.appInputBackground,
-                    alignment: Alignment.center,
-                    child: const Icon(Icons.image_outlined),
-                  ),
-            ),
-          ),
+          borderRadius: BorderRadius.circular(16),
+          child: SizedBox(width: 70, height: 70, child: child),
         ),
         Positioned(
-          right: 4,
-          top: 4,
-          child: InkWell(
+          right: -7,
+          top: -7,
+          child: GestureDetector(
             onTap: onRemove,
             child: Container(
               width: 24,
               height: 24,
-              decoration: const BoxDecoration(
-                color: Colors.black54,
+              decoration: BoxDecoration(
+                color: const Color(0xFF0F172A),
                 shape: BoxShape.circle,
+                border: Border.all(color: context.appCardBackground, width: 2),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.18),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
-              child: const Icon(Icons.close_rounded, color: Colors.white, size: 16),
+              child: const Icon(
+                Icons.close_rounded,
+                color: Colors.white,
+                size: 14,
+              ),
             ),
           ),
         ),

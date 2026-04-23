@@ -241,14 +241,14 @@ class _CountryPickerSheetState extends State<_CountryPickerSheet> {
                                     color:
                                         isSelected
                                             ? AppColors.headerBottom
-                                                .withOpacity(0.07)
+                                                .withValues(alpha: 0.07)
                                             : Colors.transparent,
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(
                                       color:
                                           isSelected
                                               ? AppColors.headerBottom
-                                                  .withOpacity(0.25)
+                                                  .withValues(alpha: 0.25)
                                               : Colors.transparent,
                                     ),
                                   ),
@@ -338,9 +338,9 @@ class AppPhoneField extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.appInputBackgroundActive,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.borderSoft),
+        border: Border.all(color: context.appBorderColor),
       ),
       child: Row(
         children: [
@@ -348,9 +348,9 @@ class AppPhoneField extends StatelessWidget {
           GestureDetector(
             onTap: readOnly ? null : onPickCountry,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               decoration: BoxDecoration(
-                border: Border(right: BorderSide(color: AppColors.borderSoft)),
+                border: Border(right: BorderSide(color: context.appBorderColor)),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -367,7 +367,7 @@ class AppPhoneField extends StatelessWidget {
                       fontWeight: FontWeight.w700,
                       color:
                           readOnly
-                              ? AppColors.textSecondary
+                              ? context.appTextSecondaryColor
                               : AppColors.headerBottom,
                     ),
                   ),
@@ -376,7 +376,7 @@ class AppPhoneField extends StatelessWidget {
                     Icon(
                       Icons.keyboard_arrow_down_rounded,
                       size: 16,
-                      color: AppColors.headerBottom.withOpacity(0.6),
+                      color: AppColors.headerBottom.withValues(alpha: 0.6),
                     ),
                   ],
                 ],
@@ -398,19 +398,19 @@ class AppPhoneField extends StatelessWidget {
                 fontWeight: FontWeight.w600,
                 color:
                     readOnly
-                        ? AppColors.textSecondary
-                        : const Color(0xFF1E293B),
+                        ? context.appTextSecondaryColor
+                        : context.appTextPrimaryColor,
               ),
               decoration: InputDecoration(
                 hintText: hint,
-                hintStyle: const TextStyle(
+                hintStyle: TextStyle(
                   fontSize: 13,
-                  color: Color(0xFF8A94A6),
+                  color: context.appTextSecondaryColor,
                 ),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 12,
-                  vertical: 14,
+                  vertical: 12,
                 ),
               ),
             ),

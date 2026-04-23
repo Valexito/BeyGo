@@ -151,6 +151,9 @@ class ParkingService {
     required int pricePerHour,
     required String openTime,
     required String closeTime,
+    double? lat,
+    double? lng,
+    List<String>? existingPhotos,
     List<XFile> newImages = const [],
   }) async {
     _ensureSameUser(ownerID);
@@ -174,6 +177,7 @@ class ParkingService {
             );
 
     final currentPhotos =
+        existingPhotos ??
         ((snap.data()?['photos'] as List?) ?? const [])
             .map((e) => '$e')
             .where((e) => e.trim().isNotEmpty)
@@ -196,6 +200,8 @@ class ParkingService {
         'open': openTime,
         'close': closeTime,
       },
+      if (lat != null) 'lat': lat,
+      if (lng != null) 'lng': lng,
       'photos': mergedPhotos,
       'coverUrl': coverUrl,
       'updatedAt': FieldValue.serverTimestamp(),
