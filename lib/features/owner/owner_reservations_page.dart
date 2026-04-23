@@ -34,6 +34,7 @@ class _OwnerReservationsPageState extends ConsumerState<OwnerReservationsPage>
   @override
   Widget build(BuildContext context) {
     final allAsync = ref.watch(ownerAllReservationsProvider);
+    final isDark = context.isDarkMode;
 
     return OwnerOnly(
       builder:
@@ -50,19 +51,35 @@ class _OwnerReservationsPageState extends ConsumerState<OwnerReservationsPage>
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Material(
                     elevation: 12,
-                    color: Colors.white,
+                    color: context.appCardBackground,
                     borderRadius: BorderRadius.circular(24),
+                    shadowColor: Colors.black.withValues(
+                      alpha: isDark ? 0.24 : 0.10,
+                    ),
                     child: Container(
                       height: 54,
                       padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: context.appCardBackground,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: context.appBorderColor),
+                      ),
                       child: TabBar(
                         controller: _tab,
                         indicator: BoxDecoration(
-                          color: const Color(0xFFEAF0F7),
+                          color:
+                              isDark
+                                  ? AppColors.headerBottom.withValues(
+                                    alpha: 0.22,
+                                  )
+                                  : const Color(0xFFEAF0F7),
                           borderRadius: BorderRadius.circular(18),
                         ),
                         labelColor: AppColors.headerBottom,
-                        unselectedLabelColor: Colors.black54,
+                        unselectedLabelColor:
+                            isDark
+                                ? Colors.white.withValues(alpha: 0.88)
+                                : Colors.black54,
                         labelStyle: const TextStyle(
                           fontWeight: FontWeight.w700,
                           fontSize: 14,
@@ -267,8 +284,8 @@ class _ActiveCard extends ConsumerWidget {
                                   onPressed: () => Navigator.pop(ctx, false),
                                   style: OutlinedButton.styleFrom(
                                     side: BorderSide(
-                                      color: AppColors.headerBottom.withOpacity(
-                                        .35,
+                                      color: AppColors.headerBottom.withValues(
+                                        alpha: .35,
                                       ),
                                     ),
                                     shape: RoundedRectangleBorder(
@@ -494,8 +511,8 @@ class _ApproveCardState extends ConsumerState<_ApproveCard> {
                                   onPressed: () => Navigator.pop(ctx, false),
                                   style: OutlinedButton.styleFrom(
                                     side: BorderSide(
-                                      color: AppColors.headerBottom.withOpacity(
-                                        .35,
+                                      color: AppColors.headerBottom.withValues(
+                                        alpha: .35,
                                       ),
                                       width: 1.2,
                                     ),

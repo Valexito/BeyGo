@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mapbox_api/common/services/app_preferences_service.dart';
 import 'package:mapbox_api/common/ui/components/app_styles.dart';
 import 'package:mapbox_api/features/core/providers/app_preferences_provider.dart';
 import 'package:mapbox_api/features/core/providers/firebase_providers.dart';
+import 'package:mapbox_api/features/core/pages/userv/legal_information_page.dart';
+import 'package:mapbox_api/features/core/pages/userv/report_problem_page.dart';
 import 'package:mapbox_api/features/core/roles/role_utils.dart';
 import 'package:mapbox_api/features/owner/widgets/app_header.dart';
 import 'package:mapbox_api/features/owner/pages/edit_owner_parking_page.dart';
+import 'package:mapbox_api/features/owner/pages/edit_owner_profile_page.dart';
 import 'package:mapbox_api/features/owner/providers/owner_management_providers.dart';
 import 'package:mapbox_api/features/auth/providers/auth_providers.dart'
     show authActionsProvider;
 import 'package:mapbox_api/features/reservations/providers/reservations_providers.dart';
-import 'package:mapbox_api/features/users/pages/configure_profile_page.dart';
 
 class OwnerSettingsPage extends ConsumerStatefulWidget {
   const OwnerSettingsPage({super.key});
@@ -23,319 +26,314 @@ class OwnerSettingsPage extends ConsumerStatefulWidget {
 class _OwnerSettingsPageState extends ConsumerState<OwnerSettingsPage> {
   @override
   Widget build(BuildContext context) {
-    final notificationAsync = ref.watch(ownerNotificationSettingsStreamProvider);
+    final notificationAsync = ref.watch(
+      ownerNotificationSettingsStreamProvider,
+    );
     final parkingAsync = ref.watch(ownerParkingDocumentProvider);
     final preferences = ref.watch(appPreferencesProvider);
     final uid = ref.watch(firebaseAuthProvider).currentUser?.uid;
 
-    return OwnerOnly(
-      builder: (_) {
-        final notificationData = notificationAsync.asData?.value;
-        final notifyNewReservation =
-            (notificationData?['enabled'] as bool?) ??
-            preferences.notificationsEnabled;
-        final notifyExitRequest =
-            (notificationData?['exitRequests'] as bool?) ?? true;
-        final notifyCancellation =
-            (notificationData?['cancellations'] as bool?) ?? true;
-        final notifyForceCancel =
-            (notificationData?['forceFinish'] as bool?) ?? false;
+    return Scaffold(
+      backgroundColor: context.appPageBackground,
+      body: OwnerOnly(
+        builder: (_) {
+          final notificationData = notificationAsync.asData?.value;
+          final notifyNewReservation =
+              (notificationData?['enabled'] as bool?) ??
+              preferences.notificationsEnabled;
+          final notifyExitRequest =
+              (notificationData?['exitRequests'] as bool?) ?? true;
+          final notifyCancellation =
+              (notificationData?['cancellations'] as bool?) ?? true;
 
-        final parking = parkingAsync.asData?.value;
-        final autoApproveReservations =
-            parking?.autoApproveReservations ?? false;
-        final requirePlateOnEntry = parking?.requirePlateOnEntry ?? true;
+          final parking = parkingAsync.asData?.value;
+          final autoApproveReservations =
+              parking?.autoApproveReservations ?? false;
+          final requirePlateOnEntry = parking?.requirePlateOnEntry ?? true;
 
-        return Column(
-          children: [
-            const AppHeader(
-              title: 'Configuración',
-              subtitle: 'Preferencias y cuenta',
-              showBack: true,
-            ),
+          return Column(
+            children: [
+              const AppHeader(
+                title: 'Configuración',
+                subtitle: 'Preferencias y cuenta',
+                showBack: true,
+              ),
 
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
-                children: [
-                  // ── Notifications ──────────────────────────────────────────
-                  _SectionHeader(
-                    icon: Icons.notifications_none_rounded,
-                    title: 'Notificaciones',
-                    subtitle: 'Controla qué alertas recibes',
-                  ),
-                  _SettingsCard(
-                    children: [
-                      _SwitchRow(
-                        icon: Icons.add_circle_outline_rounded,
-                        iconColor: const Color(0xFF2563EB),
-                        label: 'Nueva reservación',
-                        sublabel: 'Al recibir una solicitud de reserva',
-                        value: notifyNewReservation,
-                        onChanged:
-                            uid == null
-                                ? null
-                                : (v) => _saveOwnerNotification(uid, {
-                                  'enabled': v,
-                                }),
-                      ),
-                      _Divider(),
-                      _SwitchRow(
-                        icon: Icons.exit_to_app_rounded,
-                        iconColor: const Color(0xFF0EA5E9),
-                        label: 'Solicitud de salida',
-                        sublabel: 'Cuando un usuario pide salir',
-                        value: notifyExitRequest,
-                        onChanged:
-                            uid == null
-                                ? null
-                                : (v) => _saveOwnerNotification(uid, {
-                                  'exitRequests': v,
-                                }),
-                      ),
-                      _Divider(),
-                      _SwitchRow(
-                        icon: Icons.cancel_outlined,
-                        iconColor: const Color(0xFFF59E0B),
-                        label: 'Cancelación',
-                        sublabel: 'Solicitudes de cancelación de reservas',
-                        value: notifyCancellation,
-                        onChanged:
-                            uid == null
-                                ? null
-                                : (v) => _saveOwnerNotification(uid, {
-                                  'cancellations': v,
-                                }),
-                      ),
-                      _Divider(),
-                      _SwitchRow(
-                        icon: Icons.flag_rounded,
-                        iconColor: const Color(0xFFDC2626),
-                        label: 'Finalización forzada',
-                        sublabel: 'Confirmación al liberar un espacio',
-                        value: notifyForceCancel,
-                        onChanged:
-                            uid == null
-                                ? null
-                                : (v) => _saveOwnerNotification(uid, {
-                                  'forceFinish': v,
-                                }),
-                      ),
-                    ],
-                  ),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 32),
+                  children: [
+                    // ── Notifications ──────────────────────────────────────────
+                    _SectionHeader(
+                      icon: Icons.notifications_none_rounded,
+                      title: 'Notificaciones',
+                      subtitle: 'Controla qué alertas recibes',
+                    ),
+                    _SettingsCard(
+                      children: [
+                        _SwitchRow(
+                          icon: Icons.add_circle_outline_rounded,
+                          iconColor: const Color(0xFF2563EB),
+                          label: 'Nueva reservación',
+                          sublabel: 'Al recibir una solicitud de reserva',
+                          value: notifyNewReservation,
+                          onChanged:
+                              uid == null
+                                  ? null
+                                  : (v) async {
+                                    await ref
+                                        .read(appPreferencesProvider.notifier)
+                                        .setNotificationsEnabled(v);
+                                    await _saveOwnerNotification(uid, {
+                                      'enabled': v,
+                                    });
+                                  },
+                        ),
+                        _Divider(),
+                        _SwitchRow(
+                          icon: Icons.exit_to_app_rounded,
+                          iconColor: const Color(0xFF0EA5E9),
+                          label: 'Solicitud de salida',
+                          sublabel: 'Cuando un usuario pide salir',
+                          value: notifyExitRequest,
+                          onChanged:
+                              uid == null
+                                  ? null
+                                  : (v) => _saveOwnerNotification(uid, {
+                                    'exitRequests': v,
+                                  }),
+                        ),
+                        _Divider(),
+                        _SwitchRow(
+                          icon: Icons.cancel_outlined,
+                          iconColor: const Color(0xFFF59E0B),
+                          label: 'Cancelación',
+                          sublabel: 'Solicitudes de cancelación de reservas',
+                          value: notifyCancellation,
+                          onChanged:
+                              uid == null
+                                  ? null
+                                  : (v) => _saveOwnerNotification(uid, {
+                                    'cancellations': v,
+                                  }),
+                        ),
+                      ],
+                    ),
 
-                  const SizedBox(height: 24),
+                    const SizedBox(height: 24),
 
-                  // ── Parking behavior ───────────────────────────────────────
-                  _SectionHeader(
-                    icon: Icons.local_parking_rounded,
-                    title: 'Comportamiento del parqueo',
-                    subtitle: 'Ajusta cómo gestionas tus espacios',
-                  ),
-                  _SettingsCard(
-                    children: [
-                      _SwitchRow(
-                        icon: Icons.check_circle_outline_rounded,
-                        iconColor: const Color(0xFF16A34A),
-                        label: 'Auto-aprobar reservaciones',
-                        sublabel: 'Aprueba automáticamente sin revisión manual',
-                        value: autoApproveReservations,
-                        onChanged:
-                            parking == null
-                                ? null
-                                : (v) => _saveParkingBehavior(parking.id, {
-                                  'autoApproveReservations': v,
-                                }),
-                        badge: autoApproveReservations ? 'ACTIVO' : null,
-                        badgeColor: const Color(0xFF16A34A),
-                      ),
-                      _Divider(),
-                      _SwitchRow(
-                        icon: Icons.directions_car_outlined,
-                        iconColor: AppColors.headerBottom,
-                        label: 'Requerir placa al ingresar',
-                        sublabel: 'Valida la placa antes de activar la reserva',
-                        value: requirePlateOnEntry,
-                        onChanged:
-                            parking == null
-                                ? null
-                                : (v) => _saveParkingBehavior(parking.id, {
-                                  'requirePlateOnEntry': v,
-                                }),
-                      ),
-                    ],
-                  ),
+                    // ── Parking behavior ───────────────────────────────────────
+                    _SectionHeader(
+                      icon: Icons.local_parking_rounded,
+                      title: 'Comportamiento del parqueo',
+                      subtitle: 'Ajusta cómo gestionas tus espacios',
+                    ),
+                    _SettingsCard(
+                      children: [
+                        _SwitchRow(
+                          icon: Icons.check_circle_outline_rounded,
+                          iconColor: const Color(0xFF16A34A),
+                          label: 'Auto-aprobar reservaciones',
+                          sublabel:
+                              'Aprueba automáticamente sin revisión manual',
+                          value: autoApproveReservations,
+                          onChanged:
+                              parking == null
+                                  ? null
+                                  : (v) => _saveParkingBehavior(parking.id, {
+                                    'autoApproveReservations': v,
+                                  }),
+                          badge: autoApproveReservations ? 'ACTIVO' : null,
+                          badgeColor: const Color(0xFF16A34A),
+                        ),
+                        _Divider(),
+                        _SwitchRow(
+                          icon: Icons.directions_car_outlined,
+                          iconColor: AppColors.headerBottom,
+                          label: 'Requerir placa al ingresar',
+                          sublabel:
+                              'Valida la placa antes de activar la reserva',
+                          value: requirePlateOnEntry,
+                          onChanged:
+                              parking == null
+                                  ? null
+                                  : (v) => _saveParkingBehavior(parking.id, {
+                                    'requirePlateOnEntry': v,
+                                  }),
+                        ),
+                      ],
+                    ),
 
-                  const SizedBox(height: 24),
+                    const SizedBox(height: 24),
 
-                  _SectionHeader(
-                    icon: Icons.manage_accounts_rounded,
-                    title: 'Cuenta y parqueo',
-                    subtitle: 'Administra tu perfil y la información publicada',
-                  ),
-                  _SettingsCard(
-                    children: [
-                      _NavRow(
-                        icon: Icons.person_outline_rounded,
-                        iconColor: AppColors.headerBottom,
-                        label: 'Editar perfil',
-                        subtitle: 'Actualiza tus datos, foto y vehículos',
-                        onTap:
-                            () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const ConfigureProfilePage(),
-                              ),
-                            ),
-                      ),
-                      _Divider(),
-                      _NavRow(
-                        icon: Icons.storefront_outlined,
-                        iconColor: const Color(0xFF16A34A),
-                        label: 'Editar parqueo',
-                        subtitle: 'Horarios, fotos, tarifa y datos públicos',
-                        onTap:
-                            parking == null
-                                ? () => _toast(
-                                  'Aún no hay un parqueo publicado para editar.',
-                                )
-                                : () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder:
-                                        (_) => const EditOwnerParkingPage(),
-                                  ),
+                    _SectionHeader(
+                      icon: Icons.manage_accounts_rounded,
+                      title: 'Cuenta y parqueo',
+                      subtitle:
+                          'Administra tu perfil y la información publicada',
+                    ),
+                    _SettingsCard(
+                      children: [
+                        _NavRow(
+                          icon: Icons.person_outline_rounded,
+                          iconColor: AppColors.headerBottom,
+                          label: 'Editar perfil',
+                          subtitle: 'Datos de cuenta y contacto del owner',
+                          onTap:
+                              () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const EditOwnerProfilePage(),
                                 ),
-                      ),
-                      _Divider(),
-                      _NavRow(
-                        icon: Icons.delete_outline_rounded,
-                        iconColor: const Color(0xFFDC2626),
-                        label: 'Solicitar eliminación del parqueo',
-                        subtitle:
-                            'Disponible fuera del horario publicado y sin reservas activas',
-                        onTap:
-                            parking == null
-                                ? () => _toast(
-                                  'Aún no hay un parqueo publicado para eliminar.',
-                                )
-                                : () => _showDeleteParkingDialog(parking),
-                      ),
-                    ],
-                  ),
+                              ),
+                        ),
+                        _Divider(),
+                        _NavRow(
+                          icon: Icons.storefront_outlined,
+                          iconColor: const Color(0xFF16A34A),
+                          label: 'Editar parqueo',
+                          subtitle: 'Horarios, fotos, tarifa y datos públicos',
+                          onTap:
+                              parking == null
+                                  ? () => _toast(
+                                    'Aún no hay un parqueo publicado para editar.',
+                                  )
+                                  : () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder:
+                                          (_) => const EditOwnerParkingPage(),
+                                    ),
+                                  ),
+                        ),
+                        _Divider(),
+                        _NavRow(
+                          icon: Icons.delete_outline_rounded,
+                          iconColor: const Color(0xFFDC2626),
+                          label: 'Solicitar eliminación del parqueo',
+                          subtitle:
+                              'Disponible fuera del horario publicado y sin reservas activas',
+                          onTap:
+                              parking == null
+                                  ? () => _toast(
+                                    'Aún no hay un parqueo publicado para eliminar.',
+                                  )
+                                  : () => _showDeleteParkingDialog(parking),
+                        ),
+                      ],
+                    ),
 
-                  const SizedBox(height: 24),
+                    const SizedBox(height: 24),
 
-                  // ── App ───────────────────────────────────────────────────
-                  _SectionHeader(
-                    icon: Icons.phone_iphone_rounded,
-                    title: 'Aplicación',
-                  ),
-                  _SettingsCard(
-                    children: [
-                      _NavRow(
-                        icon: Icons.palette_outlined,
-                        iconColor: const Color(0xFF7C3AED),
-                        label: 'Tema',
-                        subtitle: _themeLabel(preferences.themePreference),
-                        onTap: () => _showThemePicker(),
-                      ),
-                      _Divider(),
-                      _NavRow(
-                        icon: Icons.star_border_rounded,
-                        iconColor: const Color(0xFFF59E0B),
-                        label: 'Calificar la app',
-                        onTap: () => _toast('Abriendo tienda...'),
-                      ),
-                      _Divider(),
-                      _NavRow(
-                        icon: Icons.share_outlined,
-                        iconColor: AppColors.headerBottom,
-                        label: 'Compartir app',
-                        onTap: () => _toast('Compartiendo...'),
-                      ),
-                      _Divider(),
-                      _NavRow(
-                        icon: Icons.info_outline_rounded,
-                        iconColor: const Color(0xFF6B7280),
-                        label: 'Versión de la app',
-                        trailing: const Text(
-                          'v1.0.0',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Color(0xFF9CA3AF),
-                            fontWeight: FontWeight.w600,
+                    // ── App ───────────────────────────────────────────────────
+                    _SectionHeader(
+                      icon: Icons.phone_iphone_rounded,
+                      title: 'Aplicación',
+                    ),
+                    _SettingsCard(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(10, 10, 10, 6),
+                          child: _ThemeActionItem(
+                            icon: Icons.palette_outlined,
+                            title: 'Tema',
+                            subtitle: _themeLabel(preferences.themePreference),
+                            onTap: _showThemePicker,
                           ),
                         ),
-                        onTap: () {},
-                      ),
-                    ],
-                  ),
+                        _Divider(),
+                        _NavRow(
+                          icon: Icons.share_outlined,
+                          iconColor: AppColors.headerBottom,
+                          label: 'Compartir app',
+                          subtitle: 'Copia un mensaje para recomendar la app',
+                          onTap: _shareApp,
+                        ),
+                        _Divider(),
+                        _NavRow(
+                          icon: Icons.info_outline_rounded,
+                          iconColor: AppColors.headerBottom,
+                          label: 'Versión de la app',
+                          trailing: const Text(
+                            'v1.0.0',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF9CA3AF),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          onTap: () {},
+                        ),
+                      ],
+                    ),
 
-                  const SizedBox(height: 24),
+                    const SizedBox(height: 24),
 
-                  // ── Legal ─────────────────────────────────────────────────
-                  _SectionHeader(icon: Icons.gavel_rounded, title: 'Legal'),
-                  _SettingsCard(
-                    children: [
-                      _NavRow(
-                        icon: Icons.lock_outline_rounded,
-                        iconColor: const Color(0xFF6B7280),
-                        label: 'Política de privacidad',
-                        onTap: () => _toast('Abriendo política...'),
-                      ),
-                      _Divider(),
-                      _NavRow(
-                        icon: Icons.description_outlined,
-                        iconColor: const Color(0xFF6B7280),
-                        label: 'Términos y condiciones',
-                        onTap: () => _toast('Abriendo términos...'),
-                      ),
-                      _Divider(),
-                      _NavRow(
-                        icon: Icons.cookie_outlined,
-                        iconColor: const Color(0xFF6B7280),
-                        label: 'Política de cookies',
-                        onTap: () => _toast('Abriendo cookies...'),
-                      ),
-                    ],
-                  ),
+                    // ── Legal ─────────────────────────────────────────────────
+                    _SectionHeader(icon: Icons.gavel_rounded, title: 'Legal'),
+                    _SettingsCard(
+                      children: [
+                        _NavRow(
+                          icon: Icons.lock_outline_rounded,
+                          iconColor: AppColors.headerBottom,
+                          label: 'Política de privacidad',
+                          onTap: () => _openLegal('Privacidad'),
+                        ),
+                        _Divider(),
+                        _NavRow(
+                          icon: Icons.description_outlined,
+                          iconColor: AppColors.headerBottom,
+                          label: 'Términos y condiciones',
+                          onTap: () => _openLegal('Términos de servicio'),
+                        ),
+                        _Divider(),
+                        _NavRow(
+                          icon: Icons.cookie_outlined,
+                          iconColor: AppColors.headerBottom,
+                          label: 'Política de cookies',
+                          onTap: () => _openLegal('Política de cookies'),
+                        ),
+                      ],
+                    ),
 
-                  const SizedBox(height: 24),
+                    const SizedBox(height: 24),
 
-                  // ── Support ───────────────────────────────────────────────
-                  _SectionHeader(
-                    icon: Icons.support_agent_rounded,
-                    title: 'Soporte',
-                  ),
-                  _SettingsCard(
-                    children: [
-                      _NavRow(
-                        icon: Icons.email_outlined,
-                        iconColor: AppColors.headerBottom,
-                        label: 'Contactar soporte',
-                        onTap: () => _toast('Abriendo contacto...'),
-                      ),
-                      _Divider(),
-                      _NavRow(
-                        icon: Icons.chat_bubble_outline_rounded,
-                        iconColor: AppColors.headerBottom,
-                        label: 'Enviar feedback',
-                        onTap: () => _toast('Abriendo feedback...'),
-                      ),
-                    ],
-                  ),
+                    // ── Support ───────────────────────────────────────────────
+                    _SectionHeader(
+                      icon: Icons.support_agent_rounded,
+                      title: 'Soporte',
+                    ),
+                    _SettingsCard(
+                      children: [
+                        _NavRow(
+                          icon: Icons.email_outlined,
+                          iconColor: AppColors.headerBottom,
+                          label: 'Contactar soporte',
+                          subtitle: 'Envía un reporte al equipo de soporte',
+                          onTap: () => _openSupport(),
+                        ),
+                        _Divider(),
+                        _NavRow(
+                          icon: Icons.chat_bubble_outline_rounded,
+                          iconColor: AppColors.headerBottom,
+                          label: 'Enviar feedback',
+                          subtitle: 'Cuéntanos cómo mejorar la app',
+                          onTap: () => _openFeedback(),
+                        ),
+                      ],
+                    ),
 
-                  const SizedBox(height: 24),
+                    const SizedBox(height: 24),
 
-                  // ── Logout ────────────────────────────────────────────────
-                  _LogoutButton(onTap: () => _logout(context)),
-                ],
+                    // ── Logout ────────────────────────────────────────────────
+                    _LogoutButton(onTap: () => _logout(context)),
+                  ],
+                ),
               ),
-            ),
-          ],
-        );
-      },
+            ],
+          );
+        },
+      ),
     );
   }
 
@@ -481,6 +479,49 @@ class _OwnerSettingsPageState extends ConsumerState<OwnerSettingsPage> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
+  Future<void> _shareApp() async {
+    const message =
+        'Te recomiendo Parking App para encontrar, reservar y administrar parqueos de forma rápida.';
+    await Clipboard.setData(const ClipboardData(text: message));
+    if (!mounted) return;
+    _toast('Mensaje copiado para compartir.');
+  }
+
+  void _openLegal(String section) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => LegalInformationPage(initialSection: section),
+      ),
+    );
+  }
+
+  void _openSupport() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (_) => const ReportProblemPage(
+              initialReportType: 'Problema con mi parqueo',
+              initialSubject: 'Soporte owner',
+            ),
+      ),
+    );
+  }
+
+  void _openFeedback() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (_) => const ReportProblemPage(
+              initialReportType: 'Otro',
+              initialSubject: 'Feedback de la app',
+            ),
+      ),
+    );
+  }
+
   Future<void> _saveOwnerNotification(
     String uid,
     Map<String, dynamic> changes,
@@ -506,48 +547,91 @@ class _OwnerSettingsPageState extends ConsumerState<OwnerSettingsPage> {
   }
 
   Future<void> _showThemePicker() async {
-    final selected = await showModalBottomSheet<AppThemePreference>(
+    final current = ref.read(appPreferencesProvider).themePreference;
+
+    await showModalBottomSheet<void>(
       context: context,
-      backgroundColor: context.appCardBackground,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
-      ),
-      builder: (ctx) {
-        final current = ref.read(appPreferencesProvider).themePreference;
-        final options = AppThemePreference.values;
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Selecciona un tema',
-                  style: TextStyle(
-                    color: ctx.appTextPrimaryColor,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          decoration: BoxDecoration(
+            color: context.appCardBackground,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: context.appBorderColor,
+                    borderRadius: BorderRadius.circular(99),
                   ),
                 ),
-                const SizedBox(height: 16),
-                for (final option in options) ...[
-                  _ThemeOptionTile(
-                    title: _themeLabel(option),
-                    selected: option == current,
-                    onTap: () => Navigator.pop(ctx, option),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                'Selecciona un tema',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: context.appTextPrimaryColor,
+                ),
+              ),
+              const SizedBox(height: 14),
+              ...AppThemePreference.values.map((option) {
+                final selected = option == current;
+                return ListTile(
+                  tileColor:
+                      selected
+                          ? AppColors.headerBottom.withValues(
+                            alpha: context.isDarkMode ? 0.16 : 0.08,
+                          )
+                          : Colors.transparent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                  if (option != options.last)
-                    Divider(color: ctx.appBorderColor, height: 1),
-                ],
-              ],
-            ),
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(
+                    switch (option) {
+                      AppThemePreference.system =>
+                        Icons.brightness_auto_rounded,
+                      AppThemePreference.light => Icons.light_mode_rounded,
+                      AppThemePreference.dark => Icons.dark_mode_rounded,
+                    },
+                    color:
+                        selected
+                            ? AppColors.headerBottom
+                            : context.appTextPrimaryColor,
+                  ),
+                  title: Text(
+                    _themeLabel(option),
+                    style: TextStyle(color: context.appTextPrimaryColor),
+                  ),
+                  trailing:
+                      selected
+                          ? const Icon(
+                            Icons.check_rounded,
+                            color: AppColors.headerBottom,
+                          )
+                          : null,
+                  onTap: () async {
+                    await ref
+                        .read(appPreferencesProvider.notifier)
+                        .setThemePreference(option);
+                    if (context.mounted) Navigator.pop(context);
+                  },
+                );
+              }),
+            ],
           ),
         );
       },
     );
-
-    if (selected == null) return;
-    await ref.read(appPreferencesProvider.notifier).setThemePreference(selected);
   }
 
   Future<void> _showDeleteParkingDialog(OwnerParkingDocument parking) async {
@@ -622,7 +706,7 @@ class _OwnerSettingsPageState extends ConsumerState<OwnerSettingsPage> {
   String _themeLabel(AppThemePreference preference) {
     switch (preference) {
       case AppThemePreference.system:
-        return 'Sistema';
+        return 'Predeterminado del sistema';
       case AppThemePreference.light:
         return 'Claro';
       case AppThemePreference.dark:
@@ -701,7 +785,9 @@ class _SettingsCard extends StatelessWidget {
         border: Border.all(color: context.appBorderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: context.isDarkMode ? 0.18 : 0.05),
+            color: Colors.black.withValues(
+              alpha: context.isDarkMode ? 0.18 : 0.05,
+            ),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -939,36 +1025,75 @@ class _LogoutButton extends StatelessWidget {
   }
 }
 
-class _ThemeOptionTile extends StatelessWidget {
-  const _ThemeOptionTile({
+class _ThemeActionItem extends StatelessWidget {
+  const _ThemeActionItem({
+    required this.icon,
     required this.title,
-    required this.selected,
-    required this.onTap,
+    this.subtitle,
+    this.onTap,
   });
 
+  final IconData icon;
   final String title;
-  final bool selected;
-  final VoidCallback onTap;
+  final String? subtitle;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      onTap: onTap,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: Text(
-        title,
-        style: TextStyle(
-          color: context.appTextPrimaryColor,
-          fontWeight: FontWeight.w600,
+    return Material(
+      color: context.appCardBackgroundSoft,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: context.appIconCircleColor,
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: Icon(icon, size: 20, color: AppColors.headerBottom),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 14.8,
+                        color: context.appTextPrimaryColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle!,
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          color: context.appTextSecondaryColor,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: context.appTextSecondaryColor,
+              ),
+            ],
+          ),
         ),
       ),
-      trailing:
-          selected
-              ? const Icon(
-                Icons.check_circle_rounded,
-                color: AppColors.headerBottom,
-              )
-              : null,
     );
   }
 }

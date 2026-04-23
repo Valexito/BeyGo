@@ -5,7 +5,6 @@ import 'package:mapbox_api/common/ui/components/my_button.dart';
 import 'package:mapbox_api/common/ui/components/my_text.dart';
 import 'package:mapbox_api/features/owner/widgets/app_header.dart';
 import 'package:mapbox_api/features/core/roles/role_utils.dart';
-import 'package:mapbox_api/features/owner/owner_home_page.dart';
 import 'package:mapbox_api/features/reservations/models/reservation.dart';
 import 'package:mapbox_api/features/reservations/providers/reservations_providers.dart';
 import 'package:mapbox_api/features/owner/widgets/owner_dialogs.dart';
@@ -73,6 +72,7 @@ class _OwnerRequestsPageState extends ConsumerState<OwnerRequestsPage>
   Widget build(BuildContext context) {
     final exitAsync = ref.watch(ownerExitRequestsProvider);
     final cancelAsync = ref.watch(ownerCancellationRequestsProvider);
+    final isDark = context.isDarkMode;
 
     return OwnerOnly(
       builder: (_) {
@@ -93,26 +93,38 @@ class _OwnerRequestsPageState extends ConsumerState<OwnerRequestsPage>
                   padding: const EdgeInsets.symmetric(horizontal: 18),
                   child: Material(
                     elevation: 12,
-                    color: Colors.white,
+                    color: context.appCardBackground,
                     borderRadius: BorderRadius.circular(24),
+                    shadowColor: Colors.black.withValues(
+                      alpha: isDark ? 0.24 : 0.10,
+                    ),
                     child: Container(
                       height: 56,
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: context.appCardBackground,
                         borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: context.appBorderColor),
                       ),
                       child: TabBar(
                         controller: _tabController,
                         labelPadding: EdgeInsets.zero,
                         indicator: BoxDecoration(
-                          color: const Color(0xFFEAF0F7),
+                          color:
+                              isDark
+                                  ? AppColors.headerBottom.withValues(
+                                    alpha: 0.22,
+                                  )
+                                  : const Color(0xFFEAF0F7),
                           borderRadius: BorderRadius.circular(18),
                         ),
                         indicatorSize: TabBarIndicatorSize.tab,
                         dividerColor: Colors.transparent,
                         labelColor: AppColors.headerBottom,
-                        unselectedLabelColor: Colors.black54,
+                        unselectedLabelColor:
+                            isDark
+                                ? Colors.white.withValues(alpha: 0.88)
+                                : Colors.black54,
                         labelStyle: const TextStyle(
                           fontWeight: FontWeight.w700,
                           fontSize: 14,
@@ -269,7 +281,7 @@ class _RequestCardState extends ConsumerState<_RequestCard> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.20),
+                    color: Colors.white.withValues(alpha: 0.20),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: MyText(

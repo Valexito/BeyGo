@@ -24,9 +24,9 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
     _TabItem('Inicio', Icons.home_rounded),
     _TabItem('Solicitudes', Icons.fact_check_outlined),
     _TabItem('Reservas', Icons.receipt_long_outlined),
+    _TabItem('Presencial', Icons.directions_car_filled_rounded),
     _TabItem('Historial', Icons.history_rounded),
     _TabItem('Ajustes', Icons.settings_outlined),
-    _TabItem('Manuales', Icons.directions_car_filled_rounded),
   ];
 
   @override
@@ -37,13 +37,18 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
           const _OwnerDashboardView(),
           const OwnerRequestsPage(),
           const OwnerReservationsPage(),
+          const OwnerWalkInPage(),
           const OwnerHistoryPage(),
           const OwnerSettingsPage(),
-          const OwnerWalkInPage(),
         ];
 
+        final unselectedNavColor =
+            context.isDarkMode
+                ? Colors.white.withValues(alpha: 0.88)
+                : context.appTextSecondaryColor;
+
         return Scaffold(
-          backgroundColor: AppColors.pageBg,
+          backgroundColor: context.appPageBackground,
           body: pages[_index],
           bottomNavigationBar: Container(
             margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
@@ -51,11 +56,14 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.06),
-                  blurRadius: 12,
+                  color: Colors.black.withValues(
+                    alpha: context.isDarkMode ? 0.22 : 0.06,
+                  ),
+                  blurRadius: context.isDarkMode ? 18 : 12,
                   offset: const Offset(0, 4),
                 ),
               ],
+              border: Border.all(color: context.appBorderColor),
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(24),
@@ -63,8 +71,11 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
                 selectedIndex: _index,
                 onDestinationSelected: (i) => setState(() => _index = i),
                 height: 76,
-                backgroundColor: Colors.white,
-                indicatorColor: AppColors.primarySoft.withOpacity(0.25),
+                backgroundColor: context.appCardBackground,
+                indicatorColor:
+                    context.isDarkMode
+                        ? AppColors.headerBottom.withValues(alpha: 0.22)
+                        : AppColors.primarySoft.withValues(alpha: 0.25),
                 labelTextStyle: WidgetStateProperty.resolveWith<TextStyle>((
                   states,
                 ) {
@@ -75,16 +86,13 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
                     color:
                         isSelected
                             ? AppColors.headerBottom
-                            : AppColors.headerBottom.withOpacity(0.6),
+                            : unselectedNavColor,
                   );
                 }),
                 destinations:
                     _tabs.map((t) {
                       return NavigationDestination(
-                        icon: Icon(
-                          t.icon,
-                          color: AppColors.headerBottom.withOpacity(0.6),
-                        ),
+                        icon: Icon(t.icon, color: unselectedNavColor),
                         selectedIcon: Icon(
                           t.icon,
                           color: AppColors.headerBottom,
@@ -334,7 +342,7 @@ class _DashboardHeader extends StatelessWidget {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.18),
+                  color: Colors.white.withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
@@ -448,7 +456,7 @@ class _HeaderDivider extends StatelessWidget {
     return Container(
       width: 1,
       height: 32,
-      color: Colors.white.withOpacity(0.20),
+      color: Colors.white.withValues(alpha: 0.20),
     );
   }
 }
@@ -529,9 +537,9 @@ class _AlertChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.25), width: 1.2),
+        border: Border.all(color: color.withValues(alpha: 0.25), width: 1.2),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -616,7 +624,7 @@ class _RevenueCard extends StatelessWidget {
         border: Border.all(color: AppColors.borderSoft),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.08),
+            color: color.withValues(alpha: 0.08),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -629,7 +637,7 @@ class _RevenueCard extends StatelessWidget {
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.10),
+              color: color.withValues(alpha: 0.10),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, size: 16, color: color),
@@ -683,7 +691,7 @@ class _OccupancyCard extends StatelessWidget {
         border: Border.all(color: AppColors.borderSoft),
         boxShadow: [
           BoxShadow(
-            color: AppColors.headerBottom.withOpacity(0.05),
+            color: AppColors.headerBottom.withValues(alpha: 0.05),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -771,7 +779,7 @@ class _SpaceBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.10),
+        color: color.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
@@ -810,7 +818,7 @@ class _StatCard extends StatelessWidget {
         border: Border.all(color: AppColors.borderSoft),
         boxShadow: [
           BoxShadow(
-            color: AppColors.headerBottom.withOpacity(0.04),
+            color: AppColors.headerBottom.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -823,7 +831,7 @@ class _StatCard extends StatelessWidget {
             width: 34,
             height: 34,
             decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.10),
+              color: iconColor.withValues(alpha: 0.10),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, size: 18, color: iconColor),
@@ -904,7 +912,7 @@ class _ActivityTile extends StatelessWidget {
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.10),
+              color: color.withValues(alpha: 0.10),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, size: 18, color: color),
@@ -939,7 +947,7 @@ class _ActivityTile extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.10),
+                  color: color.withValues(alpha: 0.10),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(

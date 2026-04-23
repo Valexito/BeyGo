@@ -3,7 +3,9 @@ import 'package:mapbox_api/common/ui/components/app_styles.dart';
 import 'package:mapbox_api/common/ui/components/my_text.dart';
 
 class LegalInformationPage extends StatelessWidget {
-  const LegalInformationPage({super.key});
+  const LegalInformationPage({super.key, this.initialSection});
+
+  final String? initialSection;
 
   @override
   Widget build(BuildContext context) {
@@ -11,12 +13,17 @@ class LegalInformationPage extends StatelessWidget {
       (
         title: 'Términos de servicio',
         body:
-            'Al usar la app aceptas los términos y condiciones. El uso indebido, fraude o violación de las políticas puede resultar en la suspensión de la cuenta.',
+            'Al usar Parking App aceptas utilizar la plataforma de forma responsable. La app facilita la conexión entre usuarios y proveedores de parqueo, pero cada proveedor administra su disponibilidad, horarios, tarifas y condiciones del establecimiento. El uso indebido, fraude, datos falsos, abuso de reservaciones o incumplimiento de políticas puede resultar en restricciones, strikes o suspensión de la cuenta.',
       ),
       (
         title: 'Privacidad',
         body:
-            'Protegemos tu información y solo la usamos para proveer las funciones del servicio. Puedes solicitar la eliminación de tu cuenta y datos desde tu perfil.',
+            'Usamos tu información para crear tu cuenta, gestionar reservaciones, mostrar parqueos cercanos, enviar notificaciones importantes y dar soporte. Esto puede incluir nombre, correo, teléfono, ubicación aproximada cuando la autorizas, datos del vehículo, historial de reservaciones y reportes enviados. Puedes solicitar revisión o eliminación de datos desde tu perfil o soporte.',
+      ),
+      (
+        title: 'Política de cookies',
+        body:
+            'La app móvil no usa cookies tradicionales de navegador para rastreo web. Puede utilizar almacenamiento local, preferencias del dispositivo y servicios de Firebase para mantener sesión, guardar configuración, mejorar estabilidad, entregar notificaciones y recordar preferencias como tema o alertas.',
       ),
       (
         title: 'Responsabilidad',
@@ -164,6 +171,10 @@ class LegalInformationPage extends StatelessWidget {
                                 children: [
                                   ...List.generate(items.length, (i) {
                                     final it = items[i];
+                                    final initiallyExpanded =
+                                        initialSection != null &&
+                                        it.title.toLowerCase() ==
+                                            initialSection!.toLowerCase();
                                     return Padding(
                                       padding: const EdgeInsets.only(
                                         bottom: 12,
@@ -172,10 +183,12 @@ class LegalInformationPage extends StatelessWidget {
                                         color: context.appCardBackground,
                                         elevation: context.isDarkMode ? 0 : 1.5,
                                         shadowColor: Colors.black.withValues(
-                                          alpha: context.isDarkMode ? 0.18 : 0.12,
+                                          alpha:
+                                              context.isDarkMode ? 0.18 : 0.12,
                                         ),
                                         borderRadius: BorderRadius.circular(18),
                                         child: ExpansionTile(
+                                          initiallyExpanded: initiallyExpanded,
                                           tilePadding:
                                               const EdgeInsets.symmetric(
                                                 horizontal: 16,
@@ -209,7 +222,9 @@ class LegalInformationPage extends StatelessWidget {
                                                 width: 36,
                                                 height: 36,
                                                 decoration: BoxDecoration(
-                                                  color: context.appIconCircleColor,
+                                                  color:
+                                                      context
+                                                          .appIconCircleColor,
                                                   shape: BoxShape.circle,
                                                 ),
                                                 alignment: Alignment.center,
@@ -237,7 +252,9 @@ class LegalInformationPage extends StatelessWidget {
                                               child: MyText(
                                                 text: it.body,
                                                 variant: MyTextVariant.body,
-                                                customColor: context.appTextSecondaryColor,
+                                                customColor:
+                                                    context
+                                                        .appTextSecondaryColor,
                                               ),
                                             ),
                                           ],

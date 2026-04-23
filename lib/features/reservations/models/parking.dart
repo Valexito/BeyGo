@@ -18,6 +18,8 @@ class Parking {
   final List<String> photos;
   final int pricePerHour;
   final Map<String, String>? businessHours;
+  final bool autoApproveReservations;
+  final bool requirePlateOnEntry;
 
   const Parking({
     required this.id,
@@ -37,6 +39,8 @@ class Parking {
     this.pricePerHour = 0,
     this.businessHours,
     this.phone,
+    this.autoApproveReservations = false,
+    this.requirePlateOnEntry = true,
   });
 
   static double _toDouble(dynamic value) {
@@ -98,6 +102,9 @@ class Parking {
       pricePerHour: parsedPricePerHour > 0 ? parsedPricePerHour : parsedPrice,
       businessHours: parsedHours,
       phone: data['phone'] as String?,
+      autoApproveReservations:
+          (data['autoApproveReservations'] as bool?) ?? false,
+      requirePlateOnEntry: (data['requirePlateOnEntry'] as bool?) ?? true,
     );
   }
 
@@ -118,6 +125,8 @@ class Parking {
     'pricePerHour': pricePerHour,
     'businessHours': businessHours,
     'phone': phone,
+    'autoApproveReservations': autoApproveReservations,
+    'requirePlateOnEntry': requirePlateOnEntry,
   };
 
   Parking copyWith({
@@ -138,6 +147,8 @@ class Parking {
     int? pricePerHour,
     Map<String, String>? businessHours,
     String? phone,
+    bool? autoApproveReservations,
+    bool? requirePlateOnEntry,
   }) {
     return Parking(
       id: id ?? this.id,
@@ -157,6 +168,9 @@ class Parking {
       pricePerHour: pricePerHour ?? this.pricePerHour,
       businessHours: businessHours ?? this.businessHours,
       phone: phone ?? this.phone,
+      autoApproveReservations:
+          autoApproveReservations ?? this.autoApproveReservations,
+      requirePlateOnEntry: requirePlateOnEntry ?? this.requirePlateOnEntry,
     );
   }
 }

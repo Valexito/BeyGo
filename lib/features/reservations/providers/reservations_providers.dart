@@ -234,6 +234,7 @@ final reserveSpaceProvider = Provider<
       const Duration(minutes: freeCancellationWindowMinutes),
     );
     final number = _generateReservationNumber();
+    final autoApprove = p.autoApproveReservations;
 
     final reservation = Reservation(
       id: resRef.id,
@@ -267,11 +268,18 @@ final reserveSpaceProvider = Provider<
       tx.set(resRef, reservation.toMap());
 
       tx.set(spaceRef, {
-        'status': 'requested',
+        'status': autoApprove ? 'occupied' : 'requested',
         'currentReservationId': resRef.id,
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
     });
+
+    if (autoApprove) {
+      await resRef.set({
+        'state': 'active',
+        'providerApprovalStatus': 'approved',
+      }, SetOptions(merge: true));
+    }
 
     return resRef.id;
   };

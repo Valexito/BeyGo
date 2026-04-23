@@ -80,11 +80,7 @@ class AppGradientHeader extends StatelessWidget {
     final isDark = context.isDarkMode;
     final headerGradient =
         isDark
-            ? const [
-              Color(0xFF111827),
-              Color(0xFF0F172A),
-              Color(0xFF0B1220),
-            ]
+            ? const [Color(0xFF111827), Color(0xFF0F172A), Color(0xFF0B1220)]
             : const [AppColors.headerTop, AppColors.headerBottom];
 
     return Container(
@@ -247,6 +243,12 @@ class NavyHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = context.isDarkMode;
+    final headerGradient =
+        isDark
+            ? const [Color(0xFF111827), Color(0xFF0F172A), Color(0xFF0B1220)]
+            : const [AppColors.headerTop, AppColors.headerBottom];
+
     return SizedBox(
       height: height,
       width: double.infinity,
@@ -256,10 +258,10 @@ class NavyHeader extends StatelessWidget {
             height: height,
             width: double.infinity,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
+              gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [AppColors.headerTop, AppColors.headerBottom],
+                colors: headerGradient,
               ),
               borderRadius:
                   roundedBottom
@@ -278,7 +280,7 @@ class NavyHeader extends StatelessWidget {
               width: 160,
               height: 160,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.10),
+                color: Colors.white.withValues(alpha: isDark ? 0.05 : 0.10),
                 shape: BoxShape.circle,
               ),
             ),
@@ -290,7 +292,7 @@ class NavyHeader extends StatelessWidget {
               width: 110,
               height: 110,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.08),
+                color: Colors.white.withValues(alpha: isDark ? 0.04 : 0.08),
                 shape: BoxShape.circle,
               ),
             ),

@@ -7,7 +7,14 @@ import 'package:mapbox_api/common/ui/components/my_textfield.dart';
 import 'package:mapbox_api/features/core/providers/report_provider.dart';
 
 class ReportProblemPage extends ConsumerStatefulWidget {
-  const ReportProblemPage({super.key});
+  const ReportProblemPage({
+    super.key,
+    this.initialReportType,
+    this.initialSubject,
+  });
+
+  final String? initialReportType;
+  final String? initialSubject;
 
   @override
   ConsumerState<ReportProblemPage> createState() => _ReportProblemPageState();
@@ -30,6 +37,16 @@ class _ReportProblemPageState extends ConsumerState<ReportProblemPage> {
     'Problema con reservación',
     'Otro',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialReportType != null &&
+        _reportTypes.contains(widget.initialReportType)) {
+      _selectedReportType = widget.initialReportType;
+    }
+    _subject.text = widget.initialSubject ?? '';
+  }
 
   @override
   void dispose() {
@@ -265,7 +282,8 @@ class _ReportProblemPageState extends ConsumerState<ReportProblemPage> {
                                       DropdownButtonFormField<String>(
                                         value: _selectedReportType,
                                         isExpanded: true,
-                                        dropdownColor: context.appCardBackground,
+                                        dropdownColor:
+                                            context.appCardBackground,
                                         style: TextStyle(
                                           color: context.appTextPrimaryColor,
                                           fontSize: 14,
@@ -274,7 +292,8 @@ class _ReportProblemPageState extends ConsumerState<ReportProblemPage> {
                                         decoration: InputDecoration(
                                           hintText: 'Tipo de reporte',
                                           hintStyle: TextStyle(
-                                            color: context.appTextSecondaryColor,
+                                            color:
+                                                context.appTextSecondaryColor,
                                             fontSize: 13,
                                           ),
                                           prefixIcon: const Icon(
