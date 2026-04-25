@@ -1478,95 +1478,185 @@ class _RevenuePinDialogState extends State<_RevenuePinDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: context.appCardBackground,
-      title: Text(
-        widget.title,
-        style: TextStyle(color: context.appTextPrimaryColor),
+    final titleIcon =
+        widget.requireConfirmation
+            ? Icons.lock_outline_rounded
+            : Icons.verified_user_outlined;
+
+    InputDecoration pinDecoration(String hint) => InputDecoration(
+      counterText: '',
+      hintText: hint,
+      hintStyle: TextStyle(color: context.appTextSecondaryColor),
+      prefixIcon: Icon(
+        Icons.pin_outlined,
+        size: 18,
+        color: context.appTextSecondaryColor,
       ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            widget.subtitle,
-            style: TextStyle(color: context.appTextSecondaryColor),
-          ),
-          const SizedBox(height: 14),
-          TextField(
-            controller: _pinCtrl,
-            keyboardType: TextInputType.number,
-            obscureText: true,
-            maxLength: 4,
-            style: TextStyle(color: context.appTextPrimaryColor),
-            decoration: InputDecoration(
-              counterText: '',
-              hintText: 'PIN de 4 dígitos',
-              hintStyle: TextStyle(color: context.appTextSecondaryColor),
-              filled: true,
-              fillColor: context.appInputBackground,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(color: context.appBorderColor),
+      filled: true,
+      fillColor: context.appInputBackground,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: BorderSide(color: context.appBorderColor),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: BorderSide(color: context.appBorderColor),
+      ),
+      focusedBorder: const OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(18)),
+        borderSide: BorderSide(color: AppColors.headerBottom, width: 1.5),
+      ),
+    );
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 22, vertical: 24),
+      child: Container(
+        decoration: BoxDecoration(
+          color: context.appCardBackground,
+          borderRadius: BorderRadius.circular(28),
+          border: Border.all(color: context.appBorderColor),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(
+                alpha: context.isDarkMode ? 0.28 : 0.10,
               ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(color: context.appBorderColor),
-              ),
-              focusedBorder: const OutlineInputBorder(
-                borderRadius: BorderRadius.all(Radius.circular(16)),
-                borderSide: BorderSide(color: AppColors.headerBottom),
-              ),
-            ),
-          ),
-          if (widget.requireConfirmation) ...[
-            const SizedBox(height: 12),
-            TextField(
-              controller: _confirmCtrl,
-              keyboardType: TextInputType.number,
-              obscureText: true,
-              maxLength: 4,
-              style: TextStyle(color: context.appTextPrimaryColor),
-              decoration: InputDecoration(
-                counterText: '',
-                hintText: 'Confirmar PIN',
-                hintStyle: TextStyle(color: context.appTextSecondaryColor),
-                filled: true,
-                fillColor: context.appInputBackground,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: context.appBorderColor),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: context.appBorderColor),
-                ),
-                focusedBorder: const OutlineInputBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(16)),
-                  borderSide: BorderSide(color: AppColors.headerBottom),
-                ),
-              ),
+              blurRadius: 28,
+              offset: const Offset(0, 14),
             ),
           ],
-          if (_error != null) ...[
-            const SizedBox(height: 10),
-            Text(
-              _error!,
-              style: const TextStyle(
-                color: Color(0xFFDC2626),
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancelar'),
         ),
-        ElevatedButton(onPressed: _submit, child: Text(widget.confirmLabel)),
-      ],
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(22, 22, 22, 18),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 58,
+                  height: 58,
+                  decoration: BoxDecoration(
+                    color: AppColors.headerBottom.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: AppColors.headerBottom.withValues(alpha: 0.18),
+                    ),
+                  ),
+                  child: Icon(
+                    titleIcon,
+                    color: AppColors.headerBottom,
+                    size: 28,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Center(
+                child: Text(
+                  widget.title,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: context.appTextPrimaryColor,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Center(
+                child: Text(
+                  widget.subtitle,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: context.appTextSecondaryColor,
+                    fontSize: 13,
+                    height: 1.35,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              TextField(
+                controller: _pinCtrl,
+                keyboardType: TextInputType.number,
+                obscureText: true,
+                maxLength: 4,
+                style: TextStyle(color: context.appTextPrimaryColor),
+                decoration: pinDecoration('PIN de 4 dígitos'),
+              ),
+              if (widget.requireConfirmation) ...[
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _confirmCtrl,
+                  keyboardType: TextInputType.number,
+                  obscureText: true,
+                  maxLength: 4,
+                  style: TextStyle(color: context.appTextPrimaryColor),
+                  decoration: pinDecoration('Confirmar PIN'),
+                ),
+              ],
+              if (_error != null) ...[
+                const SizedBox(height: 6),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFDC2626).withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: const Color(0xFFDC2626).withValues(alpha: 0.18),
+                    ),
+                  ),
+                  child: Text(
+                    _error!,
+                    style: const TextStyle(
+                      color: Color(0xFFDC2626),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(50),
+                        side: BorderSide(color: context.appBorderColor),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                      ),
+                      child: const Text('Cancelar'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _submit,
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(50),
+                        backgroundColor: AppColors.headerBottom,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                      ),
+                      child: Text(widget.confirmLabel),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -1645,82 +1735,233 @@ class _RevenueOtpDialogState extends State<_RevenueOtpDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: context.appCardBackground,
-      title: Text(
-        'Verificar OTP',
-        style: TextStyle(color: context.appTextPrimaryColor),
-      ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Te enviamos un código al correo registrado del owner:',
-            style: TextStyle(color: context.appTextSecondaryColor),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            widget.emailMasked,
-            style: TextStyle(
-              color: context.appTextPrimaryColor,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _codeCtrl,
-            keyboardType: TextInputType.number,
-            autofocus: true,
-            maxLength: 6,
-            style: TextStyle(color: context.appTextPrimaryColor),
-            decoration: InputDecoration(
-              counterText: '',
-              hintText: 'Código OTP',
-              hintStyle: TextStyle(color: context.appTextSecondaryColor),
-              filled: true,
-              fillColor: context.appInputBackground,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(color: context.appBorderColor),
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 22, vertical: 24),
+      child: Container(
+        decoration: BoxDecoration(
+          color: context.appCardBackground,
+          borderRadius: BorderRadius.circular(28),
+          border: Border.all(color: context.appBorderColor),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(
+                alpha: context.isDarkMode ? 0.28 : 0.10,
               ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(color: context.appBorderColor),
-              ),
-              focusedBorder: const OutlineInputBorder(
-                borderRadius: BorderRadius.all(Radius.circular(16)),
-                borderSide: BorderSide(color: AppColors.headerBottom),
-              ),
-            ),
-          ),
-          if (_error != null) ...[
-            const SizedBox(height: 10),
-            Text(
-              _error!,
-              style: const TextStyle(
-                color: Color(0xFFDC2626),
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
+              blurRadius: 28,
+              offset: const Offset(0, 14),
             ),
           ],
-        ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(22, 22, 22, 18),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 58,
+                  height: 58,
+                  decoration: BoxDecoration(
+                    color: AppColors.headerBottom.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: AppColors.headerBottom.withValues(alpha: 0.18),
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.mark_email_read_outlined,
+                    color: AppColors.headerBottom,
+                    size: 28,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Center(
+                child: Text(
+                  'Verificar OTP',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: context.appTextPrimaryColor,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Te enviamos un código al correo registrado del owner para restablecer el PIN de ingresos.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: context.appTextSecondaryColor,
+                  fontSize: 13,
+                  height: 1.35,
+                ),
+              ),
+              const SizedBox(height: 14),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: context.appCardBackgroundSoft,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: context.appBorderColor),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        color: AppColors.headerBottom.withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.alternate_email_rounded,
+                        color: AppColors.headerBottom,
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        widget.emailMasked,
+                        style: TextStyle(
+                          color: context.appTextPrimaryColor,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: _codeCtrl,
+                keyboardType: TextInputType.number,
+                autofocus: true,
+                maxLength: 6,
+                style: TextStyle(color: context.appTextPrimaryColor),
+                decoration: InputDecoration(
+                  counterText: '',
+                  hintText: 'Código OTP',
+                  hintStyle: TextStyle(color: context.appTextSecondaryColor),
+                  prefixIcon: Icon(
+                    Icons.password_rounded,
+                    size: 18,
+                    color: context.appTextSecondaryColor,
+                  ),
+                  filled: true,
+                  fillColor: context.appInputBackground,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    borderSide: BorderSide(color: context.appBorderColor),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    borderSide: BorderSide(color: context.appBorderColor),
+                  ),
+                  focusedBorder: const OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(18)),
+                    borderSide: BorderSide(
+                      color: AppColors.headerBottom,
+                      width: 1.5,
+                    ),
+                  ),
+                ),
+              ),
+              if (_error != null) ...[
+                const SizedBox(height: 6),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFDC2626).withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: const Color(0xFFDC2626).withValues(alpha: 0.18),
+                    ),
+                  ),
+                  child: Text(
+                    _error!,
+                    style: const TextStyle(
+                      color: Color(0xFFDC2626),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton.icon(
+                  onPressed: _loading || _resending ? null : _resend,
+                  icon: Icon(
+                    Icons.refresh_rounded,
+                    size: 18,
+                    color:
+                        _loading || _resending
+                            ? context.appTextSecondaryColor
+                            : AppColors.headerBottom,
+                  ),
+                  label: Text(
+                    _resending ? 'Reenviando código...' : 'Reenviar código',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color:
+                          _loading || _resending
+                              ? context.appTextSecondaryColor
+                              : AppColors.headerBottom,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: _loading ? null : () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(50),
+                        side: BorderSide(color: context.appBorderColor),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                      ),
+                      child: const Text('Cancelar'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _loading ? null : _submit,
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(50),
+                        backgroundColor: AppColors.headerBottom,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                      ),
+                      child: Text(_loading ? 'Verificando...' : 'Verificar'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
-      actions: [
-        TextButton(
-          onPressed: _loading ? null : () => Navigator.pop(context),
-          child: const Text('Cancelar'),
-        ),
-        TextButton(
-          onPressed: _loading || _resending ? null : _resend,
-          child: Text(_resending ? 'Reenviando...' : 'Reenviar'),
-        ),
-        ElevatedButton(
-          onPressed: _loading ? null : _submit,
-          child: Text(_loading ? 'Verificando...' : 'Verificar'),
-        ),
-      ],
     );
   }
 }

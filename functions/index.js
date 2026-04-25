@@ -90,49 +90,80 @@ exports.requestOwnerRevenuePinOtp = onCall({
     }
 
     const uid = request.auth.uid;
-    const { email } = await assertOwnerUser(uid);
 
-    const code = generateOtpCode();
-    const codeHash = hashValue(code);
-    const expiresAt = admin.firestore.Timestamp.fromDate(
-        new Date(Date.now() + OTP_TTL_MINUTES * 60 * 1000)
-    );
+    try {
+        const { email } = await assertOwnerUser(uid);
+        console.log(
+            `[owner-pin-otp] Preparing OTP for uid=${uid} email=${email}`
+        );
 
-    await db.collection(OTP_COLLECTION).doc(uid).set({
-        purpose: "owner_revenue_pin_reset",
-        email,
-        codeHash,
-        attempts: 0,
-        expiresAt,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        verifiedAt: null,
-        resetTokenHash: null,
-    });
+        const code = generateOtpCode();
+        const codeHash = hashValue(code);
+        const expiresAt = admin.firestore.Timestamp.fromDate(
+            new Date(Date.now() + OTP_TTL_MINUTES * 60 * 1000)
+        );
 
-    const transport = getMailTransport();
-    await transport.sendMail({
-        from: ownerSecurityEmail.value(),
-        to: email,
-        subject: "Codigo OTP para restablecer tu PIN",
-        text:
-            `Tu codigo de verificacion es: ${code}\n\n` +
-            `Este codigo vence en ${OTP_TTL_MINUTES} minutos.\n` +
-            `Si no solicitaste este cambio, ignora este correo.`,
-        html:
-            `<div style="font-family:Arial,sans-serif;padding:16px">` +
-            `<h2>Restablecer PIN de ingresos</h2>` +
-            `<p>Tu codigo de verificacion es:</p>` +
-            `<div style="font-size:32px;font-weight:800;letter-spacing:6px;margin:16px 0">${code}</div>` +
-            `<p>Este codigo vence en ${OTP_TTL_MINUTES} minutos.</p>` +
-            `<p>Si no solicitaste este cambio, puedes ignorar este correo.</p>` +
-            `</div>`,
-    });
+        await db.collection(OTP_COLLECTION).doc(uid).set({
+            purpose: "owner_revenue_pin_reset",
+            email,
+            codeHash,
+            attempts: 0,
+            expiresAt,
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            verifiedAt: null,
+            resetTokenHash: null,
+        });
 
-    return {
-        ok: true,
-        emailMasked: email.replace(/(.{2}).+(@.+)/, "$1***$2"),
-        expiresInMinutes: OTP_TTL_MINUTES,
-    };
+        const transport = getMailTransport();
+        await transport.verify();
+        console.log(`[owner-pin-otp] SMTP verified for ${ownerSecurityEmail.value()}`);
+
+        await transport.sendMail({
+            from: ownerSecurityEmail.value(),
+            to: email,
+            subject: "Codigo OTP para restablecer tu PIN",
+            text:
+                `Tu codigo de verificacion es: ${code}\n\n` +
+                `Este codigo vence en ${OTP_TTL_MINUTES} minutos.\n` +
+                `Si no solicitaste este cambio, ignora este correo.`,
+            html:
+                `<div style="font-family:Arial,sans-serif;padding:16px">` +
+                `<h2>Restablecer PIN de ingresos</h2>` +
+                `<p>Tu codigo de verificacion es:</p>` +
+                `<div style="font-size:32px;font-weight:800;letter-spacing:6px;margin:16px 0">${code}</div>` +
+                `<p>Este codigo vence en ${OTP_TTL_MINUTES} minutos.</p>` +
+                `<p>Si no solicitaste este cambio, puedes ignorar este correo.</p>` +
+                `</div>`,
+        });
+
+        console.log(`[owner-pin-otp] OTP email sent to ${email}`);
+        return {
+            ok: true,
+            emailMasked: email.replace(/(.{2}).+(@.+)/, "$1***$2"),
+            expiresInMinutes: OTP_TTL_MINUTES,
+        };
+    } catch (error) {
+        console.error("[owner-pin-otp] Request failed", error);
+
+        if (error instanceof HttpsError) {
+            throw error;
+        }
+
+        if (
+            error?.code === "EAUTH" ||
+            error?.responseCode === 535
+        ) {
+            throw new HttpsError(
+                "failed-precondition",
+                "El correo emisor OTP no pudo autenticarse en Gmail. Revisa OWNER_SECURITY_EMAIL y su App Password."
+            );
+        }
+
+        throw new HttpsError(
+            "internal",
+            "No se pudo enviar el correo OTP en este momento."
+        );
+    }
 });
 
 exports.verifyOwnerRevenuePinOtp = onCall(async (request) => {
