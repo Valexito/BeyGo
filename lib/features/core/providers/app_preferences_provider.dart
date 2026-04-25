@@ -39,4 +39,19 @@ class AppPreferencesController extends StateNotifier<AppPreferencesState> {
     await _service.setAppUpdatesEnabled(value);
     state = state.copyWith(appUpdatesEnabled: value);
   }
+
+  Future<void> setOwnerRevenueVisible(bool value) async {
+    await _service.setOwnerRevenueVisible(value);
+    state = state.copyWith(ownerRevenueVisible: value);
+  }
+
+  Future<void> setOwnerRevenuePin(String value) async {
+    await _service.setOwnerRevenuePin(value);
+    state = state.copyWith(ownerRevenuePin: value);
+  }
+
+  Future<void> clearOwnerRevenuePin() async {
+    await _service.clearOwnerRevenuePin();
+    state = state.copyWith(clearOwnerRevenuePin: true);
+  }
 }

@@ -5,11 +5,6 @@ import 'package:mapbox_api/features/users/models/user_role.dart';
 import 'package:mapbox_api/features/users/providers/user_providers.dart'
     show myRoleStreamProvider;
 
-/// Bloquea/condiciona el contenido según el rol actual del usuario.
-/// - [allow] lista de roles permitidos.
-/// - [child] contenido cuando tiene permiso.
-/// - [fallback] (opcional) qué mostrar si no tiene permiso.
-///   Si no se provee, muestra un mensaje sencillo.
 class RoleGate extends ConsumerWidget {
   const RoleGate({
     super.key,

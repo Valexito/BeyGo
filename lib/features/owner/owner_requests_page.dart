@@ -245,9 +245,18 @@ class _RequestCardState extends ConsumerState<_RequestCard> {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.appCardBackground,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.borderSoft),
+        border: Border.all(color: context.appBorderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(
+              alpha: context.isDarkMode ? 0.18 : 0.05,
+            ),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -421,8 +430,8 @@ class _InfoRow extends StatelessWidget {
         Container(
           width: 30,
           height: 30,
-          decoration: const BoxDecoration(
-            color: AppColors.iconCircle,
+          decoration: BoxDecoration(
+            color: context.appIconCircleColor,
             shape: BoxShape.circle,
           ),
           child: Icon(icon, size: 16, color: AppColors.headerBottom),
@@ -440,7 +449,7 @@ class _InfoRow extends StatelessWidget {
           text: value,
           variant: MyTextVariant.bodyBold,
           fontSize: 13,
-          customColor: const Color(0xFF6B7280),
+          customColor: context.appTextPrimaryColor,
         ),
       ],
     );

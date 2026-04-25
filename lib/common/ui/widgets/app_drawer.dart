@@ -1,9 +1,3 @@
-// lib/common/utils/components/ui/app_drawer.dart
-//
-// ✅ FIXED: Name now reads from Firestore users/{uid} document
-//    Firebase Auth displayName is only set for Google/social sign-in.
-//    For email/password users, the name is stored in Firestore profile.
-//
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -20,9 +14,6 @@ import 'package:mapbox_api/features/users/pages/profile_page.dart';
 import 'package:mapbox_api/features/auth/providers/auth_providers.dart'
     show authUserStreamProvider, authActionsProvider;
 
-// ── Firestore profile stream — auto-disposes when drawer closes ────────────
-// Reads users/{uid} in real time so the name updates the moment the user
-// completes or edits their profile, without restarting the app.
 final _drawerProfileProvider =
     StreamProvider.autoDispose<Map<String, dynamic>?>((ref) {
       final authAsync = ref.watch(authUserStreamProvider);
@@ -428,7 +419,9 @@ class _DrawerItemState extends State<_DrawerItem> {
                   color:
                       _pressed
                           ? activeColor
-                          : context.appTextSecondaryColor.withValues(alpha: 0.5),
+                          : context.appTextSecondaryColor.withValues(
+                            alpha: 0.5,
+                          ),
                 ),
               ],
             ),

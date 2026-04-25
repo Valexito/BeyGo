@@ -1,7 +1,9 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mapbox_api/common/ui/components/app_styles.dart';
 import 'package:mapbox_api/common/ui/components/my_text.dart';
+import 'package:mapbox_api/features/owner/providers/dashboard_providers.dart';
 import 'package:mapbox_api/features/owner/widgets/app_header.dart';
 import 'package:mapbox_api/features/core/roles/role_utils.dart';
 import 'package:mapbox_api/features/reservations/models/reservation.dart';
@@ -14,6 +16,7 @@ enum _StateFilter {
   cancelled,
   cancelledPenalty,
   cancellationRequested,
+  manual,
 }
 
 extension _StateFilterLabel on _StateFilter {
@@ -29,6 +32,8 @@ extension _StateFilterLabel on _StateFilter {
         return 'Canceladas c/ penalización';
       case _StateFilter.cancellationRequested:
         return 'Solicitud cancelación';
+      case _StateFilter.manual:
+        return 'Presenciales';
     }
   }
 
@@ -44,9 +49,132 @@ extension _StateFilterLabel on _StateFilter {
         return const Color(0xFF7C3AED);
       case _StateFilter.cancellationRequested:
         return const Color(0xFFF59E0B);
+      case _StateFilter.manual:
+        return const Color(0xFF16A34A);
     }
   }
 }
+
+enum _SourceFilter { all, online, manual }
+
+extension _SourceFilterLabel on _SourceFilter {
+  String get label {
+    switch (this) {
+      case _SourceFilter.all:
+        return 'Todas';
+      case _SourceFilter.online:
+        return 'En línea';
+      case _SourceFilter.manual:
+        return 'Presencial';
+    }
+  }
+}
+
+enum _PeriodFilter { week, month, all, custom }
+
+extension _PeriodFilterLabel on _PeriodFilter {
+  String get label {
+    switch (this) {
+      case _PeriodFilter.week:
+        return 'Esta semana';
+      case _PeriodFilter.month:
+        return 'Este mes';
+      case _PeriodFilter.all:
+        return 'Todo';
+      case _PeriodFilter.custom:
+        return 'Rango';
+    }
+  }
+}
+
+class _HistoryRecord {
+  final String id;
+  final bool isManual;
+  final String reservationNumber;
+  final String customerName;
+  final String plate;
+  final int spaceNumber;
+  final DateTime reservedAt;
+  final DateTime? endedAt;
+  final String state;
+  final bool cancellationPenaltyApplied;
+  final String? cancellationReason;
+  final double? amount;
+  final String? parkingName;
+
+  const _HistoryRecord({
+    required this.id,
+    required this.isManual,
+    required this.reservationNumber,
+    required this.customerName,
+    required this.plate,
+    required this.spaceNumber,
+    required this.reservedAt,
+    required this.endedAt,
+    required this.state,
+    required this.cancellationPenaltyApplied,
+    required this.cancellationReason,
+    required this.amount,
+    this.parkingName,
+  });
+
+  factory _HistoryRecord.fromReservation(Reservation r) {
+    return _HistoryRecord(
+      id: r.id,
+      isManual: false,
+      reservationNumber: r.reservationNumber ?? 'N/A',
+      customerName: r.userName ?? 'N/A',
+      plate: r.plate ?? 'N/A',
+      spaceNumber: r.spaceNumber,
+      reservedAt: r.reservedAt,
+      endedAt: r.endedAt ?? r.exitApprovedAt,
+      state: r.state,
+      cancellationPenaltyApplied: r.cancellationPenaltyApplied,
+      cancellationReason: r.cancellationReason,
+      amount: (r.amount ?? r.estimatedAmount)?.toDouble(),
+      parkingName: r.parkingName,
+    );
+  }
+
+  factory _HistoryRecord.fromWalkInDoc(
+    QueryDocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
+    final data = doc.data();
+    final enteredAt =
+        (data['enteredAt'] as Timestamp?)?.toDate() ?? DateTime.now();
+    final exitAt = (data['exitAt'] as Timestamp?)?.toDate();
+    return _HistoryRecord(
+      id: doc.id,
+      isManual: true,
+      reservationNumber:
+          data['reservationNumber'] as String? ?? 'MAN-SIN-NUMERO',
+      customerName: data['customerName'] as String? ?? 'Cliente',
+      plate: data['plate'] as String? ?? 'N/A',
+      spaceNumber: (data['spaceNumber'] as num?)?.toInt() ?? 0,
+      reservedAt: enteredAt,
+      endedAt: exitAt,
+      state: 'manual_completed',
+      cancellationPenaltyApplied: false,
+      cancellationReason: null,
+      amount: (data['amount'] as num?)?.toDouble(),
+    );
+  }
+}
+
+final ownerWalkInHistoryProvider =
+    StreamProvider.family<List<_HistoryRecord>, String>((ref, parkingId) {
+      return FirebaseFirestore.instance
+          .collection('parkings')
+          .doc(parkingId)
+          .collection('walk_ins')
+          .where('status', isEqualTo: 'completed')
+          .snapshots()
+          .map(
+            (snap) =>
+                snap.docs.map(_HistoryRecord.fromWalkInDoc).toList()
+                  ..sort((a, b) => b.reservedAt.compareTo(a.reservedAt)),
+          );
+    });
 
 class OwnerHistoryPage extends ConsumerStatefulWidget {
   const OwnerHistoryPage({super.key});
@@ -59,6 +187,8 @@ class _OwnerHistoryPageState extends ConsumerState<OwnerHistoryPage> {
   final _searchController = TextEditingController();
   String _searchQuery = '';
   _StateFilter _stateFilter = _StateFilter.all;
+  _SourceFilter _sourceFilter = _SourceFilter.all;
+  _PeriodFilter _periodFilter = _PeriodFilter.week;
   DateTimeRange? _dateRange;
 
   @override
@@ -67,13 +197,8 @@ class _OwnerHistoryPageState extends ConsumerState<OwnerHistoryPage> {
     super.dispose();
   }
 
-  List<Reservation> _applyFilters(List<Reservation> all) {
-    var items =
-        all.where((r) {
-          return r.state == 'completed' ||
-              r.state == 'cancelled' ||
-              r.state == 'cancellation_requested';
-        }).toList();
+  List<_HistoryRecord> _applyFilters(List<_HistoryRecord> all) {
+    var items = [...all];
 
     // State filter
     if (_stateFilter != _StateFilter.all) {
@@ -88,14 +213,40 @@ class _OwnerHistoryPageState extends ConsumerState<OwnerHistoryPage> {
                 return r.state == 'cancelled' && r.cancellationPenaltyApplied;
               case _StateFilter.cancellationRequested:
                 return r.state == 'cancellation_requested';
+              case _StateFilter.manual:
+                return r.isManual;
               default:
                 return true;
             }
           }).toList();
     }
 
+    if (_sourceFilter != _SourceFilter.all) {
+      items =
+          items.where((r) {
+            switch (_sourceFilter) {
+              case _SourceFilter.online:
+                return !r.isManual;
+              case _SourceFilter.manual:
+                return r.isManual;
+              case _SourceFilter.all:
+                return true;
+            }
+          }).toList();
+    }
+
+    final now = DateTime.now();
+    final startOfWeek = _startOfWeek(now);
+    final startOfMonth = DateTime(now.year, now.month, 1);
+
+    if (_periodFilter == _PeriodFilter.week) {
+      items = items.where((r) => !r.reservedAt.isBefore(startOfWeek)).toList();
+    } else if (_periodFilter == _PeriodFilter.month) {
+      items = items.where((r) => !r.reservedAt.isBefore(startOfMonth)).toList();
+    }
+
     // Date range filter
-    if (_dateRange != null) {
+    if (_periodFilter == _PeriodFilter.custom && _dateRange != null) {
       items =
           items.where((r) {
             final d = r.reservedAt;
@@ -109,16 +260,38 @@ class _OwnerHistoryPageState extends ConsumerState<OwnerHistoryPage> {
       final q = _searchQuery.toLowerCase();
       items =
           items.where((r) {
-            return (r.reservationNumber ?? '').toLowerCase().contains(q) ||
-                (r.userName ?? '').toLowerCase().contains(q) ||
-                (r.plate ?? '').toLowerCase().contains(q) ||
-                r.parkingName.toLowerCase().contains(q);
+            return r.reservationNumber.toLowerCase().contains(q) ||
+                r.customerName.toLowerCase().contains(q) ||
+                r.plate.toLowerCase().contains(q) ||
+                (r.parkingName ?? '').toLowerCase().contains(q);
           }).toList();
     }
 
     // Sort by most recent
     items.sort((a, b) => b.reservedAt.compareTo(a.reservedAt));
     return items;
+  }
+
+  DateTime _startOfWeek(DateTime date) {
+    final normalized = DateTime(date.year, date.month, date.day);
+    return normalized.subtract(Duration(days: normalized.weekday - 1));
+  }
+
+  String _weekLabel(DateTime weekStart) {
+    final end = weekStart.add(const Duration(days: 6));
+    final nowWeek = _startOfWeek(DateTime.now());
+    if (weekStart == nowWeek) return 'Esta semana';
+    return '${_formatDate(weekStart)} – ${_formatDate(end)}';
+  }
+
+  Map<DateTime, List<_HistoryRecord>> _groupByWeek(List<_HistoryRecord> items) {
+    final grouped = <DateTime, List<_HistoryRecord>>{};
+    for (final item in items) {
+      final weekStart = _startOfWeek(item.reservedAt);
+      grouped.putIfAbsent(weekStart, () => []).add(item);
+    }
+    final orderedKeys = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
+    return {for (final key in orderedKeys) key: grouped[key]!};
   }
 
   Future<void> _pickDateRange() async {
@@ -242,11 +415,170 @@ class _OwnerHistoryPageState extends ConsumerState<OwnerHistoryPage> {
     );
   }
 
+  void _showSourceFilterSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Container(
+          decoration: BoxDecoration(
+            color: ctx.appCardBackground,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: ctx.appBorderColor,
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              MyText(
+                text: 'Filtrar por origen',
+                variant: MyTextVariant.bodyBold,
+                fontSize: 16,
+                customColor: ctx.appTextPrimaryColor,
+              ),
+              const SizedBox(height: 14),
+              ..._SourceFilter.values.map((filter) {
+                final selected = _sourceFilter == filter;
+                return ListTile(
+                  onTap: () {
+                    setState(() => _sourceFilter = filter);
+                    Navigator.pop(ctx);
+                  },
+                  tileColor:
+                      selected
+                          ? AppColors.headerBottom.withValues(alpha: 0.10)
+                          : ctx.appCardBackgroundSoft,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  title: Text(
+                    filter.label,
+                    style: TextStyle(
+                      color:
+                          selected
+                              ? AppColors.headerBottom
+                              : ctx.appTextPrimaryColor,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  trailing:
+                      selected
+                          ? const Icon(
+                            Icons.check_rounded,
+                            color: AppColors.headerBottom,
+                          )
+                          : null,
+                );
+              }),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _showPeriodFilterSheet() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Container(
+          decoration: BoxDecoration(
+            color: ctx.appCardBackground,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: ctx.appBorderColor,
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              MyText(
+                text: 'Filtrar por periodo',
+                variant: MyTextVariant.bodyBold,
+                fontSize: 16,
+                customColor: ctx.appTextPrimaryColor,
+              ),
+              const SizedBox(height: 14),
+              ..._PeriodFilter.values.map((filter) {
+                final selected = _periodFilter == filter;
+                return ListTile(
+                  onTap: () async {
+                    Navigator.pop(ctx);
+                    if (filter == _PeriodFilter.custom) {
+                      setState(() => _periodFilter = filter);
+                      await _pickDateRange();
+                      return;
+                    }
+                    setState(() {
+                      _periodFilter = filter;
+                      if (filter != _PeriodFilter.custom) {
+                        _dateRange = null;
+                      }
+                    });
+                  },
+                  tileColor:
+                      selected
+                          ? AppColors.headerBottom.withValues(alpha: 0.10)
+                          : ctx.appCardBackgroundSoft,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  title: Text(
+                    filter.label,
+                    style: TextStyle(
+                      color:
+                          selected
+                              ? AppColors.headerBottom
+                              : ctx.appTextPrimaryColor,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  trailing:
+                      selected
+                          ? const Icon(
+                            Icons.check_rounded,
+                            color: AppColors.headerBottom,
+                          )
+                          : null,
+                );
+              }),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final reservationsAsync = ref.watch(ownerAllReservationsProvider);
+    final parkingAsync = ref.watch(ownerParkingProvider);
     final hasActiveFilters =
         _stateFilter != _StateFilter.all ||
+        _sourceFilter != _SourceFilter.all ||
+        _periodFilter != _PeriodFilter.week ||
         _dateRange != null ||
         _searchQuery.isNotEmpty;
     final isDark = context.isDarkMode;
@@ -333,67 +665,80 @@ class _OwnerHistoryPageState extends ConsumerState<OwnerHistoryPage> {
                     ),
                     const SizedBox(height: 10),
 
-                    // Filter chips row
-                    Row(
-                      children: [
-                        // State filter
-                        _FilterChip(
-                          icon: Icons.tune_rounded,
-                          label:
-                              _stateFilter == _StateFilter.all
-                                  ? 'Estado'
-                                  : _stateFilter.label,
-                          active: _stateFilter != _StateFilter.all,
-                          activeColor: _stateFilter.color,
-                          onTap: _showStateFilterSheet,
-                        ),
-                        const SizedBox(width: 8),
-
-                        // Date range filter
-                        _FilterChip(
-                          icon: Icons.calendar_today_rounded,
-                          label:
-                              _dateRange == null
-                                  ? 'Fecha'
-                                  : '${_formatDate(_dateRange!.start)} – ${_formatDate(_dateRange!.end)}',
-                          active: _dateRange != null,
-                          activeColor: AppColors.headerBottom,
-                          onTap: _pickDateRange,
-                        ),
-
-                        const Spacer(),
-
-                        // Clear all
-                        if (hasActiveFilters)
-                          GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _stateFilter = _StateFilter.all;
-                                _dateRange = null;
-                                _searchQuery = '';
-                                _searchController.clear();
-                              });
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 7,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(
-                                  0xFFDC2626,
-                                ).withValues(alpha: 0.08),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: const MyText(
-                                text: 'Limpiar',
-                                variant: MyTextVariant.bodyBold,
-                                fontSize: 12,
-                                customColor: Color(0xFFDC2626),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          _FilterChip(
+                            icon: Icons.tune_rounded,
+                            label:
+                                _stateFilter == _StateFilter.all
+                                    ? 'Estado'
+                                    : _stateFilter.label,
+                            active: _stateFilter != _StateFilter.all,
+                            activeColor: _stateFilter.color,
+                            onTap: _showStateFilterSheet,
+                          ),
+                          const SizedBox(width: 8),
+                          _FilterChip(
+                            icon: Icons.category_outlined,
+                            label:
+                                _sourceFilter == _SourceFilter.all
+                                    ? 'Origen'
+                                    : _sourceFilter.label,
+                            active: _sourceFilter != _SourceFilter.all,
+                            activeColor: AppColors.headerBottom,
+                            onTap: _showSourceFilterSheet,
+                          ),
+                          const SizedBox(width: 8),
+                          _FilterChip(
+                            icon: Icons.calendar_today_rounded,
+                            label:
+                                _periodFilter == _PeriodFilter.custom &&
+                                        _dateRange != null
+                                    ? '${_formatDate(_dateRange!.start)} – ${_formatDate(_dateRange!.end)}'
+                                    : _periodFilter.label,
+                            active:
+                                _periodFilter != _PeriodFilter.week ||
+                                _dateRange != null,
+                            activeColor: AppColors.headerBottom,
+                            onTap: _showPeriodFilterSheet,
+                          ),
+                          if (hasActiveFilters) ...[
+                            const SizedBox(width: 8),
+                            GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _stateFilter = _StateFilter.all;
+                                  _sourceFilter = _SourceFilter.all;
+                                  _periodFilter = _PeriodFilter.week;
+                                  _dateRange = null;
+                                  _searchQuery = '';
+                                  _searchController.clear();
+                                });
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 7,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(
+                                    0xFFDC2626,
+                                  ).withValues(alpha: 0.08),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: const MyText(
+                                  text: 'Limpiar',
+                                  variant: MyTextVariant.bodyBold,
+                                  fontSize: 12,
+                                  customColor: Color(0xFFDC2626),
+                                ),
                               ),
                             ),
-                          ),
-                      ],
+                          ],
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -402,35 +747,109 @@ class _OwnerHistoryPageState extends ConsumerState<OwnerHistoryPage> {
 
             // ── List ──
             Expanded(
-              child: reservationsAsync.when(
+              child: parkingAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (e, _) => Center(child: Text('Error: $e')),
-                data: (all) {
-                  final items = _applyFilters(all);
+                data: (parking) {
+                  final walkInsAsync =
+                      parking == null
+                          ? const AsyncValue.data(<_HistoryRecord>[])
+                          : ref.watch(ownerWalkInHistoryProvider(parking.id));
 
-                  if (items.isEmpty) {
-                    return _OwnerEmptyState(
-                      icon:
-                          hasActiveFilters
-                              ? Icons.filter_list_off_rounded
-                              : Icons.receipt_long_outlined,
-                      title:
-                          hasActiveFilters
-                              ? 'Sin resultados'
-                              : 'No hay historial',
-                      subtitle:
-                          hasActiveFilters
-                              ? 'Prueba con otros filtros o términos de búsqueda'
-                              : 'Las reservas completadas aparecerán aquí',
-                    );
-                  }
+                  return reservationsAsync.when(
+                    loading:
+                        () => const Center(child: CircularProgressIndicator()),
+                    error: (e, _) => Center(child: Text('Error: $e')),
+                    data: (allReservations) {
+                      return walkInsAsync.when(
+                        loading:
+                            () => const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                        error: (e, _) => Center(child: Text('Error: $e')),
+                        data: (walkIns) {
+                          final onlineHistory =
+                              allReservations
+                                  .where(
+                                    (r) =>
+                                        r.state == 'completed' ||
+                                        r.state == 'cancelled' ||
+                                        r.state == 'cancellation_requested',
+                                  )
+                                  .map(_HistoryRecord.fromReservation)
+                                  .toList();
 
-                  return ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                    itemCount: items.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 12),
-                    itemBuilder:
-                        (_, i) => _OwnerHistoryCard(reservation: items[i]),
+                          final items = _applyFilters([
+                            ...onlineHistory,
+                            ...walkIns,
+                          ]);
+
+                          if (items.isEmpty) {
+                            return _OwnerEmptyState(
+                              icon:
+                                  hasActiveFilters
+                                      ? Icons.filter_list_off_rounded
+                                      : Icons.receipt_long_outlined,
+                              title:
+                                  hasActiveFilters
+                                      ? 'Sin resultados'
+                                      : 'No hay historial',
+                              subtitle:
+                                  hasActiveFilters
+                                      ? 'Prueba con otros filtros o términos de búsqueda'
+                                      : 'Las reservas recientes de esta semana aparecerán aquí',
+                            );
+                          }
+
+                          final grouped = _groupByWeek(items);
+                          final children = <Widget>[];
+
+                          grouped.forEach((weekStart, records) {
+                            children.add(
+                              Padding(
+                                padding: EdgeInsets.only(
+                                  top: children.isEmpty ? 0 : 8,
+                                  bottom: 10,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.date_range_rounded,
+                                      size: 15,
+                                      color: AppColors.headerBottom,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: MyText(
+                                        text: _weekLabel(weekStart),
+                                        variant: MyTextVariant.bodyBold,
+                                        fontSize: 14,
+                                        customColor:
+                                            context.appTextPrimaryColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+
+                            for (final record in records) {
+                              children.add(
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child: _OwnerHistoryCard(record: record),
+                                ),
+                              );
+                            }
+                          });
+
+                          return ListView(
+                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                            children: children,
+                          );
+                        },
+                      );
+                    },
                   );
                 },
               ),
@@ -524,22 +943,21 @@ class _FilterChip extends StatelessWidget {
 
 // ─── History card ──────────────────────────────────────────────────────────────
 class _OwnerHistoryCard extends StatelessWidget {
-  final Reservation reservation;
+  final _HistoryRecord record;
 
-  const _OwnerHistoryCard({required this.reservation});
+  const _OwnerHistoryCard({required this.record});
 
   @override
   Widget build(BuildContext context) {
-    final stateColor = _statusColor(reservation.state);
+    final stateColor = _statusColor(record.state);
     final stateLabel = _statusLabel(
-      reservation.state,
-      reservation.cancellationPenaltyApplied,
+      record.state,
+      record.cancellationPenaltyApplied,
     );
-    final stateIcon = _statusIcon(reservation.state);
+    final stateIcon = _statusIcon(record.state);
 
-    // Duration
-    final start = reservation.reservedAt;
-    final end = reservation.endedAt ?? reservation.exitApprovedAt ?? start;
+    final start = record.reservedAt;
+    final end = record.endedAt ?? start;
     final totalMinutes = end.difference(start).inMinutes.clamp(0, 9999);
     final hours = totalMinutes ~/ 60;
     final minutes = totalMinutes % 60;
@@ -550,10 +968,8 @@ class _OwnerHistoryCard extends StatelessWidget {
             ? '${hours}h ${minutes}m'
             : '${minutes}m';
 
-    // Amount
-    final amount = reservation.amount ?? reservation.estimatedAmount;
     final amountText =
-        amount != null ? 'Q ${amount.toDouble().toStringAsFixed(2)}' : '—';
+        record.amount != null ? 'Q ${record.amount!.toStringAsFixed(2)}' : '—';
 
     return Container(
       decoration: BoxDecoration(
@@ -588,7 +1004,7 @@ class _OwnerHistoryCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: MyText(
-                    text: 'No. ${reservation.reservationNumber ?? 'N/A'}',
+                    text: 'No. ${record.reservationNumber}',
                     variant: MyTextVariant.bodyBold,
                     customColor: Colors.white,
                     fontSize: 13,
@@ -638,7 +1054,7 @@ class _OwnerHistoryCard extends StatelessWidget {
                       child: _MiniInfo(
                         icon: Icons.person_outline,
                         label: 'Usuario',
-                        value: reservation.userName ?? 'N/A',
+                        value: record.customerName,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -646,7 +1062,7 @@ class _OwnerHistoryCard extends StatelessWidget {
                       child: _MiniInfo(
                         icon: Icons.directions_car_outlined,
                         label: 'Placa',
-                        value: reservation.plate ?? 'N/A',
+                        value: record.plate,
                       ),
                     ),
                   ],
@@ -658,7 +1074,7 @@ class _OwnerHistoryCard extends StatelessWidget {
                       child: _MiniInfo(
                         icon: Icons.local_parking_outlined,
                         label: 'Espacio',
-                        value: '${reservation.spaceNumber}',
+                        value: '${record.spaceNumber}',
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -666,7 +1082,7 @@ class _OwnerHistoryCard extends StatelessWidget {
                       child: _MiniInfo(
                         icon: Icons.access_time_rounded,
                         label: 'Inicio',
-                        value: _format(reservation.reservedAt),
+                        value: _format(record.reservedAt),
                       ),
                     ),
                   ],
@@ -688,15 +1104,15 @@ class _OwnerHistoryCard extends StatelessWidget {
                         label: 'Monto',
                         value: amountText,
                         valueColor:
-                            reservation.state == 'completed'
+                            record.state == 'completed' ||
+                                    record.state == 'manual_completed'
                                 ? const Color(0xFF2563EB)
                                 : null,
                       ),
                     ),
                   ],
                 ),
-                // Cancellation reason if present
-                if ((reservation.cancellationReason ?? '').isNotEmpty) ...[
+                if ((record.cancellationReason ?? '').isNotEmpty) ...[
                   const SizedBox(height: 10),
                   Container(
                     width: double.infinity,
@@ -722,7 +1138,7 @@ class _OwnerHistoryCard extends StatelessWidget {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            reservation.cancellationReason!,
+                            record.cancellationReason!,
                             style: TextStyle(
                               fontSize: 11,
                               color: stateColor,
@@ -746,6 +1162,8 @@ class _OwnerHistoryCard extends StatelessWidget {
     switch (state) {
       case 'completed':
         return const Color(0xFF2563EB);
+      case 'manual_completed':
+        return const Color(0xFF16A34A);
       case 'cancelled':
         return const Color(0xFFDC2626);
       case 'cancellation_requested':
@@ -759,6 +1177,8 @@ class _OwnerHistoryCard extends StatelessWidget {
     switch (state) {
       case 'completed':
         return 'COMPLETADA';
+      case 'manual_completed':
+        return 'PRESENCIAL';
       case 'cancelled':
         return penalty ? 'CANCELADA •STRIKE' : 'CANCELADA';
       case 'cancellation_requested':
@@ -772,6 +1192,8 @@ class _OwnerHistoryCard extends StatelessWidget {
     switch (state) {
       case 'completed':
         return Icons.check_circle_outline_rounded;
+      case 'manual_completed':
+        return Icons.directions_car_filled_rounded;
       case 'cancelled':
         return Icons.cancel_outlined;
       case 'cancellation_requested':

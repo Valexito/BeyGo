@@ -3,15 +3,6 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:mapbox_api/common/ui/components/app_styles.dart';
 
-/// Reusable animated loading screen.
-///
-/// Usage:
-/// ```dart
-/// AppLoadingScreen(message: 'Buscando rutas...')
-/// AppLoadingScreen(message: 'Cargando perfil...', variant: LoadingVariant.profile)
-/// AppLoadingScreen(message: 'Cargando mapa...', variant: LoadingVariant.map)
-/// AppLoadingScreen.profileData()   // shortcut for profile data loading
-/// ```
 enum LoadingVariant { route, map, profile, general }
 
 class AppLoadingScreen extends StatefulWidget {

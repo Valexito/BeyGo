@@ -1,53 +1,5 @@
-// lib/common/utils/components/ui/navy_header.dart
-//
-// ─── UPGRADE LOG ────────────────────────────────────────────────────────────
-//  v2 — Unified gradient header used across ALL pages.
-//  Fully backward-compatible: existing NavyHeader usage still compiles.
-//  New recommended API: AppGradientHeader (same file, exported together).
-// ─────────────────────────────────────────────────────────────────────────────
 import 'package:flutter/material.dart';
 import 'app_styles.dart';
-
-// ═════════════════════════════════════════════════════════════════════════════
-//  AppGradientHeader  ← USE THIS in new pages
-// ═════════════════════════════════════════════════════════════════════════════
-//
-//  Examples:
-//
-//  // Simple page header with back button
-//  AppGradientHeader(title: 'Mis vehículos', showBack: true)
-//
-//  // With subtitle + custom actions
-//  AppGradientHeader(
-//    title: 'Reservaciones',
-//    subtitle: 'Gestiona tus reservas',
-//    showBack: true,
-//    actions: [
-//      IconButton(icon: Icon(Icons.filter_list_rounded), onPressed: ...),
-//    ],
-//  )
-//
-//  // Hero icon (login / onboarding style)
-//  AppGradientHeader(
-//    title: 'Parking App',
-//    subtitle: '¡Bienvenido de vuelta!',
-//    heroIcon: Icons.local_parking_rounded,
-//  )
-//
-//  // With avatar (profile pages)
-//  AppGradientHeader(
-//    title: 'Mi Perfil',
-//    showBack: true,
-//    avatar: CircleAvatar(backgroundImage: NetworkImage(url)),
-//  )
-//
-//  // With TabBar at bottom
-//  AppGradientHeader(
-//    title: 'Panel',
-//    showBack: false,
-//    bottom: TabBar(tabs: [...]),
-//  )
-// ─────────────────────────────────────────────────────────────────────────────
 
 class AppGradientHeader extends StatelessWidget {
   final String title;
@@ -221,10 +173,6 @@ class AppGradientHeader extends StatelessWidget {
   }
 }
 
-// ═════════════════════════════════════════════════════════════════════════════
-//  NavyHeader — KEPT for backward compatibility
-//  Internally delegates to AppGradientHeader when possible.
-// ═════════════════════════════════════════════════════════════════════════════
 class NavyHeader extends StatelessWidget {
   const NavyHeader({
     super.key,

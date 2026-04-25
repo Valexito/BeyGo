@@ -10,6 +10,23 @@ import 'package:mapbox_api/features/reservations/components/reservation_card.dar
 import 'package:mapbox_api/features/reservations/models/reservation.dart';
 import 'package:mapbox_api/features/reservations/providers/reservations_providers.dart';
 
+enum _ReservationsPeriodFilter { week, month, all, custom }
+
+extension _ReservationsPeriodFilterLabel on _ReservationsPeriodFilter {
+  String get label {
+    switch (this) {
+      case _ReservationsPeriodFilter.week:
+        return 'Esta semana';
+      case _ReservationsPeriodFilter.month:
+        return 'Este mes';
+      case _ReservationsPeriodFilter.all:
+        return 'Todo';
+      case _ReservationsPeriodFilter.custom:
+        return 'Rango';
+    }
+  }
+}
+
 class ReservationsPage extends ConsumerStatefulWidget {
   const ReservationsPage({super.key});
 
@@ -21,11 +38,186 @@ class _ReservationsPageState extends ConsumerState<ReservationsPage>
     with SingleTickerProviderStateMixin {
   late final TabController _tab = TabController(length: 3, vsync: this);
   final Set<String> _ratingPromptInFlight = <String>{};
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  _ReservationsPeriodFilter _periodFilter = _ReservationsPeriodFilter.week;
+  DateTimeRange? _dateRange;
+
+  bool get _isActiveTab => _tab.index == 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _tab.addListener(() {
+      if (mounted) setState(() {});
+    });
+  }
 
   @override
   void dispose() {
     _tab.dispose();
+    _searchController.dispose();
     super.dispose();
+  }
+
+  DateTime _startOfWeek(DateTime date) {
+    final normalized = DateTime(date.year, date.month, date.day);
+    return normalized.subtract(Duration(days: normalized.weekday - 1));
+  }
+
+  Future<void> _pickDateRange() async {
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2023),
+      lastDate: DateTime.now(),
+      initialDateRange: _dateRange,
+      builder: (ctx, child) {
+        final isDark = Theme.of(ctx).brightness == Brightness.dark;
+        return Theme(
+          data: Theme.of(ctx).copyWith(
+            colorScheme: (isDark
+                    ? const ColorScheme.dark()
+                    : const ColorScheme.light())
+                .copyWith(
+                  primary: AppColors.headerBottom,
+                  onPrimary: Colors.white,
+                  surface: isDark ? const Color(0xFF111827) : Colors.white,
+                ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      setState(() {
+        _periodFilter = _ReservationsPeriodFilter.custom;
+        _dateRange = picked;
+      });
+    }
+  }
+
+  Future<void> _showPeriodFilterSheet() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Container(
+          decoration: BoxDecoration(
+            color: ctx.appCardBackground,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: ctx.appBorderColor,
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              MyText(
+                text: 'Filtrar por periodo',
+                variant: MyTextVariant.bodyBold,
+                fontSize: 16,
+                customColor: ctx.appTextPrimaryColor,
+              ),
+              const SizedBox(height: 14),
+              ..._ReservationsPeriodFilter.values.map((filter) {
+                final selected = _periodFilter == filter;
+                return ListTile(
+                  onTap: () async {
+                    Navigator.pop(ctx);
+                    if (filter == _ReservationsPeriodFilter.custom) {
+                      await _pickDateRange();
+                      return;
+                    }
+                    setState(() {
+                      _periodFilter = filter;
+                      _dateRange = null;
+                    });
+                  },
+                  tileColor:
+                      selected
+                          ? AppColors.headerBottom.withValues(alpha: 0.10)
+                          : ctx.appCardBackgroundSoft,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  title: Text(
+                    filter.label,
+                    style: TextStyle(
+                      color:
+                          selected
+                              ? AppColors.headerBottom
+                              : ctx.appTextPrimaryColor,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  trailing:
+                      selected
+                          ? const Icon(
+                            Icons.check_rounded,
+                            color: AppColors.headerBottom,
+                          )
+                          : null,
+                );
+              }),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  List<Reservation> _applyFilters(List<Reservation> items, String stateLabel) {
+    var filtered = [...items];
+
+    if (_searchQuery.isNotEmpty) {
+      final q = _searchQuery.toLowerCase();
+      filtered =
+          filtered.where((r) {
+            return r.parkingName.toLowerCase().contains(q) ||
+                (r.reservationNumber ?? '').toLowerCase().contains(q) ||
+                (r.plate ?? '').toLowerCase().contains(q) ||
+                (r.userName ?? '').toLowerCase().contains(q);
+          }).toList();
+    }
+
+    if (stateLabel == 'active') {
+      filtered.sort((a, b) => b.reservedAt.compareTo(a.reservedAt));
+      return filtered;
+    }
+
+    final now = DateTime.now();
+    final startOfWeek = _startOfWeek(now);
+    final startOfMonth = DateTime(now.year, now.month, 1);
+
+    if (_periodFilter == _ReservationsPeriodFilter.week) {
+      filtered =
+          filtered.where((r) => !r.reservedAt.isBefore(startOfWeek)).toList();
+    } else if (_periodFilter == _ReservationsPeriodFilter.month) {
+      filtered =
+          filtered.where((r) => !r.reservedAt.isBefore(startOfMonth)).toList();
+    } else if (_periodFilter == _ReservationsPeriodFilter.custom &&
+        _dateRange != null) {
+      filtered =
+          filtered.where((r) {
+            final d = r.reservedAt;
+            return !d.isBefore(_dateRange!.start) &&
+                !d.isAfter(_dateRange!.end.add(const Duration(days: 1)));
+          }).toList();
+    }
+
+    filtered.sort((a, b) => b.reservedAt.compareTo(a.reservedAt));
+    return filtered;
   }
 
   @override
@@ -140,7 +332,8 @@ class _ReservationsPageState extends ConsumerState<ReservationsPage>
                             error: (_, __) => const SizedBox(height: 18),
                             data: (control) {
                               final used =
-                                  (control?['cancelAttempts'] as num?)?.toInt() ??
+                                  (control?['cancelAttempts'] as num?)
+                                      ?.toInt() ??
                                   0;
                               final max =
                                   Reservation.maxCancellationAttemptsLimit;
@@ -204,9 +397,101 @@ class _ReservationsPageState extends ConsumerState<ReservationsPage>
                 child: _SegmentTabs(controller: _tab),
               ),
             ),
+            Transform.translate(
+              offset: const Offset(0, -12),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 18),
+                child: Column(
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        color: context.appCardBackground,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: context.appBorderColor),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(
+                              alpha: context.isDarkMode ? 0.18 : 0.10,
+                            ),
+                            blurRadius: 16,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: TextField(
+                        controller: _searchController,
+                        onChanged: (v) => setState(() => _searchQuery = v),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: context.appTextPrimaryColor,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: 'Buscar por No., nombre, placa...',
+                          hintStyle: TextStyle(
+                            fontSize: 13,
+                            color: context.appTextSecondaryColor,
+                          ),
+                          prefixIcon: Icon(
+                            Icons.search_rounded,
+                            color: AppColors.headerBottom.withValues(
+                              alpha: 0.6,
+                            ),
+                            size: 20,
+                          ),
+                          suffixIcon:
+                              _searchQuery.isNotEmpty
+                                  ? IconButton(
+                                    icon: Icon(
+                                      Icons.close_rounded,
+                                      size: 18,
+                                      color: context.appTextSecondaryColor,
+                                    ),
+                                    onPressed: () {
+                                      _searchController.clear();
+                                      setState(() => _searchQuery = '');
+                                    },
+                                  )
+                                  : null,
+                          filled: true,
+                          fillColor: context.appCardBackground,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (!_isActiveTab) ...[
+                      const SizedBox(height: 10),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: _ReservationsFilterChip(
+                          icon: Icons.calendar_today_rounded,
+                          label:
+                              _periodFilter ==
+                                          _ReservationsPeriodFilter.custom &&
+                                      _dateRange != null
+                                  ? '${_formatDate(_dateRange!.start)} – ${_formatDate(_dateRange!.end)}'
+                                  : _periodFilter.label,
+                          active:
+                              _periodFilter != _ReservationsPeriodFilter.week ||
+                              _dateRange != null,
+                          activeColor: AppColors.headerBottom,
+                          onTap: _showPeriodFilterSheet,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
             Expanded(
               child: Transform.translate(
-                offset: const Offset(0, -8),
+                offset: const Offset(0, -4),
                 child: asyncList.when(
                   loading:
                       () => const Center(child: CircularProgressIndicator()),
@@ -246,9 +531,18 @@ class _ReservationsPageState extends ConsumerState<ReservationsPage>
                     return TabBarView(
                       controller: _tab,
                       children: [
-                        _ResList(items: active, stateLabel: 'active'),
-                        _ResList(items: completed, stateLabel: 'completed'),
-                        _ResList(items: cancelled, stateLabel: 'cancelled'),
+                        _ResList(
+                          items: _applyFilters(active, 'active'),
+                          stateLabel: 'active',
+                        ),
+                        _ResList(
+                          items: _applyFilters(completed, 'completed'),
+                          stateLabel: 'completed',
+                        ),
+                        _ResList(
+                          items: _applyFilters(cancelled, 'cancelled'),
+                          stateLabel: 'cancelled',
+                        ),
                       ],
                     );
                   },
@@ -338,9 +632,7 @@ class _SegmentTabs extends StatelessWidget {
           indicatorSize: TabBarIndicatorSize.tab,
           dividerColor: Colors.transparent,
           labelColor:
-              context.isDarkMode
-                  ? Colors.white
-                  : const Color(0xFF1B3A57),
+              context.isDarkMode ? Colors.white : const Color(0xFF1B3A57),
           unselectedLabelColor: context.appTextSecondaryColor,
           labelStyle: const TextStyle(
             fontWeight: FontWeight.w700,
@@ -397,12 +689,14 @@ class _EmptyReservationsState extends StatelessWidget {
         break;
       case 'completed':
         title = 'No hay reservaciones completadas';
-        subtitle = 'Tu historial de reservaciones finalizadas aparecerá aquí.';
+        subtitle =
+            'Tus reservaciones finalizadas de esta semana aparecerán aquí.';
         icon = Icons.task_alt_outlined;
         break;
       default:
         title = 'No hay reservaciones canceladas';
-        subtitle = 'Tus reservaciones canceladas aparecerán aquí.';
+        subtitle =
+            'Tus reservaciones canceladas de esta semana aparecerán aquí.';
         icon = Icons.cancel_outlined;
     }
 
@@ -429,11 +723,7 @@ class _EmptyReservationsState extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Icon(
-                icon,
-                size: 34,
-                color: AppColors.headerBottom,
-              ),
+              child: Icon(icon, size: 34, color: AppColors.headerBottom),
             ),
             const SizedBox(height: 18),
             MyText(
@@ -455,3 +745,70 @@ class _EmptyReservationsState extends StatelessWidget {
     );
   }
 }
+
+class _ReservationsFilterChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool active;
+  final Color activeColor;
+  final VoidCallback onTap;
+
+  const _ReservationsFilterChip({
+    required this.icon,
+    required this.label,
+    required this.active,
+    required this.activeColor,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color:
+              active
+                  ? activeColor.withValues(alpha: 0.10)
+                  : context.appCardBackground,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color:
+                active
+                    ? activeColor.withValues(alpha: 0.40)
+                    : context.appBorderColor,
+            width: 1.4,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 14,
+              color: active ? activeColor : context.appTextSecondaryColor,
+            ),
+            const SizedBox(width: 6),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 180),
+              child: Text(
+                label,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: active ? activeColor : context.appTextPrimaryColor,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+String _formatDate(DateTime d) =>
+    '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}';

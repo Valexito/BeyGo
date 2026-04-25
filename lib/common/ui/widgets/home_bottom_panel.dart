@@ -1,4 +1,3 @@
-// lib/features/core/widgets/home_bottom_panel.dart
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -16,18 +15,6 @@ class HomeBottomPanel extends StatefulWidget {
 
   final DraggableScrollableController controller;
   final ValueChanged<LatLng> onPlaceSelected;
-
-  /// ✅ Pass this from the parent (HomeScreen/MapPage) using your existing
-  /// getCurrentLocation() service. The widget uses it to bias Places results
-  /// nearby — no duplicate permission requests.
-  ///
-  /// Example in parent:
-  ///   LatLng? _userLocation;
-  ///   void initState() {
-  ///     getCurrentLocation().then((loc) => setState(() => _userLocation = loc));
-  ///   }
-  ///   // then in build:
-  ///   HomeBottomPanel(userLocation: _userLocation, ...)
   final LatLng? userLocation;
 
   @override
@@ -453,7 +440,8 @@ class _HomeBottomPanelState extends State<HomeBottomPanel> {
                                                     3,
                                                   ),
                                                   decoration: BoxDecoration(
-                                                    color: context.appBorderColor,
+                                                    color:
+                                                        context.appBorderColor,
                                                     shape: BoxShape.circle,
                                                   ),
                                                   child: Icon(

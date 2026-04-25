@@ -1,15 +1,7 @@
-// lib/features/core/components/map_widget.dart
-//
-// ✅ MapWidgetState is PUBLIC — GlobalKey<MapWidgetState> works from home_page.dart
-// ✅ No rxdart, no flutter_map, no latlong2, no Mapbox
-// ✅ Real-time parking markers from allParkingsStreamProvider
-// ✅ Tap marker → HomeParkingDetailBottomSheet → full reservation flow
-//
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-
 import 'package:mapbox_api/common/services/geolocator.dart';
 import 'package:mapbox_api/common/ui/components/app_styles.dart';
 import 'package:mapbox_api/common/ui/components/google_map_styles.dart';
@@ -36,9 +28,6 @@ class MapWidget extends ConsumerStatefulWidget {
   });
 
   @override
-  // ✅ PUBLIC state class — required so home_page.dart can do:
-  //    final _mapKey = GlobalKey<MapWidgetState>();
-  //    _mapKey.currentState?.centerOnUser();
   MapWidgetState createState() => MapWidgetState();
 }
 

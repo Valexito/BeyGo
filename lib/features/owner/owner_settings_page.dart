@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mapbox_api/common/services/app_preferences_service.dart';
 import 'package:mapbox_api/common/ui/components/app_styles.dart';
@@ -50,6 +51,8 @@ class _OwnerSettingsPageState extends ConsumerState<OwnerSettingsPage> {
           final autoApproveReservations =
               parking?.autoApproveReservations ?? false;
           final requirePlateOnEntry = parking?.requirePlateOnEntry ?? true;
+          final ownerRevenueVisible = preferences.ownerRevenueVisible;
+          final ownerRevenuePin = preferences.ownerRevenuePin;
 
           return Column(
             children: [
@@ -161,6 +164,43 @@ class _OwnerSettingsPageState extends ConsumerState<OwnerSettingsPage> {
                                     'requirePlateOnEntry': v,
                                   }),
                         ),
+                        _Divider(),
+                        _SwitchRow(
+                          icon: Icons.attach_money_rounded,
+                          iconColor: const Color(0xFF16A34A),
+                          label: 'Mostrar ingresos en inicio',
+                          sublabel:
+                              'Muestra o oculta el bloque financiero del dashboard',
+                          value: ownerRevenueVisible,
+                          onChanged: (v) => _handleRevenueVisibilityChange(v),
+                          badge: ownerRevenuePin != null ? 'PIN' : null,
+                          badgeColor: const Color(0xFF16A34A),
+                        ),
+                        _Divider(),
+                        _NavRow(
+                          icon: Icons.pin_outlined,
+                          iconColor: const Color(0xFF16A34A),
+                          label:
+                              ownerRevenuePin == null
+                                  ? 'Crear PIN de ingresos'
+                                  : 'Cambiar PIN de ingresos',
+                          subtitle:
+                              ownerRevenuePin == null
+                                  ? 'Protege la activación del bloque financiero'
+                                  : 'Actualiza el PIN que protege este módulo',
+                          onTap: _handleRevenuePinManagement,
+                        ),
+                        if (ownerRevenuePin != null) ...[
+                          _Divider(),
+                          _NavRow(
+                            icon: Icons.lock_reset_rounded,
+                            iconColor: const Color(0xFFF59E0B),
+                            label: 'Olvidé mi PIN',
+                            subtitle:
+                                'Restablece el PIN confirmando tu identidad',
+                            onTap: _handleForgotRevenuePin,
+                          ),
+                        ],
                       ],
                     ),
 
@@ -632,6 +672,214 @@ class _OwnerSettingsPageState extends ConsumerState<OwnerSettingsPage> {
         );
       },
     );
+  }
+
+  Future<void> _handleRevenueVisibilityChange(bool enabled) async {
+    final notifier = ref.read(appPreferencesProvider.notifier);
+    final preferences = ref.read(appPreferencesProvider);
+
+    if (!enabled) {
+      await notifier.setOwnerRevenueVisible(false);
+      if (!mounted) return;
+      _toast('Ingresos ocultos del inicio.');
+      return;
+    }
+
+    if (preferences.ownerRevenuePin == null) {
+      final pin = await _showRevenuePinSetupDialog();
+      if (pin == null) return;
+      await notifier.setOwnerRevenuePin(pin);
+      await notifier.setOwnerRevenueVisible(true);
+      if (!mounted) return;
+      _toast('PIN creado e ingresos habilitados.');
+      return;
+    }
+
+    final valid = await _showRevenuePinVerifyDialog(
+      expectedPin: preferences.ownerRevenuePin!,
+      title: 'Confirmar PIN',
+      subtitle: 'Ingresa tu PIN para mostrar los ingresos en el inicio.',
+    );
+
+    if (valid != true) return;
+    await notifier.setOwnerRevenueVisible(true);
+    if (!mounted) return;
+    _toast('Ingresos habilitados.');
+  }
+
+  Future<void> _handleRevenuePinManagement() async {
+    final notifier = ref.read(appPreferencesProvider.notifier);
+    final preferences = ref.read(appPreferencesProvider);
+
+    if (preferences.ownerRevenuePin == null) {
+      final pin = await _showRevenuePinSetupDialog();
+      if (pin == null) return;
+      await notifier.setOwnerRevenuePin(pin);
+      if (!mounted) return;
+      _toast('PIN creado correctamente.');
+      return;
+    }
+
+    final valid = await _showRevenuePinVerifyDialog(
+      expectedPin: preferences.ownerRevenuePin!,
+      title: 'Verificar PIN actual',
+      subtitle: 'Ingresa tu PIN actual para poder cambiarlo.',
+    );
+
+    if (valid != true) return;
+
+    final newPin = await _showRevenuePinSetupDialog(isChanging: true);
+    if (newPin == null) return;
+
+    await notifier.setOwnerRevenuePin(newPin);
+    if (!mounted) return;
+    _toast('PIN actualizado.');
+  }
+
+  Future<void> _handleForgotRevenuePin() async {
+    final preferences = ref.read(appPreferencesProvider);
+    if (preferences.ownerRevenuePin == null) {
+      _toast('Aún no has configurado un PIN.');
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder:
+          (ctx) => AlertDialog(
+            backgroundColor: ctx.appCardBackground,
+            title: Text(
+              'Restablecer PIN',
+              style: TextStyle(color: ctx.appTextPrimaryColor),
+            ),
+            content: Text(
+              'Para restablecer tu PIN de ingresos, primero confirmaremos tu identidad.',
+              style: TextStyle(color: ctx.appTextSecondaryColor),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Continuar'),
+              ),
+            ],
+          ),
+    );
+
+    if (confirmed != true) return;
+
+    String? emailMasked;
+    try {
+      final result =
+          await FirebaseFunctions.instance
+              .httpsCallable('requestOwnerRevenuePinOtp')
+              .call();
+      final data = Map<String, dynamic>.from(result.data as Map);
+      emailMasked = data['emailMasked'] as String?;
+    } on FirebaseFunctionsException catch (e) {
+      if (!mounted) return;
+      _toast(_mapOtpError(e));
+      return;
+    } catch (e) {
+      if (!mounted) return;
+      _toast('No se pudo enviar el OTP: $e');
+      return;
+    }
+
+    if (!mounted) return;
+
+    final resetToken = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder:
+          (_) => _RevenueOtpDialog(
+            emailMasked: emailMasked ?? 'tu correo',
+            onResend: () async {
+              await FirebaseFunctions.instance
+                  .httpsCallable('requestOwnerRevenuePinOtp')
+                  .call();
+            },
+            onVerify: (code) async {
+              final result = await FirebaseFunctions.instance
+                  .httpsCallable('verifyOwnerRevenuePinOtp')
+                  .call({'code': code});
+              final data = Map<String, dynamic>.from(result.data as Map);
+              return data['resetToken'] as String?;
+            },
+            mapError: _mapOtpError,
+          ),
+    );
+
+    if (resetToken == null || resetToken.isEmpty) return;
+
+    final newPin = await _showRevenuePinSetupDialog(isChanging: true);
+    if (newPin == null) return;
+
+    await ref.read(appPreferencesProvider.notifier).setOwnerRevenuePin(newPin);
+    await ref
+        .read(appPreferencesProvider.notifier)
+        .setOwnerRevenueVisible(false);
+    if (!mounted) return;
+    _toast('PIN restablecido. Los ingresos quedaron ocultos por seguridad.');
+  }
+
+  Future<String?> _showRevenuePinSetupDialog({bool isChanging = false}) async {
+    return showDialog<String>(
+      context: context,
+      builder:
+          (ctx) => _RevenuePinDialog(
+            title: isChanging ? 'Cambiar PIN' : 'Crear PIN',
+            subtitle:
+                isChanging
+                    ? 'Define un nuevo PIN de 4 dígitos para proteger el bloque de ingresos.'
+                    : 'Crea un PIN de 4 dígitos para proteger la activación del bloque de ingresos.',
+            confirmLabel: isChanging ? 'Guardar PIN' : 'Crear PIN',
+            requireConfirmation: true,
+          ),
+    );
+  }
+
+  Future<bool?> _showRevenuePinVerifyDialog({
+    required String expectedPin,
+    required String title,
+    required String subtitle,
+  }) async {
+    return showDialog<bool>(
+      context: context,
+      builder:
+          (ctx) => _RevenuePinDialog(
+            title: title,
+            subtitle: subtitle,
+            confirmLabel: 'Confirmar',
+            expectedPin: expectedPin,
+            requireConfirmation: false,
+          ),
+    );
+  }
+
+  String _mapOtpError(Object error) {
+    if (error is FirebaseFunctionsException) {
+      switch (error.code) {
+        case 'unauthenticated':
+          return 'Tu sesión expiró. Inicia sesión nuevamente.';
+        case 'permission-denied':
+          return 'No se pudo validar el código ingresado.';
+        case 'failed-precondition':
+          return error.message ?? 'Primero solicita un nuevo código OTP.';
+        case 'deadline-exceeded':
+          return 'El código OTP ya venció. Solicita uno nuevo.';
+        case 'resource-exhausted':
+          return 'Demasiados intentos. Solicita un nuevo código.';
+        case 'invalid-argument':
+          return 'Ingresa un código válido de 6 dígitos.';
+        default:
+          return error.message ?? 'No se pudo procesar el OTP.';
+      }
+    }
+    return 'No se pudo procesar el OTP.';
   }
 
   Future<void> _showDeleteParkingDialog(OwnerParkingDocument parking) async {
@@ -1166,6 +1414,311 @@ class _DeleteParkingRequestDialogState
         ElevatedButton(
           onPressed: () => Navigator.pop(context, _reasonCtrl.text),
           child: const Text('Enviar'),
+        ),
+      ],
+    );
+  }
+}
+
+class _RevenuePinDialog extends StatefulWidget {
+  const _RevenuePinDialog({
+    required this.title,
+    required this.subtitle,
+    required this.confirmLabel,
+    this.expectedPin,
+    required this.requireConfirmation,
+  });
+
+  final String title;
+  final String subtitle;
+  final String confirmLabel;
+  final String? expectedPin;
+  final bool requireConfirmation;
+
+  @override
+  State<_RevenuePinDialog> createState() => _RevenuePinDialogState();
+}
+
+class _RevenuePinDialogState extends State<_RevenuePinDialog> {
+  final _pinCtrl = TextEditingController();
+  final _confirmCtrl = TextEditingController();
+  String? _error;
+
+  @override
+  void dispose() {
+    _pinCtrl.dispose();
+    _confirmCtrl.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final pin = _pinCtrl.text.trim();
+
+    if (pin.length != 4 || int.tryParse(pin) == null) {
+      setState(() => _error = 'Ingresa un PIN numérico de 4 dígitos.');
+      return;
+    }
+
+    if (widget.requireConfirmation) {
+      if (_confirmCtrl.text.trim() != pin) {
+        setState(() => _error = 'La confirmación no coincide.');
+        return;
+      }
+      Navigator.pop(context, pin);
+      return;
+    }
+
+    if (widget.expectedPin != pin) {
+      setState(() => _error = 'PIN incorrecto.');
+      return;
+    }
+
+    Navigator.pop(context, true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: context.appCardBackground,
+      title: Text(
+        widget.title,
+        style: TextStyle(color: context.appTextPrimaryColor),
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            widget.subtitle,
+            style: TextStyle(color: context.appTextSecondaryColor),
+          ),
+          const SizedBox(height: 14),
+          TextField(
+            controller: _pinCtrl,
+            keyboardType: TextInputType.number,
+            obscureText: true,
+            maxLength: 4,
+            style: TextStyle(color: context.appTextPrimaryColor),
+            decoration: InputDecoration(
+              counterText: '',
+              hintText: 'PIN de 4 dígitos',
+              hintStyle: TextStyle(color: context.appTextSecondaryColor),
+              filled: true,
+              fillColor: context.appInputBackground,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: context.appBorderColor),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: context.appBorderColor),
+              ),
+              focusedBorder: const OutlineInputBorder(
+                borderRadius: BorderRadius.all(Radius.circular(16)),
+                borderSide: BorderSide(color: AppColors.headerBottom),
+              ),
+            ),
+          ),
+          if (widget.requireConfirmation) ...[
+            const SizedBox(height: 12),
+            TextField(
+              controller: _confirmCtrl,
+              keyboardType: TextInputType.number,
+              obscureText: true,
+              maxLength: 4,
+              style: TextStyle(color: context.appTextPrimaryColor),
+              decoration: InputDecoration(
+                counterText: '',
+                hintText: 'Confirmar PIN',
+                hintStyle: TextStyle(color: context.appTextSecondaryColor),
+                filled: true,
+                fillColor: context.appInputBackground,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(color: context.appBorderColor),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(color: context.appBorderColor),
+                ),
+                focusedBorder: const OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(16)),
+                  borderSide: BorderSide(color: AppColors.headerBottom),
+                ),
+              ),
+            ),
+          ],
+          if (_error != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              _error!,
+              style: const TextStyle(
+                color: Color(0xFFDC2626),
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancelar'),
+        ),
+        ElevatedButton(onPressed: _submit, child: Text(widget.confirmLabel)),
+      ],
+    );
+  }
+}
+
+class _RevenueOtpDialog extends StatefulWidget {
+  const _RevenueOtpDialog({
+    required this.emailMasked,
+    required this.onResend,
+    required this.onVerify,
+    required this.mapError,
+  });
+
+  final String emailMasked;
+  final Future<void> Function() onResend;
+  final Future<String?> Function(String code) onVerify;
+  final String Function(Object error) mapError;
+
+  @override
+  State<_RevenueOtpDialog> createState() => _RevenueOtpDialogState();
+}
+
+class _RevenueOtpDialogState extends State<_RevenueOtpDialog> {
+  final _codeCtrl = TextEditingController();
+  String? _error;
+  bool _loading = false;
+  bool _resending = false;
+
+  @override
+  void dispose() {
+    _codeCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final code = _codeCtrl.text.trim();
+    if (code.length != 6 || int.tryParse(code) == null) {
+      setState(() => _error = 'Ingresa un código de 6 dígitos.');
+      return;
+    }
+
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
+    try {
+      final token = await widget.onVerify(code);
+      if (!mounted) return;
+      Navigator.pop(context, token);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = widget.mapError(e));
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _resend() async {
+    setState(() {
+      _resending = true;
+      _error = null;
+    });
+    try {
+      await widget.onResend();
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('OTP reenviado al correo.')));
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = widget.mapError(e));
+    } finally {
+      if (mounted) setState(() => _resending = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: context.appCardBackground,
+      title: Text(
+        'Verificar OTP',
+        style: TextStyle(color: context.appTextPrimaryColor),
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Te enviamos un código al correo registrado del owner:',
+            style: TextStyle(color: context.appTextSecondaryColor),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            widget.emailMasked,
+            style: TextStyle(
+              color: context.appTextPrimaryColor,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _codeCtrl,
+            keyboardType: TextInputType.number,
+            autofocus: true,
+            maxLength: 6,
+            style: TextStyle(color: context.appTextPrimaryColor),
+            decoration: InputDecoration(
+              counterText: '',
+              hintText: 'Código OTP',
+              hintStyle: TextStyle(color: context.appTextSecondaryColor),
+              filled: true,
+              fillColor: context.appInputBackground,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: context.appBorderColor),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: context.appBorderColor),
+              ),
+              focusedBorder: const OutlineInputBorder(
+                borderRadius: BorderRadius.all(Radius.circular(16)),
+                borderSide: BorderSide(color: AppColors.headerBottom),
+              ),
+            ),
+          ),
+          if (_error != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              _error!,
+              style: const TextStyle(
+                color: Color(0xFFDC2626),
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: _loading ? null : () => Navigator.pop(context),
+          child: const Text('Cancelar'),
+        ),
+        TextButton(
+          onPressed: _loading || _resending ? null : _resend,
+          child: Text(_resending ? 'Reenviando...' : 'Reenviar'),
+        ),
+        ElevatedButton(
+          onPressed: _loading ? null : _submit,
+          child: Text(_loading ? 'Verificando...' : 'Verificar'),
         ),
       ],
     );

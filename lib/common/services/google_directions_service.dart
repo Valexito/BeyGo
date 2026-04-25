@@ -1,16 +1,3 @@
-// lib/features/reservations/services/google_directions_service.dart
-//
-// ─── Google Directions API service ───────────────────────────────────────────
-// Replaces MapboxDirectionsService entirely.
-// Falls back to OSRM (free, no key needed) if the Google key is missing.
-//
-// Key source: Env.googleMapsKey  (--dart-define=GOOGLE_MAPS_KEY=AIza...)
-//
-// Required Google Cloud APIs to enable:
-//   • Directions API
-//   • Maps SDK for Android / iOS (for the map tiles — handled by AndroidManifest)
-// ─────────────────────────────────────────────────────────────────────────────
-
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:google_maps_flutter/google_maps_flutter.dart';

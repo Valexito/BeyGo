@@ -13,10 +13,192 @@
 //   5. Enable Firebase Blaze plan (required for Cloud Functions)
 //
 const { onDocumentWritten } = require("firebase-functions/v2/firestore");
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const { defineSecret } = require("firebase-functions/params");
 const admin = require("firebase-admin");
+const crypto = require("crypto");
+const nodemailer = require("nodemailer");
 
 admin.initializeApp();
 const db = admin.firestore();
+
+const OTP_TTL_MINUTES = 10;
+const OTP_COLLECTION = "owner_security_otp";
+const ownerSecurityEmail = defineSecret("OWNER_SECURITY_EMAIL");
+const ownerSecurityEmailPassword = defineSecret("OWNER_SECURITY_EMAIL_PASSWORD");
+
+function getMailTransport() {
+    const user = ownerSecurityEmail.value();
+    const pass = ownerSecurityEmailPassword.value();
+
+    if (!user || !pass) {
+        throw new Error(
+            "Missing OWNER_SECURITY_EMAIL / OWNER_SECURITY_EMAIL_PASSWORD secrets"
+        );
+    }
+
+    return nodemailer.createTransport({
+        service: "gmail",
+        auth: { user, pass },
+    });
+}
+
+function hashValue(value) {
+    return crypto.createHash("sha256").update(value).digest("hex");
+}
+
+function generateOtpCode() {
+    return `${Math.floor(100000 + Math.random() * 900000)}`;
+}
+
+function generateResetToken() {
+    return crypto.randomBytes(24).toString("hex");
+}
+
+async function assertOwnerUser(uid) {
+    const parkingSnap = await db
+        .collection("parkings")
+        .where("ownerID", "==", uid)
+        .limit(1)
+        .get();
+
+    if (parkingSnap.empty) {
+        throw new HttpsError(
+            "permission-denied",
+            "Solo los owners pueden usar esta operación."
+        );
+    }
+
+    const userSnap = await db.collection("users").doc(uid).get();
+    const email = userSnap.data()?.email;
+
+    if (!email) {
+        throw new HttpsError(
+            "failed-precondition",
+            "No se encontró un correo válido para este owner."
+        );
+    }
+
+    return { email };
+}
+
+exports.requestOwnerRevenuePinOtp = onCall({
+    secrets: [ownerSecurityEmail, ownerSecurityEmailPassword],
+}, async (request) => {
+    if (!request.auth?.uid) {
+        throw new HttpsError("unauthenticated", "Debes iniciar sesión.");
+    }
+
+    const uid = request.auth.uid;
+    const { email } = await assertOwnerUser(uid);
+
+    const code = generateOtpCode();
+    const codeHash = hashValue(code);
+    const expiresAt = admin.firestore.Timestamp.fromDate(
+        new Date(Date.now() + OTP_TTL_MINUTES * 60 * 1000)
+    );
+
+    await db.collection(OTP_COLLECTION).doc(uid).set({
+        purpose: "owner_revenue_pin_reset",
+        email,
+        codeHash,
+        attempts: 0,
+        expiresAt,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        verifiedAt: null,
+        resetTokenHash: null,
+    });
+
+    const transport = getMailTransport();
+    await transport.sendMail({
+        from: ownerSecurityEmail.value(),
+        to: email,
+        subject: "Codigo OTP para restablecer tu PIN",
+        text:
+            `Tu codigo de verificacion es: ${code}\n\n` +
+            `Este codigo vence en ${OTP_TTL_MINUTES} minutos.\n` +
+            `Si no solicitaste este cambio, ignora este correo.`,
+        html:
+            `<div style="font-family:Arial,sans-serif;padding:16px">` +
+            `<h2>Restablecer PIN de ingresos</h2>` +
+            `<p>Tu codigo de verificacion es:</p>` +
+            `<div style="font-size:32px;font-weight:800;letter-spacing:6px;margin:16px 0">${code}</div>` +
+            `<p>Este codigo vence en ${OTP_TTL_MINUTES} minutos.</p>` +
+            `<p>Si no solicitaste este cambio, puedes ignorar este correo.</p>` +
+            `</div>`,
+    });
+
+    return {
+        ok: true,
+        emailMasked: email.replace(/(.{2}).+(@.+)/, "$1***$2"),
+        expiresInMinutes: OTP_TTL_MINUTES,
+    };
+});
+
+exports.verifyOwnerRevenuePinOtp = onCall(async (request) => {
+    if (!request.auth?.uid) {
+        throw new HttpsError("unauthenticated", "Debes iniciar sesión.");
+    }
+
+    const uid = request.auth.uid;
+    const code = `${request.data?.code ?? ""}`.trim();
+
+    if (!/^\d{6}$/.test(code)) {
+        throw new HttpsError(
+            "invalid-argument",
+            "Ingresa un codigo OTP valido de 6 digitos."
+        );
+    }
+
+    await assertOwnerUser(uid);
+
+    const docRef = db.collection(OTP_COLLECTION).doc(uid);
+    const otpSnap = await docRef.get();
+    const otpData = otpSnap.data();
+
+    if (!otpSnap.exists || !otpData) {
+        throw new HttpsError(
+            "failed-precondition",
+            "No hay un OTP activo para verificar."
+        );
+    }
+
+    const expiresAt = otpData.expiresAt?.toDate?.();
+    if (!expiresAt || expiresAt.getTime() < Date.now()) {
+      await docRef.delete().catch(() => null);
+        throw new HttpsError("deadline-exceeded", "El codigo ya vencio.");
+    }
+
+    const attempts = Number(otpData.attempts || 0);
+    if (attempts >= 5) {
+        await docRef.delete().catch(() => null);
+        throw new HttpsError(
+            "resource-exhausted",
+            "Demasiados intentos. Solicita un nuevo codigo."
+        );
+    }
+
+    if (hashValue(code) !== otpData.codeHash) {
+        await docRef.update({
+            attempts: attempts + 1,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        throw new HttpsError("permission-denied", "Codigo incorrecto.");
+    }
+
+    const resetToken = generateResetToken();
+    await docRef.update({
+        verifiedAt: admin.firestore.FieldValue.serverTimestamp(),
+        resetTokenHash: hashValue(resetToken),
+        attempts: attempts + 1,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    return {
+        ok: true,
+        resetToken,
+    };
+});
 
 // ─── Helper: get FCM token for a user ──────────────────────────────────────
 async function getToken(uid) {

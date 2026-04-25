@@ -612,28 +612,6 @@ class _NavIcon extends StatelessWidget {
   }
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-//  Map controls — AppMapZoomControls, AppMapCenterButton, AppHamburgerButton
-// ════════════════════════════════════════════════════════════════════════════
-//
-//  Usage in a GoogleMap Stack:
-//
-//  Positioned(
-//    right: 12, bottom: 160,
-//    child: AppMapZoomControls(controller: _mapController),
-//  ),
-//  Positioned(
-//    right: 12, bottom: 110,
-//    child: AppMapCenterButton(onTap: _goToMyLocation),
-//  ),
-//  Positioned(
-//    top: 56, left: 12,
-//    child: AppHamburgerButton(
-//      onTap: () => Scaffold.of(context).openDrawer(),
-//      badgeCount: pendingCount,
-//    ),
-//  ),
-
 class AppMapZoomControls extends StatelessWidget {
   final GoogleMapController? controller;
   final double zoomStep;
@@ -1177,19 +1155,6 @@ class AppEmptyState extends StatelessWidget {
     );
   }
 }
-
-// ════════════════════════════════════════════════════════════════════════════
-//  AppConfirmSheet  — bottom sheet (lighter than full dialog)
-// ════════════════════════════════════════════════════════════════════════════
-//
-//  final ok = await AppConfirmSheet.show(
-//    context,
-//    icon: Icons.logout_rounded,
-//    title: 'Cerrar sesión',
-//    message: '¿Deseas salir de tu cuenta?',
-//    confirmText: 'Salir',
-//    danger: true,
-//  );
 
 class AppConfirmSheet extends StatelessWidget {
   final IconData icon;

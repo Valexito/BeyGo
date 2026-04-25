@@ -1,4 +1,3 @@
-// lib/common/widgets/app_no_connection.dart
 import 'package:flutter/material.dart';
 import 'package:mapbox_api/common/ui/components/app_styles.dart';
 import 'package:mapbox_api/common/ui/components/my_button.dart';

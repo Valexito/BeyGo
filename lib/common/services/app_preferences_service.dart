@@ -9,6 +9,8 @@ class AppPreferencesState {
   final bool notificationsEnabled;
   final bool reservationRemindersEnabled;
   final bool appUpdatesEnabled;
+  final bool ownerRevenueVisible;
+  final String? ownerRevenuePin;
 
   const AppPreferencesState({
     required this.themePreference,
@@ -16,6 +18,8 @@ class AppPreferencesState {
     required this.notificationsEnabled,
     required this.reservationRemindersEnabled,
     required this.appUpdatesEnabled,
+    required this.ownerRevenueVisible,
+    required this.ownerRevenuePin,
   });
 
   ThemeMode get themeMode {
@@ -35,6 +39,9 @@ class AppPreferencesState {
     bool? notificationsEnabled,
     bool? reservationRemindersEnabled,
     bool? appUpdatesEnabled,
+    bool? ownerRevenueVisible,
+    String? ownerRevenuePin,
+    bool clearOwnerRevenuePin = false,
   }) {
     return AppPreferencesState(
       themePreference: themePreference ?? this.themePreference,
@@ -44,6 +51,9 @@ class AppPreferencesState {
       reservationRemindersEnabled:
           reservationRemindersEnabled ?? this.reservationRemindersEnabled,
       appUpdatesEnabled: appUpdatesEnabled ?? this.appUpdatesEnabled,
+      ownerRevenueVisible: ownerRevenueVisible ?? this.ownerRevenueVisible,
+      ownerRevenuePin:
+          clearOwnerRevenuePin ? null : ownerRevenuePin ?? this.ownerRevenuePin,
     );
   }
 }
@@ -58,6 +68,8 @@ class AppPreferencesService {
   static const _notificationsEnabledKey = 'app.notifications.enabled';
   static const _reservationRemindersKey = 'app.notifications.reminders';
   static const _appUpdatesKey = 'app.notifications.updates';
+  static const _ownerRevenueVisibleKey = 'owner.dashboard.revenue_visible';
+  static const _ownerRevenuePinKey = 'owner.dashboard.revenue_pin';
 
   late SharedPreferences _prefs;
 
@@ -73,6 +85,8 @@ class AppPreferencesService {
       reservationRemindersEnabled:
           _prefs.getBool(_reservationRemindersKey) ?? true,
       appUpdatesEnabled: _prefs.getBool(_appUpdatesKey) ?? true,
+      ownerRevenueVisible: _prefs.getBool(_ownerRevenueVisibleKey) ?? false,
+      ownerRevenuePin: _prefs.getString(_ownerRevenuePinKey),
     );
   }
 
@@ -94,6 +108,18 @@ class AppPreferencesService {
 
   Future<void> setAppUpdatesEnabled(bool value) async {
     await _prefs.setBool(_appUpdatesKey, value);
+  }
+
+  Future<void> setOwnerRevenueVisible(bool value) async {
+    await _prefs.setBool(_ownerRevenueVisibleKey, value);
+  }
+
+  Future<void> setOwnerRevenuePin(String value) async {
+    await _prefs.setString(_ownerRevenuePinKey, value);
+  }
+
+  Future<void> clearOwnerRevenuePin() async {
+    await _prefs.remove(_ownerRevenuePinKey);
   }
 
   AppThemePreference _readThemePreference() {

@@ -1,4 +1,3 @@
-// lib/common/utils/components/ui/my_textfield.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'app_styles.dart';
@@ -144,7 +143,9 @@ class _MyTextFieldState extends State<MyTextField> {
       hintText: widget.hintText,
       filled: true,
       fillColor:
-          _active ? context.appInputBackgroundActive : context.appInputBackground,
+          _active
+              ? context.appInputBackgroundActive
+              : context.appInputBackground,
       prefixIcon: _buildPrefix(),
       suffixIcon: widget.suffix,
       contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 18),

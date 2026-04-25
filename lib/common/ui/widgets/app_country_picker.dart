@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mapbox_api/common/ui/components/app_styles.dart';
 
-// ─── Model ────────────────────────────────────────────────────────────────────
 class AppCountryCode {
   final String flag;
   final String name;
@@ -14,7 +13,6 @@ class AppCountryCode {
     required this.code,
   });
 
-  /// Parses a full phone string like "+502 55551234" → splits code and number
   static ({AppCountryCode country, String number}) parse(
     String fullPhone, {
     AppCountryCode? fallback,
@@ -39,7 +37,6 @@ class AppCountryCode {
   int get hashCode => code.hashCode;
 }
 
-// ─── Countries list ───────────────────────────────────────────────────────────
 class AppCountryCodes {
   AppCountryCodes._();
 
@@ -240,8 +237,9 @@ class _CountryPickerSheetState extends State<_CountryPickerSheet> {
                                   decoration: BoxDecoration(
                                     color:
                                         isSelected
-                                            ? AppColors.headerBottom
-                                                .withValues(alpha: 0.07)
+                                            ? AppColors.headerBottom.withValues(
+                                              alpha: 0.07,
+                                            )
                                             : Colors.transparent,
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(
@@ -305,19 +303,6 @@ class _CountryPickerSheetState extends State<_CountryPickerSheet> {
   }
 }
 
-// ─── Phone field widget ───────────────────────────────────────────────────────
-/// Drop-in phone field with country code button.
-///
-/// ```dart
-/// AppPhoneField(
-///   selectedCountry: _country,
-///   numberController: _phoneCtrl,
-///   onPickCountry: () async {
-///     final picked = await AppCountryPicker.show(context, selected: _country);
-///     if (picked != null) setState(() => _country = picked);
-///   },
-/// )
-/// ```
 class AppPhoneField extends StatelessWidget {
   final AppCountryCode selectedCountry;
   final TextEditingController numberController;
@@ -350,7 +335,9 @@ class AppPhoneField extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               decoration: BoxDecoration(
-                border: Border(right: BorderSide(color: context.appBorderColor)),
+                border: Border(
+                  right: BorderSide(color: context.appBorderColor),
+                ),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,

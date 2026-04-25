@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mapbox_api/common/ui/components/app_styles.dart';
+import 'package:mapbox_api/features/core/providers/app_preferences_provider.dart';
 import 'package:mapbox_api/features/owner/owner_reservations_page.dart';
 import 'package:mapbox_api/features/owner/owner_requests_page.dart';
 import 'package:mapbox_api/features/owner/owner_settings_page.dart';
@@ -34,7 +35,7 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
     return OwnerOnly(
       builder: (_) {
         final pages = <Widget>[
-          const _OwnerDashboardView(),
+          _OwnerDashboardView(onNavigate: (i) => setState(() => _index = i)),
           const OwnerRequestsPage(),
           const OwnerReservationsPage(),
           const OwnerWalkInPage(),
@@ -117,17 +118,21 @@ class _TabItem {
 
 // ─── Dashboard View ────────────────────────────────────────────────────────────
 class _OwnerDashboardView extends ConsumerWidget {
-  const _OwnerDashboardView();
+  const _OwnerDashboardView({required this.onNavigate});
+
+  final ValueChanged<int> onNavigate;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final statsAsync = ref.watch(ownerDashboardStatsProvider);
     final parkingAsync = ref.watch(ownerParkingProvider);
+    final preferences = ref.watch(appPreferencesProvider);
 
-    final parkingName = parkingAsync.asData?.value?.name ?? 'Mi Parqueo';
+    final parking = parkingAsync.asData?.value;
+    final parkingName = parking?.name ?? 'Mi Parqueo';
 
     return Scaffold(
-      backgroundColor: AppColors.pageBg,
+      backgroundColor: context.appPageBackground,
       body: SafeArea(
         bottom: false,
         child: statsAsync.when(
@@ -140,6 +145,9 @@ class _OwnerDashboardView extends ConsumerWidget {
                   SliverToBoxAdapter(
                     child: _DashboardHeader(
                       parkingName: parkingName,
+                      businessHours: parking?.businessHours,
+                      totalSpaces: stats.totalSpaces,
+                      occupiedSpaces: stats.occupiedSpaces,
                       stats: stats,
                     ),
                   ),
@@ -155,27 +163,10 @@ class _OwnerDashboardView extends ConsumerWidget {
                       ),
                     ),
 
-                  // ── Revenue cards ──
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                      child: _SectionTitle(
-                        icon: Icons.attach_money_rounded,
-                        title: 'Ingresos',
-                      ),
-                    ),
-                  ),
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-                      child: _RevenueRow(stats: stats),
-                    ),
-                  ),
-
                   // ── Occupancy ──
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                       child: _SectionTitle(
                         icon: Icons.local_parking_rounded,
                         title: 'Ocupación en tiempo real',
@@ -189,13 +180,68 @@ class _OwnerDashboardView extends ConsumerWidget {
                     ),
                   ),
 
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
+                      child: _SectionTitle(
+                        icon: Icons.show_chart_rounded,
+                        title: 'Tendencia de hoy',
+                        trailing: _PeakHourLabel(
+                          reservations: stats.recentActivity,
+                        ),
+                      ),
+                    ),
+                  ),
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                      child: _TodayTrendCard(
+                        reservations: stats.recentActivity,
+                      ),
+                    ),
+                  ),
+
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
+                      child: _SectionTitle(
+                        icon: Icons.bolt_rounded,
+                        title: 'Acciones rápidas',
+                      ),
+                    ),
+                  ),
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                      child: _QuickActionsRow(onNavigate: onNavigate),
+                    ),
+                  ),
+
+                  if (preferences.ownerRevenueVisible) ...[
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
+                        child: _SectionTitle(
+                          icon: Icons.attach_money_rounded,
+                          title: 'Ingresos',
+                        ),
+                      ),
+                    ),
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                        child: _RevenueRow(stats: stats),
+                      ),
+                    ),
+                  ],
+
                   // ── Stats grid ──
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+                      padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
                       child: _SectionTitle(
                         icon: Icons.bar_chart_rounded,
-                        title: 'Resumen',
+                        title: 'Resumen operativo',
                       ),
                     ),
                   ),
@@ -277,8 +323,17 @@ class _OwnerDashboardView extends ConsumerWidget {
 class _DashboardHeader extends StatelessWidget {
   final String parkingName;
   final OwnerDashboardStats stats;
+  final Map<String, String>? businessHours;
+  final int totalSpaces;
+  final int occupiedSpaces;
 
-  const _DashboardHeader({required this.parkingName, required this.stats});
+  const _DashboardHeader({
+    required this.parkingName,
+    required this.stats,
+    required this.businessHours,
+    required this.totalSpaces,
+    required this.occupiedSpaces,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -290,15 +345,20 @@ class _DashboardHeader extends StatelessWidget {
             : hour < 18
             ? 'Buenas tardes'
             : 'Buenas noches';
+    final status = _parkingStatus(now, businessHours);
+    final freeSpaces = totalSpaces - occupiedSpaces;
 
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [AppColors.headerTop, AppColors.headerBottom],
+          colors:
+              context.isDarkMode
+                  ? const [Color(0xFF122033), Color(0xFF0F172A)]
+                  : const [AppColors.headerTop, AppColors.headerBottom],
         ),
-        borderRadius: BorderRadius.only(
+        borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(32),
           bottomRight: Radius.circular(32),
         ),
@@ -350,15 +410,18 @@ class _DashboardHeader extends StatelessWidget {
                     Container(
                       width: 7,
                       height: 7,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF4ADE80),
+                      decoration: BoxDecoration(
+                        color:
+                            status.isOpen
+                                ? const Color(0xFF4ADE80)
+                                : const Color(0xFFF87171),
                         shape: BoxShape.circle,
                       ),
                     ),
                     const SizedBox(width: 5),
-                    const Text(
-                      'EN VIVO',
-                      style: TextStyle(
+                    Text(
+                      status.label,
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 10,
                         fontWeight: FontWeight.w800,
@@ -372,34 +435,210 @@ class _DashboardHeader extends StatelessWidget {
 
           const SizedBox(height: 20),
 
-          // Quick stats row
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.06),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+            ),
+            child: Row(
+              children: [
+                _HeaderStat(
+                  label: 'Activas',
+                  value: '${stats.activeReservations}',
+                ),
+                _HeaderDivider(),
+                _HeaderStat(
+                  label: 'Pendientes',
+                  value: '${stats.pendingApproval}',
+                ),
+                _HeaderDivider(),
+                _HeaderStat(
+                  label: 'Solicitudes',
+                  value: '${stats.exitRequests + stats.cancellationRequests}',
+                ),
+                _HeaderDivider(),
+                _HeaderStat(label: 'Libres', value: '$freeSpaces/$totalSpaces'),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  _ParkingStatus _parkingStatus(DateTime now, Map<String, String>? hours) {
+    TimeOfDay? parse(String? raw) {
+      if (raw == null || raw.isEmpty) return null;
+      final parts = raw.split(':');
+      if (parts.length != 2) return null;
+      final hour = int.tryParse(parts[0]);
+      final minute = int.tryParse(parts[1]);
+      if (hour == null || minute == null) return null;
+      return TimeOfDay(hour: hour, minute: minute);
+    }
+
+    final open = parse(hours?['open']);
+    final close = parse(hours?['close']);
+    if (open == null || close == null) {
+      return const _ParkingStatus(label: 'ABIERTO', isOpen: true);
+    }
+
+    final nowMinutes = now.hour * 60 + now.minute;
+    final openMinutes = open.hour * 60 + open.minute;
+    final closeMinutes = close.hour * 60 + close.minute;
+
+    final isOpen =
+        openMinutes <= closeMinutes
+            ? nowMinutes >= openMinutes && nowMinutes <= closeMinutes
+            : nowMinutes >= openMinutes || nowMinutes <= closeMinutes;
+
+    return _ParkingStatus(
+      label: isOpen ? 'ABIERTO' : 'CERRADO',
+      isOpen: isOpen,
+    );
+  }
+}
+
+class _ParkingStatus {
+  final String label;
+  final bool isOpen;
+
+  const _ParkingStatus({required this.label, required this.isOpen});
+}
+
+class _PeakHourLabel extends StatelessWidget {
+  final List<Reservation> reservations;
+
+  const _PeakHourLabel({required this.reservations});
+
+  @override
+  Widget build(BuildContext context) {
+    final today = DateTime.now();
+    final todayItems =
+        reservations.where((r) {
+          final d = r.reservedAt;
+          return d.year == today.year &&
+              d.month == today.month &&
+              d.day == today.day;
+        }).toList();
+
+    final byHour = <int, int>{};
+    for (final item in todayItems) {
+      byHour.update(item.reservedAt.hour, (v) => v + 1, ifAbsent: () => 1);
+    }
+    if (byHour.isEmpty) return const SizedBox.shrink();
+
+    final peak = byHour.entries.reduce((a, b) => a.value >= b.value ? a : b);
+    return Text(
+      'Hora pico ${peak.key.toString().padLeft(2, '0')}:00',
+      style: TextStyle(
+        color: context.appTextSecondaryColor,
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+      ),
+    );
+  }
+}
+
+class _TodayTrendCard extends StatelessWidget {
+  final List<Reservation> reservations;
+
+  const _TodayTrendCard({required this.reservations});
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final counts = List<int>.filled(8, 0);
+
+    for (final item in reservations) {
+      final d = item.reservedAt;
+      if (d.year != now.year || d.month != now.month || d.day != now.day) {
+        continue;
+      }
+      final index = (((d.hour - 8) / 2).floor()).clamp(0, 7);
+      counts[index] += 1;
+    }
+
+    final maxValue = counts.fold<int>(0, (prev, e) => e > prev ? e : prev);
+    final labels = const [
+      '8a',
+      '10a',
+      '12a',
+      '14h',
+      '16h',
+      '18h',
+      '20h',
+      '22h',
+    ];
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+      decoration: BoxDecoration(
+        color: context.appCardBackground,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: context.appBorderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(
+              alpha: context.isDarkMode ? 0.16 : 0.06,
+            ),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
           Row(
             children: [
-              _HeaderStat(
-                label: 'Activas',
-                value: '${stats.activeReservations}',
-                icon: Icons.local_parking_rounded,
-              ),
-              _HeaderDivider(),
-              _HeaderStat(
-                label: 'Pendientes',
-                value: '${stats.pendingApproval}',
-                icon: Icons.hourglass_top_rounded,
-              ),
-              _HeaderDivider(),
-              _HeaderStat(
-                label: 'Solicitudes',
-                value: '${stats.exitRequests + stats.cancellationRequests}',
-                icon: Icons.notifications_none_rounded,
-              ),
-              _HeaderDivider(),
-              _HeaderStat(
-                label: 'Espacios',
-                value:
-                    '${stats.totalSpaces - stats.occupiedSpaces}/${stats.totalSpaces}',
-                icon: Icons.grid_view_rounded,
-                sublabel: 'libres',
-              ),
+              for (var i = 0; i < counts.length; i++)
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 3),
+                    child: Column(
+                      children: [
+                        Container(
+                          height:
+                              maxValue == 0
+                                  ? 10
+                                  : 18 + (counts[i] / maxValue) * 52,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors:
+                                  i == 3
+                                      ? const [
+                                        AppColors.headerTop,
+                                        AppColors.headerBottom,
+                                      ]
+                                      : [
+                                        AppColors.headerBottom.withValues(
+                                          alpha: 0.65,
+                                        ),
+                                        AppColors.headerBottom.withValues(
+                                          alpha: 0.92,
+                                        ),
+                                      ],
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          labels[i],
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: context.appTextSecondaryColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
             ],
           ),
         ],
@@ -408,18 +647,116 @@ class _DashboardHeader extends StatelessWidget {
   }
 }
 
+class _QuickActionsRow extends StatelessWidget {
+  final ValueChanged<int> onNavigate;
+
+  const _QuickActionsRow({required this.onNavigate});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: _QuickActionCard(
+            icon: Icons.fact_check_outlined,
+            label: 'Aprobar',
+            color: const Color(0xFF2563EB),
+            onTap: () => onNavigate(1),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _QuickActionCard(
+            icon: Icons.directions_car_filled_rounded,
+            label: 'Presencial',
+            color: const Color(0xFF16A34A),
+            onTap: () => onNavigate(3),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _QuickActionCard(
+            icon: Icons.receipt_long_outlined,
+            label: 'Reservas',
+            color: const Color(0xFF8B5CF6),
+            onTap: () => onNavigate(2),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _QuickActionCard(
+            icon: Icons.history_rounded,
+            label: 'Historial',
+            color: const Color(0xFFF59E0B),
+            onTap: () => onNavigate(4),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _QuickActionCard extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _QuickActionCard({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: context.appCardBackground,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: context.appBorderColor),
+          ),
+          child: Column(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(icon, color: color, size: 22),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: context.appTextPrimaryColor,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _HeaderStat extends StatelessWidget {
   final String label;
   final String value;
-  final IconData icon;
-  final String? sublabel;
 
-  const _HeaderStat({
-    required this.label,
-    required this.value,
-    required this.icon,
-    this.sublabel,
-  });
+  const _HeaderStat({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
@@ -436,7 +773,7 @@ class _HeaderStat extends StatelessWidget {
           ),
           const SizedBox(height: 2),
           Text(
-            sublabel ?? label,
+            label,
             style: const TextStyle(
               color: Colors.white60,
               fontSize: 10,
@@ -474,12 +811,12 @@ class _AlertsRow extends StatelessWidget {
         const SizedBox(height: 16),
         Row(
           children: [
-            const Text(
+            Text(
               'Requiere atención',
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF1E293B),
+                color: context.appTextPrimaryColor,
               ),
             ),
             const Spacer(),
@@ -619,9 +956,9 @@ class _RevenueCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.appCardBackground,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.borderSoft),
+        border: Border.all(color: context.appBorderColor),
         boxShadow: [
           BoxShadow(
             color: color.withValues(alpha: 0.08),
@@ -654,9 +991,9 @@ class _RevenueCard extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
-              color: Color(0xFF8A94A6),
+              color: context.appTextSecondaryColor,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -686,9 +1023,9 @@ class _OccupancyCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.appCardBackground,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.borderSoft),
+        border: Border.all(color: context.appBorderColor),
         boxShadow: [
           BoxShadow(
             color: AppColors.headerBottom.withValues(alpha: 0.05),
@@ -715,11 +1052,11 @@ class _OccupancyCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    const Text(
+                    Text(
                       'Ocupación actual',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Color(0xFF8A94A6),
+                        color: context.appTextSecondaryColor,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -813,9 +1150,9 @@ class _StatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.appCardBackground,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.borderSoft),
+        border: Border.all(color: context.appBorderColor),
         boxShadow: [
           BoxShadow(
             color: AppColors.headerBottom.withValues(alpha: 0.04),
@@ -839,19 +1176,19 @@ class _StatCard extends StatelessWidget {
           const Spacer(),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 26,
               fontWeight: FontWeight.w900,
-              color: Color(0xFF1E293B),
+              color: context.appTextPrimaryColor,
               height: 1,
             ),
           ),
           const SizedBox(height: 3),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
-              color: Color(0xFF8A94A6),
+              color: context.appTextSecondaryColor,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -865,8 +1202,9 @@ class _StatCard extends StatelessWidget {
 class _SectionTitle extends StatelessWidget {
   final IconData icon;
   final String title;
+  final Widget? trailing;
 
-  const _SectionTitle({required this.icon, required this.title});
+  const _SectionTitle({required this.icon, required this.title, this.trailing});
 
   @override
   Widget build(BuildContext context) {
@@ -876,12 +1214,14 @@ class _SectionTitle extends StatelessWidget {
         const SizedBox(width: 7),
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF1E293B),
+            color: context.appTextPrimaryColor,
           ),
         ),
+        const Spacer(),
+        if (trailing != null) trailing!,
       ],
     );
   }
@@ -902,9 +1242,9 @@ class _ActivityTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.appCardBackground,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderSoft),
+        border: Border.all(color: context.appBorderColor),
       ),
       child: Row(
         children: [
@@ -924,18 +1264,18 @@ class _ActivityTile extends StatelessWidget {
               children: [
                 Text(
                   'No. ${reservation.reservationNumber ?? 'N/A'}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF1E293B),
+                    color: context.appTextPrimaryColor,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   '${reservation.userName ?? 'N/A'} · ${reservation.plate ?? 'N/A'}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
-                    color: Color(0xFF8A94A6),
+                    color: context.appTextSecondaryColor,
                   ),
                 ),
               ],
@@ -962,7 +1302,10 @@ class _ActivityTile extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 _format(reservation.reservedAt),
-                style: const TextStyle(fontSize: 10, color: Color(0xFF8A94A6)),
+                style: TextStyle(
+                  fontSize: 10,
+                  color: context.appTextSecondaryColor,
+                ),
               ),
             ],
           ),

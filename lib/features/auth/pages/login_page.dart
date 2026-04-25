@@ -1,4 +1,3 @@
-// lib/features/auth/pages/login_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -462,7 +461,9 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                 child: Divider(color: context.appBorderColor),
                               ),
                               Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                ),
                                 child: Text(
                                   'O continuar con',
                                   style: TextStyle(
