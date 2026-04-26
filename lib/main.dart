@@ -51,6 +51,7 @@ class MyApp extends ConsumerWidget {
     final preferences = ref.watch(appPreferencesProvider);
 
     return MaterialApp(
+      navigatorKey: NotificationService.navigatorKey,
       title: 'Mapa con Parqueos',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.buildLight(),

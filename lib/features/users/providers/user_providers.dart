@@ -224,6 +224,20 @@ final canEnterAppProvider = FutureProvider.family<bool, String>((
 
   final db = ref.watch(firestoreProvider);
 
+  bool isRecoverableAccessError(Object error) {
+    final msg = error.toString().toLowerCase();
+    return msg.contains('permission-denied') ||
+        msg.contains('permission denied') ||
+        msg.contains('permis') ||
+        msg.contains('app check') ||
+        msg.contains('appcheck') ||
+        msg.contains('app attestation failed') ||
+        msg.contains('too many attempts') ||
+        msg.contains('unavailable') ||
+        msg.contains('deadline-exceeded') ||
+        msg.contains('timeout');
+  }
+
   Future<bool> _check() async {
     final doc = await db
         .collection('users')
@@ -268,18 +282,23 @@ final canEnterAppProvider = FutureProvider.family<bool, String>((
   try {
     return await _check();
   } catch (e) {
-    final msg = e.toString();
-    // PERMISSION_DENIED durante cambio de sesión → reintenta después de que
-    // Firebase Auth termine de autenticar al nuevo usuario
-    if (msg.contains('PERMISSION_DENIED') ||
-        msg.contains('permission-denied')) {
+    // PERMISSION_DENIED / App Check / timeouts durante cambio de sesión o
+    // primeras instalaciones de debug → reintenta antes de concluir que el
+    // perfil no existe.
+    if (isRecoverableAccessError(e)) {
       await Future.delayed(const Duration(seconds: 2));
       // Verifica que el uid aún sea el usuario actual antes de reintentar
       final currentAfterDelay = FirebaseAuth.instance.currentUser?.uid;
       if (currentAfterDelay != uid) return false;
       try {
         return await _check();
-      } catch (_) {
+      } catch (retryError) {
+        if (isRecoverableAccessError(retryError)) {
+          throw StateError(
+            'No se pudo validar el perfil en este momento. '
+            'Revisa App Check o tu conexión e inténtalo de nuevo.',
+          );
+        }
         return false;
       }
     }

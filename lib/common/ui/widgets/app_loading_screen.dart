@@ -119,7 +119,7 @@ class _AppLoadingScreenState extends State<AppLoadingScreen>
               right: -60,
               child: _GradientBlob(
                 size: 260,
-                color: AppColors.headerTop.withOpacity(0.12),
+                color: AppColors.headerTop.withValues(alpha: 0.12),
               ),
             ),
             Positioned(
@@ -127,7 +127,7 @@ class _AppLoadingScreenState extends State<AppLoadingScreen>
               left: -40,
               child: _GradientBlob(
                 size: 200,
-                color: AppColors.headerBottom.withOpacity(0.10),
+                color: AppColors.headerBottom.withValues(alpha: 0.10),
               ),
             ),
 
@@ -210,10 +210,12 @@ class _AppLoadingScreenState extends State<AppLoadingScreen>
                         width: i == _dotIndex ? 24 : 7,
                         height: 7,
                         decoration: BoxDecoration(
-                          color:
-                              i == _dotIndex
-                                  ? AppColors.headerBottom
-                                  : AppColors.headerBottom.withOpacity(0.20),
+                                  color:
+                                      i == _dotIndex
+                                          ? AppColors.headerBottom
+                                          : AppColors.headerBottom.withValues(
+                                            alpha: 0.20,
+                                          ),
                           borderRadius: BorderRadius.circular(99),
                         ),
                       );
@@ -254,7 +256,6 @@ class _AppLoadingScreenState extends State<AppLoadingScreen>
           'Obteniendo disponibilidad...',
         ];
       case LoadingVariant.general:
-      default:
         return ['Cargando...', 'Por favor espera...', 'Casi listo...'];
     }
   }
@@ -355,7 +356,7 @@ class _LoadingPainter extends CustomPainter {
           pos.position,
           10 * pulse,
           Paint()
-            ..color = AppColors.headerBottom.withOpacity(0.25)
+            ..color = AppColors.headerBottom.withValues(alpha: 0.25)
             ..style = PaintingStyle.fill,
         );
       }
@@ -371,7 +372,7 @@ class _LoadingPainter extends CustomPainter {
       Offset(cx - 55, cy + 50),
       12,
       Paint()
-        ..color = const Color(0xFF16A34A).withOpacity(0.2)
+        ..color = const Color(0xFF16A34A).withValues(alpha: 0.2)
         ..style = PaintingStyle.fill,
     );
 
@@ -406,14 +407,18 @@ class _LoadingPainter extends CustomPainter {
       Offset(cx, cy),
       scanRadius,
       Paint()
-        ..color = AppColors.headerBottom.withOpacity(0.08 * (1 - progress))
+        ..color = AppColors.headerBottom.withValues(
+          alpha: 0.08 * (1 - progress),
+        )
         ..style = PaintingStyle.fill,
     );
     canvas.drawCircle(
       Offset(cx, cy),
       scanRadius,
       Paint()
-        ..color = AppColors.headerBottom.withOpacity(0.3 * (1 - progress))
+        ..color = AppColors.headerBottom.withValues(
+          alpha: 0.3 * (1 - progress),
+        )
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.5,
     );
@@ -426,13 +431,15 @@ class _LoadingPainter extends CustomPainter {
     // User silhouette circle
     final bgPaint =
         Paint()
-          ..color = AppColors.headerBottom.withOpacity(0.08)
+          ..color = AppColors.headerBottom.withValues(alpha: 0.08)
           ..style = PaintingStyle.fill;
     canvas.drawCircle(Offset(cx, cy - 10), 42, bgPaint);
 
     final borderPaint =
         Paint()
-          ..color = AppColors.headerBottom.withOpacity(0.25 + 0.15 * pulse)
+          ..color = AppColors.headerBottom.withValues(
+            alpha: 0.25 + 0.15 * pulse,
+          )
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2.5;
     canvas.drawCircle(Offset(cx, cy - 10), 42 * pulse, borderPaint);
@@ -442,7 +449,7 @@ class _LoadingPainter extends CustomPainter {
       Offset(cx, cy - 22),
       16,
       Paint()
-        ..color = AppColors.headerBottom.withOpacity(0.55)
+        ..color = AppColors.headerBottom.withValues(alpha: 0.55)
         ..style = PaintingStyle.fill,
     );
 
@@ -456,7 +463,7 @@ class _LoadingPainter extends CustomPainter {
     canvas.drawPath(
       bodyPath,
       Paint()
-        ..color = AppColors.headerBottom.withOpacity(0.40)
+        ..color = AppColors.headerBottom.withValues(alpha: 0.40)
         ..style = PaintingStyle.fill,
     );
 
@@ -480,7 +487,7 @@ class _LoadingPainter extends CustomPainter {
     // Parking P icon background
     final bgPaint =
         Paint()
-          ..color = AppColors.headerBottom.withOpacity(0.08)
+          ..color = AppColors.headerBottom.withValues(alpha: 0.08)
           ..style = PaintingStyle.fill;
 
     final rRect = RRect.fromRectAndRadius(
@@ -492,8 +499,8 @@ class _LoadingPainter extends CustomPainter {
     // Pulsing border
     final borderPaint =
         Paint()
-          ..color = AppColors.headerBottom.withOpacity(
-            0.20 + 0.15 * (pulse - 0.85) / 0.3,
+          ..color = AppColors.headerBottom.withValues(
+            alpha: 0.20 + 0.15 * (pulse - 0.85) / 0.3,
           )
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2;
@@ -584,7 +591,7 @@ class _LoadingPainter extends CustomPainter {
       Offset(center.dx, center.dy + 14),
       6 * pulse,
       Paint()
-        ..color = const Color(0xFFDC2626).withOpacity(0.25)
+        ..color = const Color(0xFFDC2626).withValues(alpha: 0.25)
         ..style = PaintingStyle.fill,
     );
   }

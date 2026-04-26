@@ -509,10 +509,7 @@ class _OwnerSettingsPageState extends ConsumerState<OwnerSettingsPage> {
       await ref.read(authActionsProvider).signOut();
     } catch (_) {}
     if (!mounted) return;
-    Navigator.of(
-      context,
-      rootNavigator: true,
-    ).pushNamedAndRemoveUntil('/auth', (_) => false);
+    Navigator.of(context, rootNavigator: true).popUntil((route) => route.isFirst);
   }
 
   void _toast(String msg) {

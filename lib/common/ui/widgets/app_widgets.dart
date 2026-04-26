@@ -336,8 +336,8 @@ class _AppInputDialogState extends State<AppInputDialog> {
           color: const Color(0xFFF8FAFC),
           borderRadius: BorderRadius.circular(28),
           boxShadow: [
-            BoxShadow(
-              color: AppColors.headerBottom.withOpacity(0.16),
+              BoxShadow(
+              color: AppColors.headerBottom.withValues(alpha: 0.16),
               blurRadius: 28,
               offset: const Offset(0, 12),
             ),
@@ -366,10 +366,10 @@ class _AppInputDialogState extends State<AppInputDialog> {
                     width: 54,
                     height: 54,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.18),
+                      color: Colors.white.withValues(alpha: 0.18),
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: Colors.white.withOpacity(0.26),
+                        color: Colors.white.withValues(alpha: 0.26),
                         width: 1.2,
                       ),
                     ),
@@ -428,7 +428,7 @@ class _AppInputDialogState extends State<AppInputDialog> {
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
                         borderSide: BorderSide(
-                          color: AppColors.headerBottom.withOpacity(0.4),
+                          color: AppColors.headerBottom.withValues(alpha: 0.4),
                           width: 1.2,
                         ),
                       ),
@@ -445,7 +445,9 @@ class _AppInputDialogState extends State<AppInputDialog> {
                             onPressed: () => Navigator.pop(context, null),
                             style: OutlinedButton.styleFrom(
                               side: BorderSide(
-                                color: AppColors.headerBottom.withOpacity(0.28),
+                                color: AppColors.headerBottom.withValues(
+                                  alpha: 0.28,
+                                ),
                               ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16),
@@ -527,11 +529,11 @@ class AppBottomNav extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
-          BoxShadow(
-            color: AppColors.headerBottom.withOpacity(0.10),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
+              BoxShadow(
+                color: AppColors.headerBottom.withValues(alpha: 0.10),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
+              ),
         ],
       ),
       child: ClipRRect(
@@ -629,7 +631,7 @@ class AppMapZoomControls extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: AppColors.headerBottom.withOpacity(0.12),
+            color: AppColors.headerBottom.withValues(alpha: 0.12),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -671,7 +673,7 @@ class AppMapCenterButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: AppColors.headerBottom.withOpacity(0.12),
+            color: AppColors.headerBottom.withValues(alpha: 0.12),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -717,7 +719,7 @@ class AppHamburgerButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
-              color: AppColors.headerBottom.withOpacity(0.14),
+              color: AppColors.headerBottom.withValues(alpha: 0.14),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -842,7 +844,7 @@ class AppSectionCard extends StatelessWidget {
                   width: 30,
                   height: 30,
                   decoration: BoxDecoration(
-                    color: AppColors.headerBottom.withOpacity(0.08),
+                    color: AppColors.headerBottom.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(9),
                   ),
                   child: Icon(
@@ -872,7 +874,7 @@ class AppSectionCard extends StatelessWidget {
             border: Border.all(color: AppColors.borderSoft),
             boxShadow: [
               BoxShadow(
-                color: AppColors.headerBottom.withOpacity(0.04),
+                color: AppColors.headerBottom.withValues(alpha: 0.04),
                 blurRadius: 10,
                 offset: const Offset(0, 3),
               ),
@@ -1058,9 +1060,9 @@ class AppBadge extends StatelessWidget {
         vertical: 4,
       ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.25), width: 1),
+        border: Border.all(color: color.withValues(alpha: 0.25), width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -1124,7 +1126,7 @@ class AppEmptyState extends StatelessWidget {
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.headerBottom.withOpacity(0.08),
+                    color: AppColors.headerBottom.withValues(alpha: 0.08),
                     blurRadius: 20,
                     offset: const Offset(0, 8),
                   ),
@@ -1227,7 +1229,7 @@ class AppConfirmSheet extends StatelessWidget {
             width: 56,
             height: 56,
             decoration: BoxDecoration(
-              color: actionColor.withOpacity(0.10),
+              color: actionColor.withValues(alpha: 0.10),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, size: 28, color: actionColor),
@@ -1262,7 +1264,7 @@ class AppConfirmSheet extends StatelessWidget {
                     onPressed: () => Navigator.pop(context, false),
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(
-                        color: AppColors.headerBottom.withOpacity(0.25),
+                        color: AppColors.headerBottom.withValues(alpha: 0.25),
                       ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),

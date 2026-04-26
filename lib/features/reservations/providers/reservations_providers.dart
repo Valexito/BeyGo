@@ -99,9 +99,7 @@ final parkingSpacesProvider =
         for (final d in s.docs) {
           final n = int.tryParse(d.id);
           if (n == null) continue;
-          map[n] = ParkingSpace.fromDoc(
-            d as DocumentSnapshot<Map<String, dynamic>>,
-          );
+          map[n] = ParkingSpace.fromDoc(d);
         }
 
         return map;
@@ -114,14 +112,14 @@ final parkingByIdProvider = FutureProvider.family<Parking, String>((
 ) async {
   final db = ref.watch(_dbProvider);
   final snap = await _parkingDoc(db, id).get();
-  return Parking.fromDoc(snap as DocumentSnapshot<Map<String, dynamic>>);
+  return Parking.fromDoc(snap);
 });
 
 final parkingStreamProvider = StreamProvider.family<Parking, String>((ref, id) {
   final db = ref.watch(_dbProvider);
 
   return _parkingDoc(db, id).snapshots().map(
-    (snap) => Parking.fromDoc(snap as DocumentSnapshot<Map<String, dynamic>>),
+    (snap) => Parking.fromDoc(snap),
   );
 });
 
@@ -160,11 +158,7 @@ final userReservationsProvider = StreamProvider<List<Reservation>>((ref) {
       return q.snapshots().map(
         (qs) =>
             qs.docs
-                .map(
-                  (d) => Reservation.fromDoc(
-                    d as DocumentSnapshot<Map<String, dynamic>>,
-                  ),
-                )
+                .map((d) => Reservation.fromDoc(d))
                 .toList(),
       );
     },
@@ -219,7 +213,7 @@ final reserveSpaceProvider = Provider<
     }
 
     final p = Parking.fromDoc(
-      parkingSnap as DocumentSnapshot<Map<String, dynamic>>,
+      parkingSnap,
     );
 
     if (p.ownerID.trim().isEmpty) {
@@ -256,7 +250,7 @@ final reserveSpaceProvider = Provider<
 
     await db.runTransaction((tx) async {
       final spaceSnap = await tx.get(spaceRef);
-      final spaceData = spaceSnap.data() as Map<String, dynamic>? ?? {};
+      final spaceData = spaceSnap.data() ?? <String, dynamic>{};
 
       final currentStatus =
           ((spaceData['status'] ?? 'free') as String).toLowerCase().trim();
@@ -332,14 +326,14 @@ final cancelReservationProvider =
             }
 
             final latestReservation = Reservation.fromDoc(
-              latestReservationSnap as DocumentSnapshot<Map<String, dynamic>>,
+              latestReservationSnap,
             );
 
             if (latestReservation.state != 'active') {
               throw StateError('La reservación ya no está activa.');
             }
 
-            final spaceData = spaceSnap.data() as Map<String, dynamic>? ?? {};
+            final spaceData = spaceSnap.data() ?? <String, dynamic>{};
 
             tx.update(reservationRef, {
               'state': 'cancelled',
@@ -372,14 +366,14 @@ final cancelReservationProvider =
           }
 
           final latestReservation = Reservation.fromDoc(
-            latestReservationSnap as DocumentSnapshot<Map<String, dynamic>>,
+            latestReservationSnap,
           );
 
           if (latestReservation.state != 'active') {
             throw StateError('La reservación ya no está activa.');
           }
 
-          final controlData = controlSnap.data() as Map<String, dynamic>? ?? {};
+          final controlData = controlSnap.data() ?? <String, dynamic>{};
 
           final currentAttempts =
               (controlData['cancelAttempts'] as num?)?.toInt() ?? 0;
@@ -505,7 +499,7 @@ final completeReservationWithBillingProvider =
           }
 
           final latestReservation = Reservation.fromDoc(
-            reservationSnap as DocumentSnapshot<Map<String, dynamic>>,
+            reservationSnap,
           );
 
           if (latestReservation.state != 'active') {
@@ -525,7 +519,7 @@ final completeReservationWithBillingProvider =
           });
 
           final spaceSnap = await tx.get(spaceRef);
-          final spaceData = spaceSnap.data() as Map<String, dynamic>? ?? {};
+          final spaceData = spaceSnap.data() ?? <String, dynamic>{};
 
           if ((spaceData['status'] ?? 'free') == 'occupied' &&
               spaceData['currentReservationId'] == r.id) {
@@ -571,9 +565,7 @@ final ownerAllReservationsProvider = StreamProvider<List<Reservation>>((ref) {
         (qs) =>
             qs.docs
                 .map(
-                  (d) => Reservation.fromDoc(
-                    d as DocumentSnapshot<Map<String, dynamic>>,
-                  ),
+                  (d) => Reservation.fromDoc(d),
                 )
                 .toList(),
       );
@@ -622,14 +614,14 @@ final ownerConfirmExitProvider =
           }
 
           final latest = Reservation.fromDoc(
-            reservationSnap as DocumentSnapshot<Map<String, dynamic>>,
+            reservationSnap,
           );
 
           if (latest.exitStatus != 'requested') {
             throw StateError('La salida ya no está pendiente.');
           }
 
-          final spaceData = spaceSnap.data() as Map<String, dynamic>? ?? {};
+          final spaceData = spaceSnap.data() ?? <String, dynamic>{};
 
           tx.update(reservationRef, {
             'state': 'completed',
@@ -681,14 +673,14 @@ final ownerConfirmCancellationProvider =
           }
 
           final latest = Reservation.fromDoc(
-            reservationSnap as DocumentSnapshot<Map<String, dynamic>>,
+            reservationSnap,
           );
 
           if (latest.state != 'cancellation_requested') {
             throw StateError('La cancelación ya no está pendiente.');
           }
 
-          final spaceData = spaceSnap.data() as Map<String, dynamic>? ?? {};
+          final spaceData = spaceSnap.data() ?? <String, dynamic>{};
 
           tx.update(reservationRef, {
             'state': 'cancelled',
@@ -732,14 +724,14 @@ final ownerApproveReservationProvider =
           }
 
           final latest = Reservation.fromDoc(
-            reservationSnap as DocumentSnapshot<Map<String, dynamic>>,
+            reservationSnap,
           );
 
           if (latest.state != 'pending') {
             throw StateError('La reservación ya no está pendiente.');
           }
 
-          final spaceData = spaceSnap.data() as Map<String, dynamic>? ?? {};
+          final spaceData = spaceSnap.data() ?? <String, dynamic>{};
 
           final currentStatus =
               (spaceData['status'] ?? 'free').toString().toLowerCase().trim();
@@ -797,14 +789,14 @@ final ownerForceCancelProvider = Provider<
       }
 
       final latest = Reservation.fromDoc(
-        reservationSnap as DocumentSnapshot<Map<String, dynamic>>,
+        reservationSnap,
       );
 
       if (latest.state != 'active' && latest.state != 'pending') {
         throw StateError('La reservación no puede ser cancelada.');
       }
 
-      final controlData = controlSnap.data() as Map<String, dynamic>? ?? {};
+      final controlData = controlSnap.data() ?? <String, dynamic>{};
       final currentAttempts =
           (controlData['cancelAttempts'] as num?)?.toInt() ?? 0;
       final nextAttempts = currentAttempts + 1;
@@ -853,7 +845,7 @@ final ownerForceCancelProvider = Provider<
         });
       }
 
-      final spaceData = spaceSnap.data() as Map<String, dynamic>? ?? {};
+      final spaceData = spaceSnap.data() ?? <String, dynamic>{};
       final currentStatus =
           (spaceData['status'] ?? 'free').toString().toLowerCase().trim();
 
@@ -908,7 +900,7 @@ final ownerRejectReservationProvider =
           }
 
           final latest = Reservation.fromDoc(
-            reservationSnap as DocumentSnapshot<Map<String, dynamic>>,
+            reservationSnap,
           );
 
           if (latest.state != 'pending') {
@@ -924,7 +916,7 @@ final ownerRejectReservationProvider =
             'cancellationReason': 'Rechazada por el propietario',
           });
 
-          final spaceData = spaceSnap.data() as Map<String, dynamic>? ?? {};
+          final spaceData = spaceSnap.data() ?? <String, dynamic>{};
           final currentStatus =
               (spaceData['status'] ?? 'free').toString().toLowerCase().trim();
 

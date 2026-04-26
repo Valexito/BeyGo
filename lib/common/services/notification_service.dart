@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -6,6 +7,9 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:mapbox_api/common/services/app_preferences_service.dart';
+import 'package:mapbox_api/features/owner/owner_requests_page.dart';
+import 'package:mapbox_api/features/owner/owner_reservations_page.dart';
+import 'package:mapbox_api/features/reservations/pages/reservations_page.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -15,6 +19,7 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 class NotificationService {
   NotificationService._();
   static final instance = NotificationService._();
+  static final navigatorKey = GlobalKey<NavigatorState>();
 
   final _fcm = FirebaseMessaging.instance;
   final _localNotif = FlutterLocalNotificationsPlugin();
@@ -29,6 +34,12 @@ class NotificationService {
     await _initLocalNotifications();
     FirebaseMessaging.onMessage.listen(_onForegroundMessage);
     FirebaseMessaging.onMessageOpenedApp.listen(_onNotificationTap);
+    final initialMessage = await _fcm.getInitialMessage();
+    if (initialMessage != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _onNotificationTap(initialMessage);
+      });
+    }
 
     // ✅ FIX: Auth state listener saves token whenever a user signs in.
     // This handles both first run and subsequent logins.
@@ -94,16 +105,25 @@ class NotificationService {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
     try {
-      await FirebaseFirestore.instance.collection('users').doc(uid).update({
-        'fcmToken': FieldValue.delete(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .update({
+            'fcmToken': FieldValue.delete(),
+            'updatedAt': FieldValue.serverTimestamp(),
+          })
+          .timeout(const Duration(seconds: 4));
       debugPrint('[FCM] Token removed for $uid');
-      // Delete local token so a fresh one is generated on next login
-      await _fcm.deleteToken();
-      debugPrint('[FCM] Local FCM token deleted');
     } catch (e) {
       debugPrint('[FCM] Error removing token on sign-out: $e');
+    }
+
+    try {
+      // Delete local token so a fresh one is generated on next login.
+      await _fcm.deleteToken().timeout(const Duration(seconds: 4));
+      debugPrint('[FCM] Local FCM token deleted');
+    } catch (e) {
+      debugPrint('[FCM] Error deleting local FCM token on sign-out: $e');
     }
   }
 
@@ -135,6 +155,20 @@ class NotificationService {
       const InitializationSettings(android: android, iOS: ios),
       onDidReceiveNotificationResponse: (details) {
         debugPrint('[LocalNotif] Tapped: ${details.payload}');
+        final payload = details.payload;
+        if (payload == null || payload.isEmpty) return;
+        try {
+          final decoded = jsonDecode(payload);
+          if (decoded is Map<String, dynamic>) {
+            _navigateFromData(decoded);
+          } else if (decoded is Map) {
+            _navigateFromData(
+              decoded.map((key, value) => MapEntry('$key', '$value')),
+            );
+          }
+        } catch (e) {
+          debugPrint('[LocalNotif] Payload parse error: $e');
+        }
       },
     );
 
@@ -182,12 +216,71 @@ class NotificationService {
           presentSound: prefs.notificationSoundEnabled,
         ),
       ),
-      payload: message.data['route'],
+      payload: jsonEncode(message.data),
     );
   }
 
   void _onNotificationTap(RemoteMessage message) {
     debugPrint('[FCM] Tapped notification: ${message.data}');
+    _navigateFromData(message.data);
+  }
+
+  void _navigateFromData(Map<String, dynamic> data) {
+    final nav = navigatorKey.currentState;
+    if (nav == null) {
+      debugPrint('[FCM] Navigator not ready for payload: $data');
+      return;
+    }
+
+    final route = (data['route'] as String? ?? '').trim();
+    final reservationId = (data['reservationId'] as String? ?? '').trim();
+    final type = (data['type'] as String? ?? '').trim();
+
+    if (route == 'reservations') {
+      nav.push(
+        MaterialPageRoute(
+          builder:
+              (_) => ReservationsPage(
+                initialReservationId:
+                    reservationId.isEmpty ? null : reservationId,
+              ),
+        ),
+      );
+      return;
+    }
+
+    if (route == 'ownerRequests') {
+      nav.push(
+        MaterialPageRoute(
+          builder:
+              (_) => OwnerRequestsPage(
+                initialReservationId:
+                    reservationId.isEmpty ? null : reservationId,
+                initialTab:
+                    type == 'cancel_requested'
+                        ? OwnerRequestTab.cancellations
+                        : OwnerRequestTab.exits,
+              ),
+        ),
+      );
+      return;
+    }
+
+    if (route == 'ownerReservations') {
+      nav.push(
+        MaterialPageRoute(
+          builder:
+              (_) => OwnerReservationsPage(
+                initialReservationId:
+                    reservationId.isEmpty ? null : reservationId,
+                initialTab:
+                    type == 'new_reservation'
+                        ? OwnerReservationsTab.pending
+                        : OwnerReservationsTab.active,
+              ),
+        ),
+      );
+    }
   }
 
   bool _shouldDisplayMessage(

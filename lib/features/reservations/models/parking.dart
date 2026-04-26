@@ -96,7 +96,9 @@ class Parking {
               : null,
       imageUrl: data['imageUrl'] as String?,
       localImagePath: data['localImagePath'] as String?,
-      descripcion: data['descripcion'] as String?,
+      descripcion:
+          (data['descripcion'] as String?) ??
+          (data['description'] as String?),
       coverUrl: data['coverUrl'] as String?,
       photos: _toStringList(data['photos']),
       pricePerHour: parsedPricePerHour > 0 ? parsedPricePerHour : parsedPrice,
@@ -120,6 +122,7 @@ class Parking {
     'imageUrl': imageUrl,
     'localImagePath': localImagePath,
     'descripcion': descripcion,
+    'description': descripcion,
     'coverUrl': coverUrl,
     'photos': photos,
     'pricePerHour': pricePerHour,

@@ -5,6 +5,7 @@ import 'package:mapbox_api/common/ui/components/app_styles.dart';
 import 'package:mapbox_api/common/ui/components/my_text.dart';
 import 'package:mapbox_api/features/core/pages/userv/report_problem_page.dart';
 import 'package:mapbox_api/features/reservations/components/rating_dialog.dart';
+import 'package:mapbox_api/features/reservations/components/reservations_details_sheet.dart';
 import 'package:mapbox_api/features/core/providers/firebase_providers.dart';
 import 'package:mapbox_api/features/reservations/components/reservation_card.dart';
 import 'package:mapbox_api/features/reservations/models/reservation.dart';
@@ -28,7 +29,9 @@ extension _ReservationsPeriodFilterLabel on _ReservationsPeriodFilter {
 }
 
 class ReservationsPage extends ConsumerStatefulWidget {
-  const ReservationsPage({super.key});
+  final String? initialReservationId;
+
+  const ReservationsPage({super.key, this.initialReservationId});
 
   @override
   ConsumerState<ReservationsPage> createState() => _ReservationsPageState();
@@ -42,6 +45,7 @@ class _ReservationsPageState extends ConsumerState<ReservationsPage>
   String _searchQuery = '';
   _ReservationsPeriodFilter _periodFilter = _ReservationsPeriodFilter.week;
   DateTimeRange? _dateRange;
+  bool _handledInitialReservation = false;
 
   bool get _isActiveTab => _tab.index == 0;
 
@@ -240,6 +244,28 @@ class _ReservationsPageState extends ConsumerState<ReservationsPage>
     final controlAsync = ref.watch(userReservationControlProvider);
 
     asyncList.whenData((all) {
+      if (!_handledInitialReservation &&
+          widget.initialReservationId != null &&
+          widget.initialReservationId!.isNotEmpty) {
+        final target = all.cast<Reservation?>().firstWhere(
+          (reservation) => reservation?.id == widget.initialReservationId,
+          orElse: () => null,
+        );
+
+        if (target != null) {
+          _handledInitialReservation = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) async {
+            if (!mounted) return;
+            await showModalBottomSheet<void>(
+              context: context,
+              isScrollControlled: true,
+              backgroundColor: Colors.transparent,
+              builder: (_) => ReservationDetailsSheet(reservation: target),
+            );
+          });
+        }
+      }
+
       final pendingPrompt = all.cast<Reservation?>().firstWhere(
         (reservation) => reservation?.needsRatingPrompt == true,
         orElse: () => null,

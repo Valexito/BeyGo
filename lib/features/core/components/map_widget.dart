@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -36,12 +38,14 @@ class MapWidget extends ConsumerStatefulWidget {
 class MapWidgetState extends ConsumerState<MapWidget> {
   GoogleMapController? _mapController;
   LatLng? _currentPosition;
+  BitmapDescriptor? _parkingMarkerIcon;
 
   static const LatLng _fallback = LatLng(14.834999, -91.518669); // Xela
 
   @override
   void initState() {
     super.initState();
+    _prepareParkingMarkerIcon();
     _initLocation();
   }
 
@@ -68,16 +72,88 @@ class MapWidgetState extends ConsumerState<MapWidget> {
     }
   }
 
+  Future<void> _prepareParkingMarkerIcon() async {
+    try {
+      final icon = await _buildParkingMarkerIcon();
+      if (!mounted) return;
+      setState(() => _parkingMarkerIcon = icon);
+    } catch (_) {}
+  }
+
+  Future<BitmapDescriptor> _buildParkingMarkerIcon() async {
+    const size = 96.0;
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder);
+    final center = const Offset(size / 2, size / 2);
+
+    final shadowPaint =
+        Paint()
+          ..color = Colors.black.withValues(alpha: 0.18)
+          ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 8);
+    canvas.drawCircle(center + const Offset(0, 6), 24, shadowPaint);
+
+    final gradientPaint =
+        Paint()
+          ..shader = const LinearGradient(
+            colors: [AppColors.headerTop, AppColors.headerBottom],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ).createShader(const Rect.fromLTWH(18, 14, 60, 60));
+    canvas.drawCircle(center, 24, gradientPaint);
+
+    final borderPaint =
+        Paint()
+          ..color = Colors.white.withValues(alpha: 0.92)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 3;
+    canvas.drawCircle(center, 24, borderPaint);
+
+    final carPainter = TextPainter(textDirection: TextDirection.ltr);
+    carPainter.text = TextSpan(
+      text: String.fromCharCode(Icons.directions_car_filled_rounded.codePoint),
+      style: TextStyle(
+        fontSize: 22,
+        fontFamily: Icons.directions_car_filled_rounded.fontFamily,
+        package: Icons.directions_car_filled_rounded.fontPackage,
+        color: Colors.white.withValues(alpha: 0.96),
+      ),
+    );
+    carPainter.layout();
+    carPainter.paint(
+      canvas,
+      Offset(center.dx - carPainter.width / 2, center.dy - 11),
+    );
+
+    final pointer =
+        Path()
+          ..moveTo(center.dx - 11, size - 28)
+          ..lineTo(center.dx + 11, size - 28)
+          ..lineTo(center.dx, size - 8)
+          ..close();
+    canvas.drawPath(pointer, gradientPaint);
+
+    final image = await recorder.endRecording().toImage(
+      size.toInt(),
+      size.toInt(),
+    );
+    final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+    final bytes = byteData!.buffer.asUint8List();
+    return BitmapDescriptor.bytes(bytes);
+  }
+
   // ── Build markers ─────────────────────────────────────────────────────────
   Set<Marker> _buildMarkers(List<Parking> parkings) {
     return parkings.map((p) {
       return Marker(
         markerId: MarkerId('parking_${p.id}'),
         position: LatLng(p.lat, p.lng),
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+        icon:
+            _parkingMarkerIcon ??
+            BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
         infoWindow: InfoWindow(
           title: p.name,
           snippet: 'Q${p.price}/hora · Toca para ver',
+          onTap: () => _showParkingDetails(p),
         ),
         onTap: () => _showParkingDetails(p),
       );

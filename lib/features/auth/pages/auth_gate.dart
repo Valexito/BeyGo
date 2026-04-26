@@ -87,7 +87,11 @@ class _AuthGateState extends ConsumerState<AuthGate> {
               variant: LoadingVariant.profile,
             );
           },
-          error: (_, __) => CompleteProfilePage(user: user, isNewUser: false),
+          error:
+              (error, _) => _ProfileValidationErrorView(
+                message: error.toString(),
+                onRetry: () => ref.invalidate(canEnterAppProvider(user.uid)),
+              ),
           data: (canEnter) {
             _cachedCanEnter = canEnter;
             if (canEnter) return const HomeSwitch();
@@ -95,6 +99,70 @@ class _AuthGateState extends ConsumerState<AuthGate> {
           },
         );
       },
+    );
+  }
+}
+
+class _ProfileValidationErrorView extends StatelessWidget {
+  const _ProfileValidationErrorView({
+    required this.message,
+    required this.onRetry,
+  });
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 28),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 74,
+                height: 74,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2563EB).withValues(alpha: 0.10),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.verified_user_outlined,
+                  color: Color(0xFF2563EB),
+                  size: 34,
+                ),
+              ),
+              const SizedBox(height: 18),
+              const Text(
+                'No pudimos validar tu perfil todavía',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF1E293B),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 13,
+                  height: 1.45,
+                  color: Color(0xFF64748B),
+                ),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: onRetry,
+                child: const Text('Reintentar'),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

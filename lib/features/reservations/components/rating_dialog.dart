@@ -95,7 +95,9 @@ class _RatingDialogState extends State<_RatingDialog> {
 
       final db = FirebaseFirestore.instance;
       final parkingRef = db.collection('parkings').doc(parkingId);
-      final reviewRef = parkingRef.collection('reviews').doc(uid);
+      final reviewRef = parkingRef.collection('reviews').doc(
+        widget.reservation.id,
+      );
 
       // Write the individual review
       await reviewRef.set({
@@ -106,6 +108,7 @@ class _RatingDialogState extends State<_RatingDialog> {
         'rating': _avgRating,
         'comment': _commentCtrl.text.trim(),
         'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
       });
 
       await db.collection('reservations').doc(widget.reservation.id).set({

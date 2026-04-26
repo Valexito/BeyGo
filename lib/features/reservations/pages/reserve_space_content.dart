@@ -37,9 +37,40 @@ class ReserveSpaceContent extends ConsumerStatefulWidget {
 }
 
 class _ReserveSpaceContentState extends ConsumerState<ReserveSpaceContent> {
+  int _headerPage = 0;
+
+  void _openGallery([int? initialPage]) {
+    if (widget.gallery.isEmpty) return;
+    Navigator.of(context, rootNavigator: true).push(
+      PageRouteBuilder(
+        opaque: false,
+        barrierDismissible: true,
+        barrierColor: Colors.black,
+        pageBuilder: (_, __, ___) {
+          return _FullscreenGalleryDialog(
+            gallery: widget.gallery,
+            initialPage: initialPage ?? _headerPage,
+          );
+        },
+        transitionsBuilder: (_, animation, __, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final w = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final safeTop = MediaQuery.of(context).padding.top;
+    const headerActionHeight = 54.0;
+    final heroVisibleHeight = screenHeight * 0.25;
+    final galleryTapTop = safeTop + headerActionHeight;
+    final galleryTapHeight = (heroVisibleHeight - galleryTapTop).clamp(
+      0.0,
+      260.0,
+    );
 
     final cross =
         w >= 520
@@ -61,6 +92,8 @@ class _ReserveSpaceContentState extends ConsumerState<ReserveSpaceContent> {
               _ReservationHeader(
                 gallery: widget.gallery,
                 onBack: () => Navigator.pop(context),
+                onPageChanged: (page) => _headerPage = page,
+                onOpenGallery: _openGallery,
               ),
             ],
           ),
@@ -466,6 +499,17 @@ class _ReserveSpaceContentState extends ConsumerState<ReserveSpaceContent> {
               );
             },
           ),
+          if (widget.gallery.isNotEmpty && galleryTapHeight > 0)
+            Positioned(
+              top: galleryTapTop,
+              left: 0,
+              right: 0,
+              height: galleryTapHeight,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => _openGallery(),
+              ),
+            ),
         ],
       ),
     );
@@ -648,8 +692,15 @@ class _VehicleSelectorCard extends StatelessWidget {
 class _ReservationHeader extends StatefulWidget {
   final List<String> gallery;
   final VoidCallback onBack;
+  final ValueChanged<int> onPageChanged;
+  final ValueChanged<int> onOpenGallery;
 
-  const _ReservationHeader({required this.gallery, required this.onBack});
+  const _ReservationHeader({
+    required this.gallery,
+    required this.onBack,
+    required this.onPageChanged,
+    required this.onOpenGallery,
+  });
 
   @override
   State<_ReservationHeader> createState() => _ReservationHeaderState();
@@ -657,6 +708,7 @@ class _ReservationHeader extends StatefulWidget {
 
 class _ReservationHeaderState extends State<_ReservationHeader> {
   late final PageController _pageController;
+  int _page = 0;
 
   @override
   void initState() {
@@ -684,55 +736,14 @@ class _ReservationHeaderState extends State<_ReservationHeader> {
             PageView.builder(
               controller: _pageController,
               itemCount: widget.gallery.length,
+              onPageChanged: (value) {
+                setState(() => _page = value);
+                widget.onPageChanged(value);
+              },
               itemBuilder: (_, i) {
                 return GestureDetector(
-                  onTap: () {
-                    showGeneralDialog(
-                      context: context,
-                      barrierDismissible: true,
-                      barrierLabel: 'Image',
-                      barrierColor: Colors.black,
-                      transitionDuration: const Duration(milliseconds: 300),
-                      pageBuilder: (_, __, ___) {
-                        return Scaffold(
-                          backgroundColor: Colors.black,
-                          body: Stack(
-                            children: [
-                              PageView.builder(
-                                controller: PageController(initialPage: i),
-                                itemCount: widget.gallery.length,
-                                itemBuilder: (_, index) {
-                                  return Center(
-                                    child: InteractiveViewer(
-                                      child: Image.network(
-                                        widget.gallery[index],
-                                        fit: BoxFit.contain,
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                              Positioned(
-                                top: 40,
-                                right: 20,
-                                child: IconButton(
-                                  icon: const Icon(
-                                    Icons.close,
-                                    color: Colors.white,
-                                    size: 28,
-                                  ),
-                                  onPressed: () => Navigator.pop(context),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                      transitionBuilder: (_, animation, __, child) {
-                        return FadeTransition(opacity: animation, child: child);
-                      },
-                    );
-                  },
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => widget.onOpenGallery(i),
                   child: Image.network(
                     widget.gallery[i],
                     fit: BoxFit.cover,
@@ -759,6 +770,62 @@ class _ReservationHeaderState extends State<_ReservationHeader> {
               ),
             ),
           ),
+          if (hasGallery)
+            Positioned(
+              right: 18,
+              bottom: 18,
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.45),
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.16),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.photo_library_outlined,
+                          color: Colors.white,
+                          size: 14,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          '${_page + 1}/${widget.gallery.length}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.45),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.16),
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.open_in_full_rounded,
+                      color: Colors.white,
+                      size: 16,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           Positioned(
             top: 12,
             left: 18,
@@ -768,6 +835,117 @@ class _ReservationHeaderState extends State<_ReservationHeader> {
                 style: TextButton.styleFrom(foregroundColor: Colors.white),
                 icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 16),
                 label: const Text('Regresar'),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FullscreenGalleryDialog extends StatefulWidget {
+  final List<String> gallery;
+  final int initialPage;
+
+  const _FullscreenGalleryDialog({
+    required this.gallery,
+    required this.initialPage,
+  });
+
+  @override
+  State<_FullscreenGalleryDialog> createState() =>
+      _FullscreenGalleryDialogState();
+}
+
+class _FullscreenGalleryDialogState extends State<_FullscreenGalleryDialog> {
+  late final PageController _controller;
+  late int _page;
+
+  @override
+  void initState() {
+    super.initState();
+    _page = widget.initialPage;
+    _controller = PageController(initialPage: widget.initialPage);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+          PageView.builder(
+            controller: _controller,
+            itemCount: widget.gallery.length,
+            onPageChanged: (value) => setState(() => _page = value),
+            itemBuilder: (_, index) {
+              return Center(
+                child: InteractiveViewer(
+                  minScale: 0.9,
+                  maxScale: 4.0,
+                  child: Image.network(
+                    widget.gallery[index],
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              );
+            },
+          ),
+          Positioned(
+            top: 34,
+            left: 18,
+            right: 18,
+            child: SafeArea(
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.36),
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.10),
+                      ),
+                    ),
+                    child: Text(
+                      'Foto ${_page + 1} de ${widget.gallery.length}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.36),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.10),
+                      ),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.close_rounded,
+                        color: Colors.white,
+                        size: 26,
+                      ),
+                      onPressed:
+                          () => Navigator.of(context, rootNavigator: true).pop(),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

@@ -13,8 +13,17 @@ import 'package:mapbox_api/features/core/roles/role_utils.dart';
 import 'package:mapbox_api/features/reservations/models/reservation.dart';
 import 'package:mapbox_api/features/reservations/providers/reservations_providers.dart';
 
+enum OwnerReservationsTab { active, pending }
+
 class OwnerReservationsPage extends ConsumerStatefulWidget {
-  const OwnerReservationsPage({super.key});
+  final String? initialReservationId;
+  final OwnerReservationsTab initialTab;
+
+  const OwnerReservationsPage({
+    super.key,
+    this.initialReservationId,
+    this.initialTab = OwnerReservationsTab.active,
+  });
 
   @override
   ConsumerState<OwnerReservationsPage> createState() =>
@@ -23,7 +32,11 @@ class OwnerReservationsPage extends ConsumerStatefulWidget {
 
 class _OwnerReservationsPageState extends ConsumerState<OwnerReservationsPage>
     with SingleTickerProviderStateMixin {
-  late final TabController _tab = TabController(length: 2, vsync: this);
+  late final TabController _tab = TabController(
+    length: 2,
+    vsync: this,
+    initialIndex: widget.initialTab == OwnerReservationsTab.active ? 0 : 1,
+  );
 
   @override
   void dispose() {
@@ -109,7 +122,20 @@ class _OwnerReservationsPageState extends ConsumerState<OwnerReservationsPage>
                         data: (items) {
                           final active =
                               items.where((r) => r.state == 'active').toList();
-                          if (active.isEmpty) {
+                          final visible =
+                              widget.initialReservationId == null
+                                  ? active
+                                  : [
+                                    ...active.where(
+                                      (r) =>
+                                          r.id == widget.initialReservationId,
+                                    ),
+                                    ...active.where(
+                                      (r) =>
+                                          r.id != widget.initialReservationId,
+                                    ),
+                                  ];
+                          if (visible.isEmpty) {
                             return const _EmptyState(
                               icon: Icons.local_parking,
                               title: 'Sin reservas activas',
@@ -118,11 +144,16 @@ class _OwnerReservationsPageState extends ConsumerState<OwnerReservationsPage>
                           }
                           return ListView.separated(
                             padding: const EdgeInsets.all(16),
-                            itemCount: active.length,
+                            itemCount: visible.length,
                             separatorBuilder:
                                 (_, __) => const SizedBox(height: 14),
                             itemBuilder:
-                                (_, i) => _ActiveCard(reservation: active[i]),
+                                (_, i) => _ActiveCard(
+                                  reservation: visible[i],
+                                  highlighted:
+                                      visible[i].id ==
+                                      widget.initialReservationId,
+                                ),
                           );
                         },
                       ),
@@ -143,7 +174,20 @@ class _OwnerReservationsPageState extends ConsumerState<OwnerReservationsPage>
                                         r.providerApprovalStatus == 'pending',
                                   )
                                   .toList();
-                          if (pending.isEmpty) {
+                          final visible =
+                              widget.initialReservationId == null
+                                  ? pending
+                                  : [
+                                    ...pending.where(
+                                      (r) =>
+                                          r.id == widget.initialReservationId,
+                                    ),
+                                    ...pending.where(
+                                      (r) =>
+                                          r.id != widget.initialReservationId,
+                                    ),
+                                  ];
+                          if (visible.isEmpty) {
                             return const _EmptyState(
                               icon: Icons.hourglass_empty,
                               title: 'Sin solicitudes',
@@ -153,11 +197,16 @@ class _OwnerReservationsPageState extends ConsumerState<OwnerReservationsPage>
                           }
                           return ListView.separated(
                             padding: const EdgeInsets.all(16),
-                            itemCount: pending.length,
+                            itemCount: visible.length,
                             separatorBuilder:
                                 (_, __) => const SizedBox(height: 14),
                             itemBuilder:
-                                (_, i) => _ApproveCard(reservation: pending[i]),
+                                (_, i) => _ApproveCard(
+                                  reservation: visible[i],
+                                  highlighted:
+                                      visible[i].id ==
+                                      widget.initialReservationId,
+                                ),
                           );
                         },
                       ),
@@ -174,12 +223,18 @@ class _OwnerReservationsPageState extends ConsumerState<OwnerReservationsPage>
 // ─── Active card ─────────────────────────────────────────────────────────
 class _ActiveCard extends ConsumerWidget {
   final Reservation reservation;
-  const _ActiveCard({required this.reservation});
+  final bool highlighted;
+
+  const _ActiveCard({
+    required this.reservation,
+    this.highlighted = false,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return _Card(
       header: 'No. ${reservation.reservationNumber ?? "N/A"}',
+      highlighted: highlighted,
       rows: [
         _Row(Icons.info_outline, 'Estado', 'Activa'),
         _Row(Icons.access_time, 'Inicio', _fmt(reservation.reservedAt)),
@@ -332,7 +387,12 @@ class _ActiveCard extends ConsumerWidget {
 // ─── Pending approval card — Approve + Reject ─────────────────────────────
 class _ApproveCard extends ConsumerStatefulWidget {
   final Reservation reservation;
-  const _ApproveCard({required this.reservation});
+  final bool highlighted;
+
+  const _ApproveCard({
+    required this.reservation,
+    this.highlighted = false,
+  });
 
   @override
   ConsumerState<_ApproveCard> createState() => _ApproveCardState();
@@ -350,6 +410,7 @@ class _ApproveCardState extends ConsumerState<_ApproveCard> {
 
     return _Card(
       header: 'No. ${widget.reservation.reservationNumber ?? "N/A"}',
+      highlighted: widget.highlighted,
       rows: [
         _Row(Icons.hourglass_top, 'Estado', 'Pendiente'),
         _Row(
@@ -580,10 +641,12 @@ class _Card extends StatelessWidget {
   final String header;
   final List<_Row> rows;
   final Widget actions;
+  final bool highlighted;
   const _Card({
     required this.header,
     required this.rows,
     required this.actions,
+    this.highlighted = false,
   });
 
   @override
@@ -591,7 +654,13 @@ class _Card extends StatelessWidget {
     decoration: BoxDecoration(
       color: context.appCardBackground,
       borderRadius: BorderRadius.circular(22),
-      border: Border.all(color: context.appBorderColor),
+      border: Border.all(
+        color:
+            highlighted
+                ? AppColors.headerBottom.withValues(alpha: 0.45)
+                : context.appBorderColor,
+        width: highlighted ? 1.6 : 1,
+      ),
       boxShadow: [
         BoxShadow(
           color: Colors.black.withValues(

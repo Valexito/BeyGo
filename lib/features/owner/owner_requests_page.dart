@@ -9,8 +9,17 @@ import 'package:mapbox_api/features/reservations/models/reservation.dart';
 import 'package:mapbox_api/features/reservations/providers/reservations_providers.dart';
 import 'package:mapbox_api/features/owner/widgets/owner_dialogs.dart';
 
+enum OwnerRequestTab { exits, cancellations }
+
 class OwnerRequestsPage extends ConsumerStatefulWidget {
-  const OwnerRequestsPage({super.key});
+  final String? initialReservationId;
+  final OwnerRequestTab initialTab;
+
+  const OwnerRequestsPage({
+    super.key,
+    this.initialReservationId,
+    this.initialTab = OwnerRequestTab.exits,
+  });
 
   @override
   ConsumerState<OwnerRequestsPage> createState() => _OwnerRequestsPageState();
@@ -60,6 +69,7 @@ class _OwnerRequestsPageState extends ConsumerState<OwnerRequestsPage>
   late final TabController _tabController = TabController(
     length: 2,
     vsync: this,
+    initialIndex: widget.initialTab == OwnerRequestTab.exits ? 0 : 1,
   );
 
   @override
@@ -153,7 +163,21 @@ class _OwnerRequestsPageState extends ConsumerState<OwnerRequestsPage>
                             ),
                         error: (e, _) => Center(child: Text('$e')),
                         data: (items) {
-                          if (items.isEmpty) {
+                          final visible =
+                              widget.initialReservationId == null
+                                  ? items
+                                  : [
+                                    ...items.where(
+                                      (r) =>
+                                          r.id == widget.initialReservationId,
+                                    ),
+                                    ...items.where(
+                                      (r) =>
+                                          r.id != widget.initialReservationId,
+                                    ),
+                                  ];
+
+                          if (visible.isEmpty) {
                             return const _OwnerEmptyState(
                               icon: Icons.logout,
                               title: 'Sin salidas',
@@ -163,13 +187,16 @@ class _OwnerRequestsPageState extends ConsumerState<OwnerRequestsPage>
 
                           return ListView.separated(
                             padding: const EdgeInsets.all(16),
-                            itemCount: items.length,
+                            itemCount: visible.length,
                             separatorBuilder:
                                 (_, __) => const SizedBox(height: 14),
                             itemBuilder:
                                 (_, i) => _RequestCard(
-                                  reservation: items[i],
+                                  reservation: visible[i],
                                   isExit: true,
+                                  highlighted:
+                                      visible[i].id ==
+                                      widget.initialReservationId,
                                 ),
                           );
                         },
@@ -183,7 +210,21 @@ class _OwnerRequestsPageState extends ConsumerState<OwnerRequestsPage>
                             ),
                         error: (e, _) => Center(child: Text('$e')),
                         data: (items) {
-                          if (items.isEmpty) {
+                          final visible =
+                              widget.initialReservationId == null
+                                  ? items
+                                  : [
+                                    ...items.where(
+                                      (r) =>
+                                          r.id == widget.initialReservationId,
+                                    ),
+                                    ...items.where(
+                                      (r) =>
+                                          r.id != widget.initialReservationId,
+                                    ),
+                                  ];
+
+                          if (visible.isEmpty) {
                             return const _OwnerEmptyState(
                               icon: Icons.cancel,
                               title: 'Sin cancelaciones',
@@ -193,13 +234,16 @@ class _OwnerRequestsPageState extends ConsumerState<OwnerRequestsPage>
 
                           return ListView.separated(
                             padding: const EdgeInsets.all(16),
-                            itemCount: items.length,
+                            itemCount: visible.length,
                             separatorBuilder:
                                 (_, __) => const SizedBox(height: 14),
                             itemBuilder:
                                 (_, i) => _RequestCard(
-                                  reservation: items[i],
+                                  reservation: visible[i],
                                   isExit: false,
+                                  highlighted:
+                                      visible[i].id ==
+                                      widget.initialReservationId,
                                 ),
                           );
                         },
@@ -220,8 +264,13 @@ class _OwnerRequestsPageState extends ConsumerState<OwnerRequestsPage>
 class _RequestCard extends ConsumerStatefulWidget {
   final Reservation reservation;
   final bool isExit;
+  final bool highlighted;
 
-  const _RequestCard({required this.reservation, required this.isExit});
+  const _RequestCard({
+    required this.reservation,
+    required this.isExit,
+    this.highlighted = false,
+  });
 
   @override
   ConsumerState<_RequestCard> createState() => _RequestCardState();
@@ -247,7 +296,13 @@ class _RequestCardState extends ConsumerState<_RequestCard> {
       decoration: BoxDecoration(
         color: context.appCardBackground,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: context.appBorderColor),
+        border: Border.all(
+          color:
+              widget.highlighted
+                  ? AppColors.headerBottom.withValues(alpha: 0.45)
+                  : context.appBorderColor,
+          width: widget.highlighted ? 1.6 : 1,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(

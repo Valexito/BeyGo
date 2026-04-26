@@ -294,7 +294,9 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
   Future<void> _pickOnMap() async {
     final result = await Navigator.push<LatLng>(
       context,
-      MaterialPageRoute(builder: (_) => const MapPickPage()),
+      MaterialPageRoute(
+        builder: (_) => MapPickPage(initialPosition: _picked),
+      ),
     );
     if (result != null) setState(() => _picked = result);
   }

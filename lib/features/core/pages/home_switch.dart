@@ -26,7 +26,6 @@ class HomeSwitch extends ConsumerWidget {
             return const OwnerHomePage();
           case UserRole.user:
           case UserRole.unknown:
-          default:
             return const HomePage();
         }
       },

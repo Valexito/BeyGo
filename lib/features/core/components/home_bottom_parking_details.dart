@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mapbox_api/common/ui/components/app_styles.dart';
 import 'package:mapbox_api/features/core/providers/spaces_provider.dart';
 import 'package:mapbox_api/common/ui/components/my_button.dart';
 import 'package:mapbox_api/common/ui/components/my_text.dart';
@@ -92,11 +93,13 @@ class _HomeParkingDetailBottomSheetState
     final favAsync = ref.watch(isFavoriteStreamProvider(widget.parking.id));
     final spacesAsync = ref.watch(availableSpacesProvider(widget.parking.id));
     final isFav = favAsync.maybeWhen(data: (v) => v, orElse: () => false);
+    final rating = (widget.parking.rating ?? 0).toDouble();
+    final hasRating = rating > 0;
 
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
       child: Material(
-        color: Colors.white,
+        color: context.appCardBackground,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -177,6 +180,55 @@ class _HomeParkingDetailBottomSheetState
                     ),
                   ),
 
+                  Positioned(
+                    right: 14,
+                    bottom: 24,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.94),
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                          color: const Color(0xFFFCD34D).withValues(alpha: 0.45),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.12),
+                            blurRadius: 14,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          Icon(
+                            hasRating
+                                ? Icons.star_rounded
+                                : Icons.star_outline_rounded,
+                            size: 18,
+                            color:
+                                hasRating
+                                    ? const Color(0xFFF59E0B)
+                                    : AppColors.textSecondary,
+                          ),
+                          const SizedBox(height: 4),
+                          MyText(
+                            text: hasRating ? rating.toStringAsFixed(1) : 'Nuevo',
+                            variant: MyTextVariant.bodyBold,
+                            fontSize: 13,
+                            customColor:
+                                hasRating
+                                    ? const Color(0xFFB45309)
+                                    : AppColors.textSecondary,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
                   // Dots del carrusel
                   if (hasMultiple)
                     Positioned(
@@ -210,95 +262,147 @@ class _HomeParkingDetailBottomSheetState
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  MyText(
-                    text: 'Parqueo en ${widget.parking.name}',
-                    variant: MyTextVariant.title,
-                    fontSize: 18,
-                  ),
-                  const SizedBox(height: 6),
-                  if ((widget.parking.descripcion ?? '').isNotEmpty)
-                    MyText(
-                      text: widget.parking.descripcion!,
-                      variant: MyTextVariant.body,
-                      fontSize: 14,
-                    ),
-                  const SizedBox(height: 12),
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(
-                        Icons.attach_money,
-                        size: 18,
-                        color: Colors.blueAccent,
-                      ),
-                      const SizedBox(width: 4),
-                      MyText(
-                        text: '${_money(widget.parking.price)} / hora',
-                        variant: MyTextVariant.bodyBold,
-                        fontSize: 16,
-                      ),
-                      const Spacer(),
-                      Icon(Icons.star, size: 18, color: Color(0xFFFBBF24)),
-                      const SizedBox(width: 4),
-                      MyText(
-                        text: (widget.parking.rating ?? 4.5).toStringAsFixed(1),
-                        variant: MyTextVariant.bodyBold,
-                        fontSize: 14,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.local_parking,
-                        size: 18,
-                        color: Colors.blueAccent,
-                      ),
-                      const SizedBox(width: 6),
-                      spacesAsync.when(
-                        data:
-                            (spaces) => MyText(
-                              text: '$spaces espacios disponibles',
-                              variant: MyTextVariant.body,
-                              fontSize: 14,
-                            ),
-                        loading:
-                            () => const MyText(
-                              text: 'Cargando...',
-                              variant: MyTextVariant.body,
-                              fontSize: 14,
-                            ),
-                        error:
-                            (_, __) => MyText(
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            MyText(
                               text:
-                                  '${widget.parking.spaces} espacios disponibles',
-                              variant: MyTextVariant.body,
-                              fontSize: 14,
+                                  'Parqueo en ${widget.parking.name.toUpperCase()}',
+                              variant: MyTextVariant.title,
+                              fontSize: 18,
                             ),
+                            const SizedBox(height: 6),
+                            if ((widget.parking.descripcion ?? '').isNotEmpty)
+                              MyText(
+                                text: widget.parking.descripcion!,
+                                variant: MyTextVariant.body,
+                                fontSize: 14,
+                                customColor: context.appTextSecondaryColor,
+                              ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: context.appCardBackgroundSoft,
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(color: context.appBorderColor),
+                        ),
+                        child: Column(
+                          children: [
+                            _buildOpenStatus(),
+                          ],
+                        ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.access_time,
-                        size: 18,
-                        color: Colors.blueAccent,
-                      ),
-                      const SizedBox(width: 6),
-                      MyText(
-                        text:
-                            '${widget.parking.businessHours?['open'] ?? '--'} - ${widget.parking.businessHours?['close'] ?? '--'}',
-                        variant: MyTextVariant.body,
-                        fontSize: 14,
-                      ),
-                      const Spacer(),
-                      _buildOpenStatus(),
-                    ],
+                  const SizedBox(height: 14),
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: context.appCardBackgroundSoft,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: context.appBorderColor),
+                    ),
+                    child: Column(
+                      children: [
+                        _InfoTile(
+                          icon: Icons.directions_car_filled_rounded,
+                          iconColor: const Color(0xFF2563EB),
+                          label: 'Espacios disponibles',
+                          valueWidget: spacesAsync.when(
+                            data:
+                                (spaces) => MyText(
+                                  text: '$spaces espacios',
+                                  variant: MyTextVariant.bodyBold,
+                                  fontSize: 14,
+                                  customColor: context.appTextPrimaryColor,
+                                ),
+                            loading:
+                                () => MyText(
+                                  text: 'Cargando...',
+                                  variant: MyTextVariant.body,
+                                  fontSize: 14,
+                                  customColor: context.appTextSecondaryColor,
+                                ),
+                            error:
+                                (_, __) => MyText(
+                                  text: '${widget.parking.spaces} espacios',
+                                  variant: MyTextVariant.bodyBold,
+                                  fontSize: 14,
+                                  customColor: context.appTextPrimaryColor,
+                                ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        _InfoTile(
+                          icon: Icons.attach_money_rounded,
+                          iconColor: const Color(0xFF2563EB),
+                          label: 'Precio',
+                          valueWidget: MyText(
+                            text: '${_money(widget.parking.price)} / hora',
+                            variant: MyTextVariant.bodyBold,
+                            fontSize: 14,
+                            customColor: context.appTextPrimaryColor,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        _InfoTile(
+                          icon: Icons.schedule_rounded,
+                          iconColor: const Color(0xFF2563EB),
+                          label: 'Horario',
+                          valueWidget: Flexible(
+                            child: Align(
+                              alignment: Alignment.centerRight,
+                              child: Text(
+                                '${widget.parking.businessHours?['open'] ?? '--'} - ${widget.parking.businessHours?['close'] ?? '--'}',
+                                textAlign: TextAlign.right,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: context.appTextPrimaryColor,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 18),
-                  const Divider(height: 1),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          height: 1,
+                          color: context.appBorderColor,
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        child: Icon(
+                          Icons.place_rounded,
+                          size: 16,
+                          color: context.appTextSecondaryColor,
+                        ),
+                      ),
+                      Expanded(
+                        child: Container(
+                          height: 1,
+                          color: context.appBorderColor,
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 18),
 
                   MyButton(
@@ -372,8 +476,9 @@ class _HomeParkingDetailBottomSheetState
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.18)),
       ),
       child: MyText(
         text: text,
@@ -381,6 +486,49 @@ class _HomeParkingDetailBottomSheetState
         fontSize: 12,
         customColor: color,
       ),
+    );
+  }
+}
+
+class _InfoTile extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final String label;
+  final Widget valueWidget;
+
+  const _InfoTile({
+    required this.icon,
+    required this.iconColor,
+    required this.label,
+    required this.valueWidget,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            color: iconColor.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, size: 18, color: iconColor),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: MyText(
+            text: label,
+            variant: MyTextVariant.body,
+            fontSize: 13,
+            customColor: context.appTextSecondaryColor,
+          ),
+        ),
+        const SizedBox(width: 8),
+        valueWidget,
+      ],
     );
   }
 }

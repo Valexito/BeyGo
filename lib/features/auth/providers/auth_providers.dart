@@ -71,7 +71,11 @@ class _AuthActions {
 
     // ✅ Remove FCM token BEFORE signing out so this device stops receiving
     // notifications for the user that is leaving.
-    await NotificationService.instance.onSignOut();
+    try {
+      await NotificationService.instance.onSignOut().timeout(
+        const Duration(seconds: 6),
+      );
+    } catch (_) {}
 
     try {
       await _ref.read(googleSignInInstanceProvider).signOut();

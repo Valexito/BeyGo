@@ -288,7 +288,14 @@ exports.onReservationChanged = onDocumentWritten(
                 token: ownerToken,
                 title: "🅿️ Nueva solicitud de reserva",
                 body: `Espacio ${spaceNumber} en ${parkingName}`,
-                data: { route: "ownerReservations", type: "new_reservation" },
+                data: {
+                    route: "ownerReservations",
+                    type: "new_reservation",
+                    reservationId: event.params.resId,
+                    reservationNumber,
+                    parkingId: after.parkingId ?? "",
+                    spaceNumber: `${spaceNumber}`,
+                },
             });
             return;
         }
@@ -307,7 +314,10 @@ exports.onReservationChanged = onDocumentWritten(
                 data: {
                     route: "reservations",
                     type: "reservation_approved",
+                    reservationId: event.params.resId,
                     reservationNumber,
+                    parkingId: after.parkingId ?? "",
+                    spaceNumber: `${spaceNumber}`,
                 },
             });
             return;
@@ -320,7 +330,14 @@ exports.onReservationChanged = onDocumentWritten(
                 token: userToken,
                 title: "❌ Reserva no aprobada",
                 body: `Tu solicitud en ${parkingName} fue rechazada`,
-                data: { route: "reservations", type: "reservation_rejected" },
+                data: {
+                    route: "reservations",
+                    type: "reservation_rejected",
+                    reservationId: event.params.resId,
+                    reservationNumber,
+                    parkingId: after.parkingId ?? "",
+                    spaceNumber: `${spaceNumber}`,
+                },
             });
             return;
         }
@@ -332,7 +349,14 @@ exports.onReservationChanged = onDocumentWritten(
                 token: ownerToken,
                 title: "🚗 Solicitud de salida",
                 body: `Espacio ${spaceNumber} en ${parkingName} — No. ${reservationNumber}`,
-                data: { route: "ownerRequests", type: "exit_requested" },
+                data: {
+                    route: "ownerRequests",
+                    type: "exit_requested",
+                    reservationId: event.params.resId,
+                    reservationNumber,
+                    parkingId: after.parkingId ?? "",
+                    spaceNumber: `${spaceNumber}`,
+                },
             });
             return;
         }
@@ -347,7 +371,10 @@ exports.onReservationChanged = onDocumentWritten(
                 data: {
                     route: "reservations",
                     type: "exit_approved",
+                    reservationId: event.params.resId,
                     reservationNumber,
+                    parkingId: after.parkingId ?? "",
+                    spaceNumber: `${spaceNumber}`,
                 },
             });
             return;
@@ -363,7 +390,14 @@ exports.onReservationChanged = onDocumentWritten(
                 token: ownerToken,
                 title: "🔔 Solicitud de cancelación",
                 body: `Espacio ${spaceNumber} en ${parkingName}`,
-                data: { route: "ownerRequests", type: "cancel_requested" },
+                data: {
+                    route: "ownerRequests",
+                    type: "cancel_requested",
+                    reservationId: event.params.resId,
+                    reservationNumber,
+                    parkingId: after.parkingId ?? "",
+                    spaceNumber: `${spaceNumber}`,
+                },
             });
             return;
         }
@@ -379,8 +413,10 @@ exports.onReservationChanged = onDocumentWritten(
                 data: {
                     route: "reservations",
                     type: "reservation_completed",
+                    reservationId: event.params.resId,
                     reservationNumber,
                     parkingId: after.parkingId,
+                    spaceNumber: `${spaceNumber}`,
                 },
             });
             return;
@@ -397,7 +433,14 @@ exports.onReservationChanged = onDocumentWritten(
                 token: userToken,
                 title: "ℹ️ Cancelación procesada",
                 body: `Tu reserva en ${parkingName} fue cancelada`,
-                data: { route: "reservations", type: "cancellation_confirmed" },
+                data: {
+                    route: "reservations",
+                    type: "cancellation_confirmed",
+                    reservationId: event.params.resId,
+                    reservationNumber,
+                    parkingId: after.parkingId ?? "",
+                    spaceNumber: `${spaceNumber}`,
+                },
             });
         }
     }

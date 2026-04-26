@@ -19,7 +19,8 @@ import 'package:mapbox_api/common/ui/components/navy_header.dart';
 import 'package:mapbox_api/common/ui/widgets/app_map_controls.dart';
 
 class MapPickerPage extends StatefulWidget {
-  /// Optional initial position. Defaults to Xela, Guatemala.
+  /// Optional initial position. If not provided, tries current location first
+  /// and falls back to Xela, Guatemala.
   final LatLng? initialPosition;
   final String title;
 
@@ -53,6 +54,15 @@ class _MapPickerPageState extends State<MapPickerPage> {
     super.initState();
     _selectedPosition = widget.initialPosition;
     _searchCtrl.addListener(() => setState(() {}));
+    if (widget.initialPosition == null) {
+      unawaited(
+        _centerOnCurrentLocation(
+          selectLocation: true,
+          showError: false,
+          animate: true,
+        ),
+      );
+    }
   }
 
   @override
@@ -132,20 +142,36 @@ class _MapPickerPageState extends State<MapPickerPage> {
   }
 
   Future<void> _goToCurrentLocation() async {
+    await _centerOnCurrentLocation(
+      selectLocation: true,
+      showError: true,
+      animate: true,
+    );
+  }
+
+  Future<void> _centerOnCurrentLocation({
+    required bool selectLocation,
+    required bool showError,
+    required bool animate,
+  }) async {
     if (_locating) return;
     setState(() => _locating = true);
     try {
       final loc = await getCurrentLocation();
       if (!mounted) return;
       setState(() {
-        _selectedPosition = loc;
+        if (selectLocation) {
+          _selectedPosition = loc;
+        }
         _showSuggestions = false;
       });
-      await _mapController?.animateCamera(
-        CameraUpdate.newCameraPosition(CameraPosition(target: loc, zoom: 16)),
-      );
+      if (animate) {
+        await _mapController?.animateCamera(
+          CameraUpdate.newCameraPosition(CameraPosition(target: loc, zoom: 16)),
+        );
+      }
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted || !showError) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('No pudimos obtener tu ubicación: $e')),
       );
@@ -175,7 +201,17 @@ class _MapPickerPageState extends State<MapPickerPage> {
               children: [
                 // Map
                 GoogleMap(
-                  onMapCreated: (c) => _mapController = c,
+                  onMapCreated: (c) async {
+                    _mapController = c;
+                    if (widget.initialPosition == null &&
+                        _selectedPosition != null) {
+                      await c.animateCamera(
+                        CameraUpdate.newCameraPosition(
+                          CameraPosition(target: _selectedPosition!, zoom: 16),
+                        ),
+                      );
+                    }
+                  },
                   initialCameraPosition: CameraPosition(
                     target: initial,
                     zoom: 15,
