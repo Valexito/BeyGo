@@ -498,7 +498,7 @@ class _RouteHeader extends StatelessWidget {
             left: 20,
             right: 20,
             child: Text(
-              'RUTA A $parkingName',
+              'RUTA A ${parkingName.toUpperCase()}',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(

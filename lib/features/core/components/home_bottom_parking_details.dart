@@ -7,6 +7,7 @@ import 'package:mapbox_api/common/ui/components/my_text.dart';
 import 'package:mapbox_api/features/core/providers/favorites_provider.dart';
 import 'package:mapbox_api/features/reservations/models/parking.dart';
 import 'package:mapbox_api/features/reservations/pages/reserve_space_page.dart';
+import 'package:mapbox_api/features/reservations/providers/reservations_providers.dart';
 
 class HomeParkingDetailBottomSheet extends ConsumerStatefulWidget {
   final Parking parking;
@@ -37,11 +38,11 @@ class _HomeParkingDetailBottomSheetState
   bool _isToggling = false;
 
   // Galería a mostrar (1) photos[] (2) coverUrl (3) imageUrl (4) placeholder
-  List<String> get _gallery {
+  List<String> _galleryFor(Parking parking) {
     final g = <String>[];
-    if (widget.parking.photos.isNotEmpty) g.addAll(widget.parking.photos);
+    if (parking.photos.isNotEmpty) g.addAll(parking.photos);
 
-    final cover = widget.parking.coverUrl ?? widget.parking.imageUrl;
+    final cover = parking.coverUrl ?? parking.imageUrl;
     if (g.isEmpty && (cover ?? '').isNotEmpty) g.add(cover!);
 
     if (g.isEmpty) {
@@ -86,14 +87,16 @@ class _HomeParkingDetailBottomSheetState
 
   @override
   Widget build(BuildContext context) {
-    final gallery = _gallery;
+    final parkingAsync = ref.watch(parkingStreamProvider(widget.parking.id));
+    final currentParking = parkingAsync.asData?.value ?? widget.parking;
+    final gallery = _galleryFor(currentParking);
     final hasMultiple = gallery.length > 1;
 
     // Escucha en tiempo real si este parking es favorito
     final favAsync = ref.watch(isFavoriteStreamProvider(widget.parking.id));
     final spacesAsync = ref.watch(availableSpacesProvider(widget.parking.id));
     final isFav = favAsync.maybeWhen(data: (v) => v, orElse: () => false);
-    final rating = (widget.parking.rating ?? 0).toDouble();
+    final rating = (currentParking.rating ?? 0).toDouble();
     final hasRating = rating > 0;
 
     return ClipRRect(
@@ -271,14 +274,14 @@ class _HomeParkingDetailBottomSheetState
                           children: [
                             MyText(
                               text:
-                                  'Parqueo en ${widget.parking.name.toUpperCase()}',
+                                  'PARQUEO EN ${currentParking.name.toUpperCase()}',
                               variant: MyTextVariant.title,
                               fontSize: 18,
                             ),
                             const SizedBox(height: 6),
-                            if ((widget.parking.descripcion ?? '').isNotEmpty)
+                            if ((currentParking.descripcion ?? '').isNotEmpty)
                               MyText(
-                                text: widget.parking.descripcion!,
+                                text: currentParking.descripcion!,
                                 variant: MyTextVariant.body,
                                 fontSize: 14,
                                 customColor: context.appTextSecondaryColor,
@@ -299,7 +302,7 @@ class _HomeParkingDetailBottomSheetState
                         ),
                         child: Column(
                           children: [
-                            _buildOpenStatus(),
+                            _buildOpenStatus(currentParking),
                           ],
                         ),
                       ),
@@ -336,7 +339,7 @@ class _HomeParkingDetailBottomSheetState
                                 ),
                             error:
                                 (_, __) => MyText(
-                                  text: '${widget.parking.spaces} espacios',
+                                  text: '${currentParking.spaces} espacios',
                                   variant: MyTextVariant.bodyBold,
                                   fontSize: 14,
                                   customColor: context.appTextPrimaryColor,
@@ -349,7 +352,7 @@ class _HomeParkingDetailBottomSheetState
                           iconColor: const Color(0xFF2563EB),
                           label: 'Precio',
                           valueWidget: MyText(
-                            text: '${_money(widget.parking.price)} / hora',
+                            text: '${_money(currentParking.price)} / hora',
                             variant: MyTextVariant.bodyBold,
                             fontSize: 14,
                             customColor: context.appTextPrimaryColor,
@@ -364,7 +367,7 @@ class _HomeParkingDetailBottomSheetState
                             child: Align(
                               alignment: Alignment.centerRight,
                               child: Text(
-                                '${widget.parking.businessHours?['open'] ?? '--'} - ${widget.parking.businessHours?['close'] ?? '--'}',
+                                '${currentParking.businessHours?['open'] ?? '--'} - ${currentParking.businessHours?['close'] ?? '--'}',
                                 textAlign: TextAlign.right,
                                 style: TextStyle(
                                   fontSize: 14,
@@ -413,7 +416,7 @@ class _HomeParkingDetailBottomSheetState
                         context,
                         MaterialPageRoute(
                           builder:
-                              (_) => ReserveSpacePage(parking: widget.parking),
+                              (_) => ReserveSpacePage(parking: currentParking),
                         ),
                       );
                     },
@@ -427,10 +430,10 @@ class _HomeParkingDetailBottomSheetState
     );
   }
 
-  Widget _buildOpenStatus() {
+  Widget _buildOpenStatus(Parking parking) {
     try {
-      final open = widget.parking.businessHours?['open'];
-      final close = widget.parking.businessHours?['close'];
+      final open = parking.businessHours?['open'];
+      final close = parking.businessHours?['close'];
 
       if (open == null || close == null) {
         return _statusChip('N/A', Colors.grey);

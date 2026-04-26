@@ -1,14 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:mapbox_api/common/services/app_preferences_service.dart';
 import 'package:mapbox_api/common/ui/components/app_styles.dart';
 import 'package:mapbox_api/common/ui/components/my_text.dart';
-import 'package:mapbox_api/common/services/app_preferences_service.dart';
+import 'package:mapbox_api/features/auth/providers/auth_providers.dart'
+    show authActionsProvider;
+import 'package:mapbox_api/features/core/pages/userv/legal_information_page.dart';
+import 'package:mapbox_api/features/core/pages/userv/report_problem_page.dart';
+import 'package:mapbox_api/features/core/providers/app_preferences_provider.dart';
 import 'package:mapbox_api/features/core/providers/firebase_providers.dart'
     show currentUserProvider;
-import 'package:mapbox_api/features/core/providers/app_preferences_provider.dart';
+import 'package:mapbox_api/features/owner/widgets/become_owner_page.dart';
+import 'package:mapbox_api/features/reservations/pages/reservations_page.dart';
+import 'package:mapbox_api/features/users/pages/configure_profile_page.dart';
 import 'package:mapbox_api/features/users/providers/user_providers.dart'
     show myNotificationSettingsStreamProvider, saveNotificationSettingsProvider;
+import 'package:mapbox_api/features/users/widgets/delete_account_dialog.dart';
 
 class ConfigurationsPage extends ConsumerWidget {
   const ConfigurationsPage({super.key});
@@ -56,8 +65,9 @@ class ConfigurationsPage extends ConsumerWidget {
                         width: 92,
                         height: 92,
                         decoration: BoxDecoration(
-                          color: (isDark ? Colors.white : Colors.white)
-                              .withValues(alpha: isDark ? 0.04 : 0.12),
+                          color: Colors.white.withValues(
+                            alpha: isDark ? 0.04 : 0.12,
+                          ),
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -69,8 +79,9 @@ class ConfigurationsPage extends ConsumerWidget {
                         width: 118,
                         height: 118,
                         decoration: BoxDecoration(
-                          color: (isDark ? Colors.white : Colors.white)
-                              .withValues(alpha: isDark ? 0.03 : 0.10),
+                          color: Colors.white.withValues(
+                            alpha: isDark ? 0.03 : 0.10,
+                          ),
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -79,10 +90,7 @@ class ConfigurationsPage extends ConsumerWidget {
                       children: [
                         Stack(
                           children: [
-                            SizedBox(
-                              height: 235,
-                              width: double.infinity,
-                            ),
+                            const SizedBox(height: 235, width: double.infinity),
                             Positioned.fill(
                               child: IgnorePointer(
                                 child: SafeArea(
@@ -95,21 +103,28 @@ class ConfigurationsPage extends ConsumerWidget {
                                       0,
                                     ),
                                     child: Column(
-                                      children: [
+                                      children: const [
                                         Icon(
-                                          Icons.settings_outlined,
+                                          Icons.settings_suggest_rounded,
                                           color: Colors.white,
                                           size: 52,
                                         ),
-                                        const SizedBox(height: 12),
-                                        const MyText(
+                                        SizedBox(height: 12),
+                                        MyText(
                                           text: 'Configuraciones',
                                           variant: MyTextVariant.title,
                                           customColor: Colors.white,
                                           textAlign: TextAlign.center,
                                           fontSize: 28,
                                         ),
-                                        const SizedBox(height: 6),
+                                        SizedBox(height: 6),
+                                        MyText(
+                                          text: 'Preferencias, cuenta y soporte',
+                                          variant: MyTextVariant.subtitle,
+                                          customColor: Colors.white70,
+                                          textAlign: TextAlign.center,
+                                          fontSize: 13,
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -169,9 +184,9 @@ class ConfigurationsPage extends ConsumerWidget {
                             ),
                             child: Padding(
                               padding: const EdgeInsets.fromLTRB(
-                                20,
+                                16,
                                 28,
-                                20,
+                                16,
                                 34,
                               ),
                               child:
@@ -253,10 +268,7 @@ class _SettingsBody extends ConsumerWidget {
           await ref.read(saveNotificationSettingsProvider).call(uid, values);
         }
 
-        Future<void> saveNotificationToggle(
-          String key,
-          bool value,
-        ) async {
+        Future<void> saveNotificationToggle(String key, bool value) async {
           final controller = ref.read(appPreferencesProvider.notifier);
           switch (key) {
             case 'enabled':
@@ -275,157 +287,263 @@ class _SettingsBody extends ConsumerWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Align(
-              alignment: Alignment.centerLeft,
-              child: MyText(
-                text: 'Preferencias de la app',
-                variant: MyTextVariant.title,
-                customColor:
-                    context.isDarkMode
-                        ? Colors.white
-                        : AppColors.headerBottom,
-                fontSize: 22,
-              ),
+            _SectionHeader(
+              icon: Icons.notifications_none_rounded,
+              title: 'Notificaciones',
+              subtitle: 'Controla qué alertas recibes y cómo se muestran',
             ),
-            const SizedBox(height: 8),
-            MyText(
-              text:
-                  'Administra tus notificaciones y preferencias generales desde aquí.',
-              variant: MyTextVariant.subtitle,
-              fontSize: 13,
-              customColor: context.appTextSecondaryColor,
+            _SettingsCard(
+              children: [
+                _SwitchRow(
+                  icon: Icons.notifications_active_outlined,
+                  iconColor: const Color(0xFF2563EB),
+                  label: 'Notificaciones activas',
+                  sublabel: 'Permitir alertas mientras usas la app',
+                  value: enabled,
+                  onChanged: (v) => saveNotificationToggle('enabled', v),
+                  badge: enabled ? 'ON' : null,
+                  badgeColor: const Color(0xFF2563EB),
+                ),
+                const _Divider(),
+                _SwitchRow(
+                  icon: Icons.alarm_on_outlined,
+                  iconColor: const Color(0xFF0EA5E9),
+                  label: 'Recordatorios',
+                  sublabel: 'Antes de iniciar o terminar una reservación',
+                  value: reminders,
+                  onChanged:
+                      enabled
+                          ? (v) => saveNotificationToggle('reminders', v)
+                          : null,
+                ),
+                const _Divider(),
+                _SwitchRow(
+                  icon: Icons.system_update_alt_rounded,
+                  iconColor: const Color(0xFFF59E0B),
+                  label: 'Actualizaciones',
+                  sublabel: 'Cambios importantes y estado del servicio',
+                  value: updates,
+                  onChanged:
+                      enabled
+                          ? (v) => saveNotificationToggle('updates', v)
+                          : null,
+                ),
+                const _Divider(),
+                _SwitchRow(
+                  icon: Icons.volume_up_outlined,
+                  iconColor: const Color(0xFF16A34A),
+                  label: 'Sonido',
+                  sublabel: 'Reproducir sonido en notificaciones visibles',
+                  value: sound,
+                  onChanged:
+                      enabled
+                          ? (v) async {
+                            await ref
+                                .read(appPreferencesProvider.notifier)
+                                .setNotificationSoundEnabled(v);
+                            await savePartial({'soundEnabled': v});
+                          }
+                          : null,
+                ),
+              ],
             ),
             const SizedBox(height: 24),
-
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 4),
-              child: MyText(
-                text: 'Notificaciones',
-                variant: MyTextVariant.normal,
-                fontSize: 13,
-                customColor: context.appTextPrimaryColor,
-              ),
+            _SectionHeader(
+              icon: Icons.person_outline_rounded,
+              title: 'Cuenta y perfil',
+              subtitle: 'Accesos importantes para tu cuenta de usuario',
             ),
-            const SizedBox(height: 10),
-
-            Container(
-              decoration: BoxDecoration(
-                color: context.appCardBackground,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(
-                      alpha: context.isDarkMode ? 0.22 : 0.07,
-                    ),
-                    blurRadius: context.isDarkMode ? 20 : 16,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-                border: Border.all(color: context.appBorderColor),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                child: Column(
-                  children: [
-                    _SwitchActionItem(
-                      icon: Icons.notifications_active_outlined,
-                      title: 'Activadas',
-                      subtitle: 'Permitir alertas mientras usas la app',
-                      value: enabled,
-                      onChanged: (v) => saveNotificationToggle('enabled', v),
-                    ),
-                    const _Divider(),
-                    _SwitchActionItem(
-                      icon: Icons.alarm_on_outlined,
-                      title: 'Recordatorios',
-                      subtitle: 'Antes de iniciar o terminar una reservación',
-                      value: reminders,
-                      onChanged:
-                          enabled
-                              ? (v) => saveNotificationToggle('reminders', v)
-                              : null,
-                    ),
-                    const _Divider(),
-                    _SwitchActionItem(
-                      icon: Icons.system_update_alt_rounded,
-                      title: 'Actualizaciones',
-                      subtitle: 'Cambios importantes y estado del servicio',
-                      value: updates,
-                      onChanged:
-                          enabled
-                              ? (v) => saveNotificationToggle('updates', v)
-                              : null,
-                    ),
-                    const _Divider(),
-                    _SwitchActionItem(
-                      icon: Icons.volume_up_outlined,
-                      title: 'Sonido',
-                      subtitle: 'Reproducir sonido en notificaciones visibles',
-                      value: sound,
-                      onChanged:
-                          enabled
-                              ? (v) async {
-                                await ref
-                                    .read(appPreferencesProvider.notifier)
-                                    .setNotificationSoundEnabled(v);
-                                await savePartial({'soundEnabled': v});
-                              }
-                              : null,
-                    ),
-                  ],
+            _SettingsCard(
+              children: [
+                _NavRow(
+                  icon: Icons.edit_outlined,
+                  iconColor: AppColors.headerBottom,
+                  label: 'Editar perfil',
+                  subtitle: 'Datos personales, foto y vehículos',
+                  onTap:
+                      () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const ConfigureProfilePage(),
+                        ),
+                      ),
                 ),
-              ),
-            ),
-
-            const SizedBox(height: 18),
-
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 4),
-              child: MyText(
-                text: 'Preferencias generales',
-                variant: MyTextVariant.normal,
-                fontSize: 13,
-                customColor: context.appTextPrimaryColor,
-              ),
-            ),
-            const SizedBox(height: 10),
-
-            Container(
-              decoration: BoxDecoration(
-                color: context.appCardBackground,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(
-                      alpha: context.isDarkMode ? 0.22 : 0.07,
-                    ),
-                    blurRadius: context.isDarkMode ? 20 : 16,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-                border: Border.all(color: context.appBorderColor),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(10),
-                child: Column(
-                  children: [
-                    _ArrowActionItem(
-                      icon: Icons.palette_outlined,
-                      title: 'Tema',
-                      subtitle: _themeLabel(preferences.themePreference),
-                      onTap: () => _showThemePicker(context, ref),
-                    ),
-                  ],
+                const _Divider(),
+                _NavRow(
+                  icon: Icons.bookmark_added_outlined,
+                  iconColor: const Color(0xFF16A34A),
+                  label: 'Mis reservaciones',
+                  subtitle: 'Consulta tus reservaciones activas e historial',
+                  onTap:
+                      () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const ReservationsPage(),
+                        ),
+                      ),
                 ),
-              ),
+                const _Divider(),
+                _NavRow(
+                  icon: Icons.local_parking_rounded,
+                  iconColor: const Color(0xFFF59E0B),
+                  label: 'Registrar un parqueo',
+                  subtitle: 'Inicia el proceso para convertirte en proveedor',
+                  onTap:
+                      () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const BecomeOwnerPage(),
+                        ),
+                      ),
+                ),
+              ],
             ),
-
+            const SizedBox(height: 24),
+            _SectionHeader(
+              icon: Icons.phone_iphone_rounded,
+              title: 'Aplicación',
+              subtitle: 'Personaliza la experiencia y comparte la app',
+            ),
+            _SettingsCard(
+              children: [
+                _NavRow(
+                  icon: Icons.palette_outlined,
+                  iconColor: AppColors.headerBottom,
+                  label: 'Tema',
+                  subtitle: _themeLabel(preferences.themePreference),
+                  onTap: () => _showThemePicker(context, ref),
+                ),
+                const _Divider(),
+                _NavRow(
+                  icon: Icons.share_outlined,
+                  iconColor: const Color(0xFF2563EB),
+                  label: 'Compartir app',
+                  subtitle: 'Copia un mensaje para recomendar la app',
+                  onTap: () => _shareApp(context),
+                ),
+                const _Divider(),
+                _NavRow(
+                  icon: Icons.info_outline_rounded,
+                  iconColor: const Color(0xFF0EA5E9),
+                  label: 'Versión de la app',
+                  trailing: const Text(
+                    'v1.0.0',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF9CA3AF),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  onTap: () {},
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            _SectionHeader(
+              icon: Icons.gavel_rounded,
+              title: 'Legal',
+              subtitle: 'Consulta información importante sobre el servicio',
+            ),
+            _SettingsCard(
+              children: [
+                _NavRow(
+                  icon: Icons.lock_outline_rounded,
+                  iconColor: AppColors.headerBottom,
+                  label: 'Política de privacidad',
+                  onTap: () => _openLegal(context, 'Privacidad'),
+                ),
+                const _Divider(),
+                _NavRow(
+                  icon: Icons.description_outlined,
+                  iconColor: const Color(0xFF16A34A),
+                  label: 'Términos y condiciones',
+                  onTap: () => _openLegal(context, 'Términos de servicio'),
+                ),
+                const _Divider(),
+                _NavRow(
+                  icon: Icons.cookie_outlined,
+                  iconColor: const Color(0xFFF59E0B),
+                  label: 'Política de cookies',
+                  onTap: () => _openLegal(context, 'Política de cookies'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            _SectionHeader(
+              icon: Icons.support_agent_rounded,
+              title: 'Soporte',
+              subtitle: 'Pide ayuda o envíanos feedback',
+            ),
+            _SettingsCard(
+              children: [
+                _NavRow(
+                  icon: Icons.email_outlined,
+                  iconColor: AppColors.headerBottom,
+                  label: 'Contactar soporte',
+                  subtitle: 'Envíanos un reporte si algo no está funcionando',
+                  onTap:
+                      () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (_) => const ReportProblemPage(
+                                initialReportType: 'Problema con reservación',
+                                initialSubject: 'Soporte de usuario',
+                              ),
+                        ),
+                      ),
+                ),
+                const _Divider(),
+                _NavRow(
+                  icon: Icons.chat_bubble_outline_rounded,
+                  iconColor: const Color(0xFF0EA5E9),
+                  label: 'Enviar feedback',
+                  subtitle: 'Cuéntanos qué mejorar o qué te gustaría ver',
+                  onTap:
+                      () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (_) => const ReportProblemPage(
+                                initialReportType: 'Otro',
+                                initialSubject: 'Feedback de la app',
+                              ),
+                        ),
+                      ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            _SectionHeader(
+              icon: Icons.warning_amber_rounded,
+              title: 'Cuenta sensible',
+              subtitle: 'Acciones delicadas para tu cuenta',
+            ),
+            _SettingsCard(
+              children: [
+                _NavRow(
+                  icon: Icons.delete_forever_outlined,
+                  iconColor: const Color(0xFFDC2626),
+                  label: 'Eliminar cuenta',
+                  subtitle: 'Borra tu perfil y la información asociada',
+                  onTap:
+                      () => showDialog(
+                        context: context,
+                        builder: (_) => const DeleteAccountDialog(),
+                      ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            _LogoutButton(
+              onTap: () => _logout(context, ref),
+            ),
             const SizedBox(height: 18),
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 4),
               child: MyText(
                 text:
-                    'Estos ajustes se guardan en tu cuenta y puedes cambiarlos cuando quieras.',
+                    'Tus preferencias se guardan en tu cuenta y puedes ajustarlas cuando quieras.',
                 variant: MyTextVariant.bodyMuted,
                 fontSize: 12,
                 customColor: context.appTextSecondaryColor,
@@ -436,66 +554,188 @@ class _SettingsBody extends ConsumerWidget {
       },
     );
   }
-}
 
-class _Divider extends StatelessWidget {
-  const _Divider();
+  Future<void> _logout(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      useRootNavigator: true,
+      barrierDismissible: true,
+      builder:
+          (ctx) => Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: const EdgeInsets.symmetric(horizontal: 28),
+            child: Container(
+              decoration: BoxDecoration(
+                color: ctx.appCardBackground,
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(
+                      alpha: ctx.isDarkMode ? 0.28 : 0.12,
+                    ),
+                    blurRadius: 28,
+                    offset: const Offset(0, 12),
+                  ),
+                ],
+              ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 58,
+                      height: 58,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFDC2626).withValues(alpha: 0.10),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: const Color(
+                            0xFFDC2626,
+                          ).withValues(alpha: 0.20),
+                          width: 1.2,
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.logout_rounded,
+                        color: Color(0xFFDC2626),
+                        size: 26,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Cerrar sesión',
+                      style: TextStyle(
+                        color: ctx.appTextPrimaryColor,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '¿Seguro que deseas cerrar sesión?',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: ctx.appTextSecondaryColor,
+                      ),
+                    ),
+                    const SizedBox(height: 22),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: SizedBox(
+                            height: 46,
+                            child: OutlinedButton(
+                              onPressed: () => Navigator.pop(ctx, false),
+                              style: OutlinedButton.styleFrom(
+                                side: BorderSide(
+                                  color: ctx.appBorderColor,
+                                  width: 1.2,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                backgroundColor: ctx.appCardBackground,
+                              ),
+                              child: Text(
+                                'Cancelar',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  color: ctx.appTextPrimaryColor,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: SizedBox(
+                            height: 46,
+                            child: ElevatedButton(
+                              onPressed: () => Navigator.pop(ctx, true),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFDC2626),
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                              ),
+                              child: const Text(
+                                'Salir',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+    );
 
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 10),
-      child: Divider(height: 1, thickness: 1, color: context.appBorderColor),
+    if (confirmed != true) return;
+    try {
+      await ref.read(authActionsProvider).signOut();
+    } catch (_) {}
+    if (!context.mounted) return;
+    Navigator.of(context, rootNavigator: true).popUntil((route) => route.isFirst);
+  }
+
+  Future<void> _shareApp(BuildContext context) async {
+    const message =
+        'Te recomiendo Parking App para encontrar y reservar parqueos de forma rápida.';
+    await Clipboard.setData(const ClipboardData(text: message));
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Mensaje copiado para compartir.')));
+  }
+
+  void _openLegal(BuildContext context, String section) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => LegalInformationPage(initialSection: section),
+      ),
     );
   }
 }
 
-class _SwitchActionItem extends StatelessWidget {
-  const _SwitchActionItem({
-    required this.icon,
-    required this.title,
-    required this.value,
-    required this.onChanged,
-    this.subtitle,
-  });
-
+class _SectionHeader extends StatelessWidget {
   final IconData icon;
   final String title;
   final String? subtitle;
-  final bool value;
-  final ValueChanged<bool>? onChanged;
+
+  const _SectionHeader({
+    required this.icon,
+    required this.title,
+    this.subtitle,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final textColor =
-        onChanged == null
-            ? context.appTextSecondaryColor.withValues(alpha: 0.7)
-            : context.appTextPrimaryColor;
-    final subtitleColor =
-        onChanged == null
-            ? context.appTextSecondaryColor.withValues(alpha: 0.7)
-            : context.appTextSecondaryColor;
-
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+      padding: const EdgeInsets.only(bottom: 10),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 40,
-            height: 40,
+            width: 36,
+            height: 36,
             decoration: BoxDecoration(
-              color: context.appIconCircleColor,
-              shape: BoxShape.circle,
+              color: AppColors.headerBottom.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(12),
             ),
-            alignment: Alignment.center,
-            child: Icon(
-              icon,
-              size: 20,
-              color:
-                  onChanged == null
-                      ? context.appTextSecondaryColor
-                      : AppColors.headerBottom,
-            ),
+            child: Icon(icon, size: 18, color: AppColors.headerBottom),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -505,25 +745,167 @@ class _SwitchActionItem extends StatelessWidget {
                 Text(
                   title,
                   style: TextStyle(
-                    fontSize: 15,
-                    color: textColor,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: context.appTextPrimaryColor,
                   ),
                 ),
-                if (subtitle != null) ...[
-                  const SizedBox(height: 3),
+                if (subtitle != null)
                   Text(
                     subtitle!,
                     style: TextStyle(
-                      fontSize: 12.5,
-                      color: subtitleColor,
+                      fontSize: 11,
+                      color: context.appTextSecondaryColor,
                     ),
                   ),
-                ],
               ],
             ),
           ),
-          Switch.adaptive(
+        ],
+      ),
+    );
+  }
+}
+
+class _SettingsCard extends StatelessWidget {
+  final List<Widget> children;
+
+  const _SettingsCard({required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: context.appCardBackground,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: context.appBorderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(
+              alpha: context.isDarkMode ? 0.18 : 0.05,
+            ),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(children: children),
+    );
+  }
+}
+
+class _Divider extends StatelessWidget {
+  const _Divider();
+
+  @override
+  Widget build(BuildContext context) {
+    return Divider(
+      height: 1,
+      thickness: 1,
+      color: context.appBorderColor,
+      indent: 56,
+    );
+  }
+}
+
+class _SwitchRow extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final String label;
+  final String? sublabel;
+  final bool value;
+  final ValueChanged<bool>? onChanged;
+  final String? badge;
+  final Color? badgeColor;
+
+  const _SwitchRow({
+    required this.icon,
+    required this.iconColor,
+    required this.label,
+    this.sublabel,
+    required this.value,
+    required this.onChanged,
+    this.badge,
+    this.badgeColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final textColor =
+        onChanged == null
+            ? context.appTextSecondaryColor.withValues(alpha: 0.7)
+            : context.appTextPrimaryColor;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: iconColor.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 18, color: iconColor),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        label,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: textColor,
+                        ),
+                      ),
+                    ),
+                    if (badge != null) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 7,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: badgeColor!.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          badge!,
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800,
+                            color: badgeColor,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                if (sublabel != null)
+                  Text(
+                    sublabel!,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color:
+                          onChanged == null
+                              ? context.appTextSecondaryColor.withValues(
+                                alpha: 0.7,
+                              )
+                              : context.appTextSecondaryColor,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          Switch(
             value: value,
             onChanged: onChanged,
             activeColor: AppColors.headerBottom,
@@ -534,73 +916,107 @@ class _SwitchActionItem extends StatelessWidget {
   }
 }
 
-class _ArrowActionItem extends StatelessWidget {
-  const _ArrowActionItem({
-    required this.icon,
-    required this.title,
-    this.subtitle,
-    this.onTap,
-  });
-
+class _NavRow extends StatelessWidget {
   final IconData icon;
-  final String title;
+  final Color iconColor;
+  final String label;
   final String? subtitle;
-  final VoidCallback? onTap;
+  final VoidCallback onTap;
+  final Widget? trailing;
+
+  const _NavRow({
+    required this.icon,
+    required this.iconColor,
+    required this.label,
+    this.subtitle,
+    required this.onTap,
+    this.trailing,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: context.appCardBackgroundSoft,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-          child: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: context.appIconCircleColor,
-                  shape: BoxShape.circle,
-                ),
-                alignment: Alignment.center,
-                child: Icon(icon, size: 20, color: AppColors.headerBottom),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: iconColor.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(10),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+              child: Icon(icon, size: 18, color: iconColor),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: context.appTextPrimaryColor,
+                    ),
+                  ),
+                  if (subtitle != null)
                     Text(
-                      title,
+                      subtitle!,
                       style: TextStyle(
-                        fontSize: 14.8,
-                        color: context.appTextPrimaryColor,
-                        fontWeight: FontWeight.w600,
+                        fontSize: 11,
+                        color: context.appTextSecondaryColor,
                       ),
                     ),
-                    if (subtitle != null) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        subtitle!,
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          color: context.appTextSecondaryColor,
-                        ),
-                      ),
-                    ],
-                  ],
+                ],
+              ),
+            ),
+            trailing ??
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: context.appTextSecondaryColor,
+                  size: 20,
                 ),
-              ),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: context.appTextSecondaryColor,
-              ),
-            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LogoutButton extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _LogoutButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 52,
+      child: OutlinedButton.icon(
+        onPressed: onTap,
+        style: OutlinedButton.styleFrom(
+          foregroundColor: const Color(0xFFDC2626),
+          backgroundColor: const Color(0xFFDC2626).withValues(
+            alpha: context.isDarkMode ? 0.10 : 0.04,
           ),
+          side: BorderSide(
+            color: const Color(0xFFDC2626).withValues(alpha: 0.45),
+            width: 1.3,
+          ),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+        ),
+        icon: const Icon(Icons.logout_rounded, size: 18),
+        label: const Text(
+          'Cerrar sesión',
+          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
         ),
       ),
     );

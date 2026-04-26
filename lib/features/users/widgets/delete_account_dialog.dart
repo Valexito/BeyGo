@@ -49,16 +49,19 @@ class _DeleteAccountDialogState extends ConsumerState<DeleteAccountDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = context.isDarkMode;
+    final danger = const Color(0xFFDC2626);
+
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.symmetric(horizontal: 24),
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.cardBg,
+          color: context.appCardBackground,
           borderRadius: BorderRadius.circular(AppDims.radiusXl),
           boxShadow: [
             BoxShadow(
-              color: AppColors.primaryDark.withOpacity(0.10),
+              color: Colors.black.withValues(alpha: isDark ? 0.28 : 0.10),
               blurRadius: 28,
               offset: const Offset(0, 14),
             ),
@@ -81,7 +84,7 @@ class _DeleteAccountDialogState extends ConsumerState<DeleteAccountDialog> {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.headerBottom.withOpacity(0.22),
+                      color: AppColors.headerBottom.withValues(alpha: 0.22),
                       blurRadius: 16,
                       offset: const Offset(0, 8),
                     ),
@@ -96,7 +99,7 @@ class _DeleteAccountDialogState extends ConsumerState<DeleteAccountDialog> {
 
               const SizedBox(height: 16),
 
-              const MyText(
+              MyText(
                 text: 'Eliminar cuenta',
                 variant: MyTextVariant.title,
                 customColor: AppColors.headerBottom,
@@ -104,7 +107,7 @@ class _DeleteAccountDialogState extends ConsumerState<DeleteAccountDialog> {
 
               const SizedBox(height: 10),
 
-              const MyText(
+              MyText(
                 text:
                     'Esta acción eliminará permanentemente tu cuenta y toda la información asociada.\n\n'
                     'Esto incluye:\n'
@@ -117,7 +120,7 @@ class _DeleteAccountDialogState extends ConsumerState<DeleteAccountDialog> {
                 variant: MyTextVariant.subtitle,
                 textAlign: TextAlign.left,
                 fontSize: 13,
-                customColor: AppColors.textSecondary,
+                customColor: context.appTextSecondaryColor,
               ),
 
               const SizedBox(height: 18),
@@ -132,22 +135,33 @@ class _DeleteAccountDialogState extends ConsumerState<DeleteAccountDialog> {
                 child: TextField(
                   controller: controller,
                   onChanged: _onChanged,
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
+                  style: TextStyle(
+                    color: context.appTextPrimaryColor,
                     fontSize: 14,
                   ),
                   decoration: InputDecoration(
                     hintText: 'ELIMINAR',
-                    hintStyle: const TextStyle(color: AppColors.textSecondary),
+                    hintStyle: TextStyle(color: context.appTextSecondaryColor),
                     filled: true,
-                    fillColor: const Color(0xFFF4F8FC),
+                    fillColor: context.appCardBackgroundSoft,
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 14,
                       vertical: 14,
                     ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide.none,
+                      borderSide: BorderSide(color: context.appBorderColor),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide(color: context.appBorderColor),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(
+                        color: AppColors.headerBottom,
+                        width: 1.4,
+                      ),
                     ),
                   ),
                 ),
@@ -165,7 +179,7 @@ class _DeleteAccountDialogState extends ConsumerState<DeleteAccountDialog> {
                             isLoading ? null : () => Navigator.pop(context),
                         style: OutlinedButton.styleFrom(
                           side: BorderSide(
-                            color: AppColors.headerBottom.withOpacity(0.35),
+                            color: AppColors.headerBottom.withValues(alpha: 0.35),
                             width: 1.2,
                           ),
                           shape: RoundedRectangleBorder(
@@ -173,9 +187,9 @@ class _DeleteAccountDialogState extends ConsumerState<DeleteAccountDialog> {
                               AppDims.radiusLg,
                             ),
                           ),
-                          backgroundColor: Colors.white,
+                          backgroundColor: context.appCardBackground,
                         ),
-                        child: const MyText(
+                        child: MyText(
                           text: 'Cancelar',
                           variant: MyTextVariant.normalBold,
                           customColor: AppColors.headerBottom,
@@ -197,15 +211,18 @@ class _DeleteAccountDialogState extends ConsumerState<DeleteAccountDialog> {
                                 text: 'Eliminar',
                                 loading: isLoading,
                                 margin: EdgeInsets.zero,
-                                color: Colors.red,
+                                color: danger,
                                 fontSize: 14,
                               )
                               : OutlinedButton(
                                 onPressed: null,
                                 style: OutlinedButton.styleFrom(
-                                  side: const BorderSide(
-                                    color: Colors.red,
+                                  side: BorderSide(
+                                    color: danger.withValues(alpha: 0.55),
                                     width: 1.4,
+                                  ),
+                                  backgroundColor: danger.withValues(
+                                    alpha: isDark ? 0.08 : 0.03,
                                   ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(
@@ -213,10 +230,10 @@ class _DeleteAccountDialogState extends ConsumerState<DeleteAccountDialog> {
                                     ),
                                   ),
                                 ),
-                                child: const MyText(
+                                child: MyText(
                                   text: 'Eliminar',
                                   variant: MyTextVariant.normalBold,
-                                  customColor: Colors.red,
+                                  customColor: danger.withValues(alpha: 0.75),
                                   fontSize: 14,
                                 ),
                               ),
