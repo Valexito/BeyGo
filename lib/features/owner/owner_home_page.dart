@@ -279,7 +279,7 @@ class _OwnerDashboardView extends ConsumerWidget {
                             crossAxisCount: 2,
                             mainAxisSpacing: 12,
                             crossAxisSpacing: 12,
-                            childAspectRatio: 1.55,
+                            childAspectRatio: 1.42,
                           ),
                     ),
                   ),
@@ -1163,6 +1163,7 @@ class _StatCard extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Container(
             width: 34,
@@ -1173,11 +1174,10 @@ class _StatCard extends StatelessWidget {
             ),
             child: Icon(icon, size: 18, color: iconColor),
           ),
-          const Spacer(),
           Text(
             value,
             style: TextStyle(
-              fontSize: 26,
+              fontSize: 24,
               fontWeight: FontWeight.w900,
               color: context.appTextPrimaryColor,
               height: 1,
@@ -1186,6 +1186,8 @@ class _StatCard extends StatelessWidget {
           const SizedBox(height: 3),
           Text(
             label,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontSize: 11,
               color: context.appTextSecondaryColor,

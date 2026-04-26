@@ -296,8 +296,18 @@ class _ActiveCard extends ConsumerWidget {
             insetPadding: const EdgeInsets.symmetric(horizontal: 28),
             child: Container(
               decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
+                color: ctx.appCardBackground,
                 borderRadius: BorderRadius.circular(28),
+                border: Border.all(color: ctx.appBorderColor),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(
+                      alpha: ctx.isDarkMode ? 0.28 : 0.10,
+                    ),
+                    blurRadius: 28,
+                    offset: const Offset(0, 14),
+                  ),
+                ],
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -308,10 +318,11 @@ class _ActiveCard extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const MyText(
+                        MyText(
                           text: 'Motivo',
                           variant: MyTextVariant.bodyBold,
                           fontSize: 13,
+                          customColor: ctx.appTextPrimaryColor,
                         ),
                         const SizedBox(height: 8),
                         TextField(
@@ -321,13 +332,29 @@ class _ActiveCard extends ConsumerWidget {
                           decoration: InputDecoration(
                             hintText: 'Ej: Usuario no llegó...',
                             filled: true,
-                            fillColor: const Color(0xFFF1F5F9),
+                            fillColor: ctx.appCardBackgroundSoft,
                             contentPadding: const EdgeInsets.all(12),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(14),
-                              borderSide: BorderSide.none,
+                              borderSide: BorderSide(
+                                color: ctx.appBorderColor,
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(
+                                color: ctx.appBorderColor,
+                              ),
+                            ),
+                            focusedBorder: const OutlineInputBorder(
+                              borderRadius: BorderRadius.all(Radius.circular(14)),
+                              borderSide: BorderSide(
+                                color: AppColors.headerBottom,
+                                width: 1.4,
+                              ),
                             ),
                           ),
+                          style: TextStyle(color: ctx.appTextPrimaryColor),
                         ),
                         const SizedBox(height: 12),
                         Row(
@@ -346,7 +373,7 @@ class _ActiveCard extends ConsumerWidget {
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(16),
                                     ),
-                                    backgroundColor: Colors.white,
+                                    backgroundColor: ctx.appCardBackground,
                                   ),
                                   child: const MyText(
                                     text: 'Cancelar',
@@ -544,8 +571,18 @@ class _ApproveCardState extends ConsumerState<_ApproveCard> {
             insetPadding: const EdgeInsets.symmetric(horizontal: 28),
             child: Container(
               decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
+                color: ctx.appCardBackground,
                 borderRadius: BorderRadius.circular(28),
+                border: Border.all(color: ctx.appBorderColor),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(
+                      alpha: ctx.isDarkMode ? 0.28 : 0.10,
+                    ),
+                    blurRadius: 28,
+                    offset: const Offset(0, 14),
+                  ),
+                ],
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -560,7 +597,7 @@ class _ApproveCardState extends ConsumerState<_ApproveCard> {
                           variant: MyTextVariant.bodyMuted,
                           textAlign: TextAlign.center,
                           fontSize: 13,
-                          customColor: const Color(0xFF5A6478),
+                          customColor: ctx.appTextSecondaryColor,
                         ),
                         const SizedBox(height: 20),
                         Row(
@@ -580,7 +617,7 @@ class _ApproveCardState extends ConsumerState<_ApproveCard> {
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(16),
                                     ),
-                                    backgroundColor: Colors.white,
+                                    backgroundColor: ctx.appCardBackground,
                                   ),
                                   child: const MyText(
                                     text: 'Cancelar',

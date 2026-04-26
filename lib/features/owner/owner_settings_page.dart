@@ -1083,6 +1083,7 @@ class _SwitchRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
             width: 36,
@@ -1098,7 +1099,10 @@ class _SwitchRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     Text(
                       label,
@@ -1108,8 +1112,7 @@ class _SwitchRow extends StatelessWidget {
                         color: context.appTextPrimaryColor,
                       ),
                     ),
-                    if (badge != null) ...[
-                      const SizedBox(width: 6),
+                    if (badge != null)
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 7,
@@ -1128,7 +1131,6 @@ class _SwitchRow extends StatelessWidget {
                           ),
                         ),
                       ),
-                    ],
                   ],
                 ),
                 if (sublabel != null)
@@ -1142,10 +1144,18 @@ class _SwitchRow extends StatelessWidget {
               ],
             ),
           ),
-          Switch(
-            value: value,
-            onChanged: onChanged,
-            activeColor: AppColors.headerBottom,
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 52,
+            child: Transform.scale(
+              scale: 0.92,
+              child: Switch(
+                value: value,
+                onChanged: onChanged,
+                activeColor: AppColors.headerBottom,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+            ),
           ),
         ],
       ),
@@ -1505,152 +1515,159 @@ class _RevenuePinDialogState extends State<_RevenuePinDialog> {
       ),
     );
 
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 22, vertical: 24),
-      child: Container(
-        decoration: BoxDecoration(
-          color: context.appCardBackground,
-          borderRadius: BorderRadius.circular(28),
-          border: Border.all(color: context.appBorderColor),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(
-                alpha: context.isDarkMode ? 0.28 : 0.10,
-              ),
-              blurRadius: 28,
-              offset: const Offset(0, 14),
+    return AnimatedPadding(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOut,
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 22, vertical: 24),
+        child: SingleChildScrollView(
+          child: Container(
+            decoration: BoxDecoration(
+              color: context.appCardBackground,
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(color: context.appBorderColor),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(
+                    alpha: context.isDarkMode ? 0.28 : 0.10,
+                  ),
+                  blurRadius: 28,
+                  offset: const Offset(0, 14),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(22, 22, 22, 18),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 58,
-                  height: 58,
-                  decoration: BoxDecoration(
-                    color: AppColors.headerBottom.withValues(alpha: 0.12),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: AppColors.headerBottom.withValues(alpha: 0.18),
-                    ),
-                  ),
-                  child: Icon(
-                    titleIcon,
-                    color: AppColors.headerBottom,
-                    size: 28,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 18),
-              Center(
-                child: Text(
-                  widget.title,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: context.appTextPrimaryColor,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Center(
-                child: Text(
-                  widget.subtitle,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: context.appTextSecondaryColor,
-                    fontSize: 13,
-                    height: 1.35,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 18),
-              TextField(
-                controller: _pinCtrl,
-                keyboardType: TextInputType.number,
-                obscureText: true,
-                maxLength: 4,
-                style: TextStyle(color: context.appTextPrimaryColor),
-                decoration: pinDecoration('PIN de 4 dígitos'),
-              ),
-              if (widget.requireConfirmation) ...[
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _confirmCtrl,
-                  keyboardType: TextInputType.number,
-                  obscureText: true,
-                  maxLength: 4,
-                  style: TextStyle(color: context.appTextPrimaryColor),
-                  decoration: pinDecoration('Confirmar PIN'),
-                ),
-              ],
-              if (_error != null) ...[
-                const SizedBox(height: 6),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFDC2626).withValues(alpha: 0.10),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: const Color(0xFFDC2626).withValues(alpha: 0.18),
-                    ),
-                  ),
-                  child: Text(
-                    _error!,
-                    style: const TextStyle(
-                      color: Color(0xFFDC2626),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-              const SizedBox(height: 18),
-              Row(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(22, 22, 22, 18),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: const Size.fromHeight(50),
-                        side: BorderSide(color: context.appBorderColor),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18),
+                  Center(
+                    child: Container(
+                      width: 58,
+                      height: 58,
+                      decoration: BoxDecoration(
+                        color: AppColors.headerBottom.withValues(alpha: 0.12),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: AppColors.headerBottom.withValues(alpha: 0.18),
                         ),
                       ),
-                      child: const Text('Cancelar'),
+                      child: Icon(
+                        titleIcon,
+                        color: AppColors.headerBottom,
+                        size: 28,
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: _submit,
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: const Size.fromHeight(50),
-                        backgroundColor: AppColors.headerBottom,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18),
+                  const SizedBox(height: 18),
+                  Center(
+                    child: Text(
+                      widget.title,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: context.appTextPrimaryColor,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Center(
+                    child: Text(
+                      widget.subtitle,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: context.appTextSecondaryColor,
+                        fontSize: 13,
+                        height: 1.35,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  TextField(
+                    controller: _pinCtrl,
+                    keyboardType: TextInputType.number,
+                    obscureText: true,
+                    maxLength: 4,
+                    style: TextStyle(color: context.appTextPrimaryColor),
+                    decoration: pinDecoration('PIN de 4 dígitos'),
+                  ),
+                  if (widget.requireConfirmation) ...[
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _confirmCtrl,
+                      keyboardType: TextInputType.number,
+                      obscureText: true,
+                      maxLength: 4,
+                      style: TextStyle(color: context.appTextPrimaryColor),
+                      decoration: pinDecoration('Confirmar PIN'),
+                    ),
+                  ],
+                  if (_error != null) ...[
+                    const SizedBox(height: 6),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFDC2626).withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: const Color(0xFFDC2626).withValues(alpha: 0.18),
                         ),
                       ),
-                      child: Text(widget.confirmLabel),
+                      child: Text(
+                        _error!,
+                        style: const TextStyle(
+                          color: Color(0xFFDC2626),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
+                  ],
+                  const SizedBox(height: 18),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size.fromHeight(48),
+                            side: BorderSide(color: context.appBorderColor),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                          ),
+                          child: const Text('Cancelar'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: _submit,
+                          style: ElevatedButton.styleFrom(
+                            minimumSize: const Size.fromHeight(48),
+                            backgroundColor: AppColors.headerBottom,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                          ),
+                          child: FittedBox(child: Text(widget.confirmLabel)),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
         ),
       ),

@@ -19,11 +19,13 @@ class OwnerDialogs {
           insetPadding: const EdgeInsets.symmetric(horizontal: 24),
           child: Container(
             decoration: BoxDecoration(
-              color: AppColors.cardBg,
+              color: ctx.appCardBackground,
               borderRadius: BorderRadius.circular(AppDims.radiusXl),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.primaryDark.withOpacity(0.10),
+                  color: Colors.black.withValues(
+                    alpha: ctx.isDarkMode ? 0.28 : 0.10,
+                  ),
                   blurRadius: 28,
                   offset: const Offset(0, 14),
                 ),
@@ -38,11 +40,11 @@ class OwnerDialogs {
                     width: 62,
                     height: 62,
                     decoration: BoxDecoration(
-                      color: accent.withOpacity(0.12),
+                      color: accent.withValues(alpha: 0.12),
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: accent.withOpacity(0.18),
+                          color: accent.withValues(alpha: 0.18),
                           blurRadius: 16,
                           offset: const Offset(0, 8),
                         ),
@@ -61,7 +63,7 @@ class OwnerDialogs {
                       vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      color: accent.withOpacity(0.10),
+                      color: accent.withValues(alpha: 0.10),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: MyText(
@@ -81,14 +83,16 @@ class OwnerDialogs {
                     variant: MyTextVariant.subtitle,
                     textAlign: TextAlign.center,
                     fontSize: 13,
+                    customColor: ctx.appTextPrimaryColor,
                   ),
                   const SizedBox(height: 10),
-                  const MyText(
+                  MyText(
                     text:
                         'Esta acción actualizará el estado de la reservación.',
                     variant: MyTextVariant.bodyMuted,
                     textAlign: TextAlign.center,
                     fontSize: 12,
+                    customColor: ctx.appTextSecondaryColor,
                   ),
                   const SizedBox(height: 20),
                   Row(
@@ -100,7 +104,7 @@ class OwnerDialogs {
                             onPressed: () => Navigator.pop(ctx, false),
                             style: OutlinedButton.styleFrom(
                               side: BorderSide(
-                                color: AppColors.headerBottom.withOpacity(0.35),
+                                color: AppColors.headerBottom.withValues(alpha: 0.35),
                                 width: 1.2,
                               ),
                               shape: RoundedRectangleBorder(
@@ -108,7 +112,7 @@ class OwnerDialogs {
                                   AppDims.radiusLg,
                                 ),
                               ),
-                              backgroundColor: Colors.white,
+                              backgroundColor: ctx.appCardBackground,
                             ),
                             child: const MyText(
                               text: 'Cancelar',

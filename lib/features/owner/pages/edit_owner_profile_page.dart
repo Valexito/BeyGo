@@ -168,7 +168,7 @@ class _EditOwnerProfilePageState extends ConsumerState<EditOwnerProfilePage> {
               : Column(
                 children: [
                   const AppHeader(
-                    title: 'Perfil owner',
+                    title: 'Editar perfil',
                     subtitle: 'Datos de cuenta y contacto',
                     showBack: true,
                   ),
@@ -179,9 +179,9 @@ class _EditOwnerProfilePageState extends ConsumerState<EditOwnerProfilePage> {
                         padding: const EdgeInsets.fromLTRB(16, 18, 16, 28),
                         children: [
                           _SectionCard(
-                            title: 'Información del propietario',
+                            title: 'Información del perfil',
                             subtitle:
-                                'Estos datos se usan para gestionar tu cuenta owner.',
+                                'Estos datos se usan para gestionar tu cuenta.',
                             children: [
                               Center(
                                 child: _OwnerAvatar(

@@ -324,91 +324,112 @@ class _OwnerHistoryPageState extends ConsumerState<OwnerHistoryPage> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (ctx) {
-        return Container(
-          decoration: BoxDecoration(
-            color: ctx.appCardBackground,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-          ),
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Handle
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: ctx.appBorderColor,
-                    borderRadius: BorderRadius.circular(99),
+        return SafeArea(
+          top: false,
+          child: Container(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(ctx).size.height * 0.72,
+            ),
+            decoration: BoxDecoration(
+              color: ctx.appCardBackground,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(28),
+              ),
+            ),
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: ctx.appBorderColor,
+                      borderRadius: BorderRadius.circular(99),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 18),
-              MyText(
-                text: 'Filtrar por estado',
-                variant: MyTextVariant.bodyBold,
-                fontSize: 16,
-                customColor: ctx.appTextPrimaryColor,
-              ),
-              const SizedBox(height: 14),
-              ..._StateFilter.values.map((f) {
-                final selected = _stateFilter == f;
-                return GestureDetector(
-                  onTap: () {
-                    setState(() => _stateFilter = f);
-                    Navigator.pop(ctx);
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.only(bottom: 10),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 13,
-                    ),
-                    decoration: BoxDecoration(
-                      color:
-                          selected
-                              ? f.color.withValues(alpha: 0.10)
-                              : ctx.appCardBackgroundSoft,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color:
-                            selected
-                                ? f.color.withValues(alpha: 0.35)
-                                : Colors.transparent,
-                        width: 1.5,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 10,
-                          height: 10,
-                          decoration: BoxDecoration(
-                            color: f.color,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: MyText(
-                            text: f.label,
-                            variant: MyTextVariant.bodyBold,
-                            fontSize: 14,
-                            customColor:
-                                selected ? f.color : ctx.appTextPrimaryColor,
-                          ),
-                        ),
-                        if (selected)
-                          Icon(Icons.check_rounded, color: f.color, size: 18),
-                      ],
+                const SizedBox(height: 18),
+                MyText(
+                  text: 'Filtrar por estado',
+                  variant: MyTextVariant.bodyBold,
+                  fontSize: 16,
+                  customColor: ctx.appTextPrimaryColor,
+                ),
+                const SizedBox(height: 14),
+                Flexible(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children:
+                          _StateFilter.values.map((f) {
+                            final selected = _stateFilter == f;
+                            return GestureDetector(
+                              onTap: () {
+                                setState(() => _stateFilter = f);
+                                Navigator.pop(ctx);
+                              },
+                              child: Container(
+                                margin: const EdgeInsets.only(bottom: 10),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 13,
+                                ),
+                                decoration: BoxDecoration(
+                                  color:
+                                      selected
+                                          ? f.color.withValues(alpha: 0.10)
+                                          : ctx.appCardBackgroundSoft,
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                    color:
+                                        selected
+                                            ? f.color.withValues(alpha: 0.35)
+                                            : Colors.transparent,
+                                    width: 1.5,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 10,
+                                      height: 10,
+                                      decoration: BoxDecoration(
+                                        color: f.color,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: MyText(
+                                        text: f.label,
+                                        variant: MyTextVariant.bodyBold,
+                                        fontSize: 14,
+                                        customColor:
+                                            selected
+                                                ? f.color
+                                                : ctx.appTextPrimaryColor,
+                                      ),
+                                    ),
+                                    if (selected)
+                                      Icon(
+                                        Icons.check_rounded,
+                                        color: f.color,
+                                        size: 18,
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }).toList(),
                     ),
                   ),
-                );
-              }),
-            ],
+                ),
+              ],
+            ),
           ),
         );
       },
