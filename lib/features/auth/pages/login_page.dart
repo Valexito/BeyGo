@@ -267,37 +267,40 @@ class _LoginPageState extends ConsumerState<LoginPage>
                 child: Column(
                   children: [
                     Container(
-                      width: 84,
-                      height: 84,
+                      width: 92,
+                      height: 92,
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.16),
-                        shape: BoxShape.circle,
+                        borderRadius: BorderRadius.circular(28),
                         border: Border.all(
                           color: Colors.white.withValues(alpha: 0.22),
                           width: 1.4,
                         ),
                       ),
-                      child: const Icon(
-                        Icons.local_parking_rounded,
-                        size: 40,
-                        color: Colors.white,
+                      padding: const EdgeInsets.all(10),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(22),
+                        child: Image.asset(
+                          'assets/branding/icon.png',
+                          fit: BoxFit.cover,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 14),
                     const Text(
-                      'Parking App',
+                      'BeyGo',
                       style: TextStyle(
-                        fontSize: 24,
+                        fontSize: 28,
                         fontWeight: FontWeight.w800,
                         color: Colors.white,
-                        letterSpacing: -0.5,
+                        letterSpacing: -0.8,
                       ),
                     ),
                     const SizedBox(height: 6),
                     const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 16),
                       child: Text(
-                        '¡Bienvenido! Reserva tu lugar fácil y rápido.',
+                        'Encuentra y reserva tu espacio de parqueo fácil y rápido.',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 13,

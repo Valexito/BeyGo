@@ -141,6 +141,17 @@ class _HomePageState extends ConsumerState<HomePage> {
             ),
           ),
 
+          Positioned(
+            top: safeTop + 12,
+            left: 72,
+            right: 72,
+            child: IgnorePointer(
+              child: Center(
+                child: _BrandBadge(compact: true),
+              ),
+            ),
+          ),
+
           // ── Map controls (float above bottom panel) ──────────────────────
           AnimatedPositioned(
             duration: const Duration(milliseconds: 180),
@@ -194,6 +205,77 @@ class _TopBtn extends StatelessWidget {
       child: Icon(icon, size: 20, color: context.appTextPrimaryColor),
     ),
   );
+}
+
+class _BrandBadge extends StatelessWidget {
+  const _BrandBadge({this.compact = false});
+
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 10 : 12,
+        vertical: compact ? 8 : 10,
+      ),
+      decoration: BoxDecoration(
+        color: context.appCardBackground.withValues(
+          alpha: context.isDarkMode ? 0.94 : 0.97,
+        ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: context.appBorderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: context.isDarkMode ? 0.22 : 0.10),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: compact ? 30 : 36,
+            height: compact ? 30 : 36,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              image: const DecorationImage(
+                image: AssetImage('assets/branding/icon.png'),
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+          SizedBox(width: compact ? 8 : 10),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'BeyGo',
+                style: TextStyle(
+                  fontSize: compact ? 13 : 14,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.3,
+                  color: context.appTextPrimaryColor,
+                ),
+              ),
+              if (!compact)
+                Text(
+                  'Tu ruta al parqueo',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: context.appTextSecondaryColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _SettingsSheet extends ConsumerWidget {
