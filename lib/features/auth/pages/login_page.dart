@@ -267,19 +267,19 @@ class _LoginPageState extends ConsumerState<LoginPage>
                 child: Column(
                   children: [
                     Container(
-                      width: 92,
-                      height: 92,
+                      width: 74,
+                      height: 74,
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.16),
-                        borderRadius: BorderRadius.circular(28),
+                        color: Colors.white.withValues(alpha: 0.03),
+                        borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.22),
-                          width: 1.4,
+                          color: Colors.white.withValues(alpha: 0.05),
+                          width: 0.25,
                         ),
                       ),
-                      padding: const EdgeInsets.all(10),
+                      padding: const EdgeInsets.all(4),
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(22),
+                        borderRadius: BorderRadius.circular(16),
                         child: Image.asset(
                           'assets/branding/icon.png',
                           fit: BoxFit.cover,

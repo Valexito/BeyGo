@@ -92,7 +92,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
       case 'invalid-email':
         return 'El correo no es válido.';
       case 'weak-password':
-        return 'La contraseña es muy débil. Mínimo 8 caracteres.';
+        return 'Usa una contraseña fuerte con mayúscula, minúscula, número y símbolo.';
       default:
         return 'No se pudo crear la cuenta. Intenta de nuevo.';
     }
@@ -138,6 +138,12 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
     final text = (v ?? '').trim();
     if (text.isEmpty) return 'Ingresa tu contraseña.';
     if (text.length < 8) return 'Mínimo 8 caracteres.';
+    if (!RegExp(r'[A-Z]').hasMatch(text)) return 'Agrega al menos una mayúscula.';
+    if (!RegExp(r'[a-z]').hasMatch(text)) return 'Agrega al menos una minúscula.';
+    if (!RegExp(r'\d').hasMatch(text)) return 'Agrega al menos un número.';
+    if (!RegExp(r'[^A-Za-z0-9]').hasMatch(text)) {
+      return 'Agrega al menos un símbolo.';
+    }
     return null;
   }
 
@@ -296,6 +302,15 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
                                     () => setState(
                                       () => _obscurePass = !_obscurePass,
                                     ),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Usa 8+ caracteres con mayúscula, minúscula, número y símbolo.',
+                              style: TextStyle(
+                                fontSize: 12,
+                                height: 1.35,
+                                color: context.appTextSecondaryColor,
                               ),
                             ),
                             const SizedBox(height: 16),
