@@ -9,7 +9,7 @@ import 'package:mapbox_api/features/users/providers/user_providers.dart';
 
 final authUserStreamProvider = StreamProvider<User?>((ref) {
   final auth = ref.watch(firebaseAuthProvider);
-  return auth.userChanges();
+  return auth.authStateChanges();
 });
 
 final googleSignInInstanceProvider = Provider<GoogleSignIn>((_) {
@@ -48,6 +48,7 @@ class _AuthActions {
 
   final FirebaseAuth _auth;
   final Ref _ref;
+  Future<void>? _ongoingSignOut;
 
   Future<UserCredential> signInWithEmailPassword({
     required String email,
@@ -67,6 +68,20 @@ class _AuthActions {
   }
 
   Future<void> signOut() async {
+    if (_ongoingSignOut != null) {
+      return _ongoingSignOut!;
+    }
+
+    _ongoingSignOut = _performSignOut();
+
+    try {
+      await _ongoingSignOut;
+    } finally {
+      _ongoingSignOut = null;
+    }
+  }
+
+  Future<void> _performSignOut() async {
     final uid = _auth.currentUser?.uid;
 
     // ✅ Remove FCM token BEFORE signing out so this device stops receiving
@@ -77,11 +92,27 @@ class _AuthActions {
       );
     } catch (_) {}
 
+    final googleSignIn = _ref.read(googleSignInInstanceProvider);
+
     try {
-      await _ref.read(googleSignInInstanceProvider).signOut();
+      // Disconnect is stronger than signOut and helps avoid the same Google
+      // account silently reattaching after repeated login/logout cycles.
+      await googleSignIn.disconnect().timeout(const Duration(seconds: 4));
     } catch (_) {}
 
-    await _auth.signOut();
+    try {
+      await googleSignIn.signOut().timeout(const Duration(seconds: 4));
+    } catch (_) {}
+
+    try {
+      await _auth.signOut().timeout(const Duration(seconds: 4));
+    } catch (_) {}
+
+    try {
+      await _auth.authStateChanges().firstWhere((user) => user == null).timeout(
+        const Duration(seconds: 4),
+      );
+    } catch (_) {}
 
     if (uid != null) {
       _ref.invalidate(isProfileCompleteProvider(uid));

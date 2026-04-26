@@ -687,7 +687,10 @@ class _SettingsBody extends ConsumerWidget {
       await ref.read(authActionsProvider).signOut();
     } catch (_) {}
     if (!context.mounted) return;
-    Navigator.of(context, rootNavigator: true).popUntil((route) => route.isFirst);
+    Navigator.of(
+      context,
+      rootNavigator: true,
+    ).pushNamedAndRemoveUntil('/auth', (_) => false);
   }
 
   Future<void> _shareApp(BuildContext context) async {
