@@ -1,7 +1,10 @@
-name: mapbox_api
-description: "A new Flutter project."
+name: beygo
+description: "Encuentra y reserva parqueos cercanos en tiempo real."
 publish_to: 'none'
 
+# version: <semver>+<buildNumber>
+# Cada subida nueva a Play Store debe incrementar el buildNumber (después del +).
+# El versionName (1.0.0) puede repetirse; el versionCode (buildNumber) NO.
 version: 1.0.0+1
 
 environment:
@@ -59,9 +62,44 @@ dev_dependencies:
   build_runner: ^2.5.4
   custom_lint: ^0.7.6
   riverpod_lint: ^2.6.5
+  flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.4.6
 
 flutter:
   uses-material-design: true
 
   assets:
     - assets/images/
+
+# ──────────────────────────────────────────────────────────────────────────────
+# flutter_launcher_icons
+# 1) Coloca tu PNG en assets/branding/icon.png  (1024x1024, sin transparencia)
+# 2) Coloca el "foreground" de adaptive icon en assets/branding/icon_foreground.png
+#    (1024x1024, contenido centrado en un círculo de seguridad ~660px)
+# 3) Corre:  dart run flutter_launcher_icons
+# ──────────────────────────────────────────────────────────────────────────────
+flutter_launcher_icons:
+  android: "ic_launcher"
+  ios: true
+  remove_alpha_ios: true
+  image_path: "assets/branding/icon.png"
+  min_sdk_android: 23
+  adaptive_icon_background: "#FFFFFF"          # o un hex de tu marca
+  adaptive_icon_foreground: "assets/branding/icon_foreground.png"
+  web:
+    generate: false
+
+# ──────────────────────────────────────────────────────────────────────────────
+# flutter_native_splash
+# Coloca el logo en assets/branding/splash.png  (1152x1152 transparente recomendado)
+# Corre:  dart run flutter_native_splash:create
+# ──────────────────────────────────────────────────────────────────────────────
+flutter_native_splash:
+  color: "#FFFFFF"             # color de fondo (cámbialo al de tu marca)
+  image: "assets/branding/splash.png"
+  android_12:
+    image: "assets/branding/splash.png"
+    icon_background_color: "#FFFFFF"
+  android: true
+  ios: true
+  web: false

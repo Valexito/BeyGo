@@ -2,11 +2,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import 'package:mapbox_api/features/core/providers/firebase_providers.dart'
+import 'package:beygo/features/core/providers/firebase_providers.dart'
     show firestoreProvider, currentUserProvider;
 
-import 'package:mapbox_api/features/users/models/vehicule.dart';
-import 'package:mapbox_api/features/users/models/user_role.dart';
+import 'package:beygo/features/users/models/vehicule.dart';
+import 'package:beygo/features/users/models/user_role.dart';
 
 // ---------- Refs ----------
 final userDocRefProvider =

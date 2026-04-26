@@ -5,14 +5,10 @@
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mapbox_api/common/ui/components/app_styles.dart';
-import 'package:mapbox_api/common/ui/components/my_button.dart';
-import 'package:mapbox_api/common/ui/components/my_text.dart';
-import 'package:mapbox_api/features/owner/widgets/app_header.dart';
-import 'package:mapbox_api/features/core/roles/role_utils.dart';
-import 'package:mapbox_api/features/reservations/models/reservation.dart';
-import 'package:mapbox_api/features/reservations/providers/reservations_providers.dart';
-
+import 'package:beygo/common/common.dart';
+import 'package:beygo/features/owner/widgets/app_header.dart';
+import 'package:beygo/features/core/roles/role_utils.dart';
+import 'package:beygo/features/reservations/reservations.dart';
 enum OwnerReservationsTab { active, pending }
 
 class OwnerReservationsPage extends ConsumerStatefulWidget {

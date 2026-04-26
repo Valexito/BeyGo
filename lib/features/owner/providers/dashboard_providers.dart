@@ -1,10 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:mapbox_api/features/core/providers/firebase_providers.dart';
-import 'package:mapbox_api/features/reservations/models/reservation.dart';
-import 'package:mapbox_api/features/reservations/models/parking.dart';
-import 'package:mapbox_api/features/reservations/providers/reservations_providers.dart';
-
+import 'package:beygo/features/core/providers/firebase_providers.dart';
+import 'package:beygo/features/reservations/reservations.dart';
 // ─── Owner's single parking (stream) ─────────────────────────────────────────
 final ownerParkingProvider = StreamProvider<Parking?>((ref) {
   final db = ref.watch(firestoreProvider);

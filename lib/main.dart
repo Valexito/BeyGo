@@ -3,20 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
-
-import 'package:mapbox_api/common/services/app_preferences_service.dart';
-import 'package:mapbox_api/common/services/notification_service.dart';
-import 'package:mapbox_api/features/core/providers/app_preferences_provider.dart';
-import 'package:mapbox_api/features/reservations/pages/route_view_page.dart';
+import 'package:beygo/common/common.dart';
+import 'package:beygo/features/core/providers/app_preferences_provider.dart';
+import 'package:beygo/features/reservations/pages/route_view_page.dart';
 import 'firebase_options.dart';
-import 'common/ui/components/app_styles.dart';
 import 'features/auth/pages/auth_gate.dart';
 import 'features/core/pages/home_switch.dart';
 import 'features/core/pages/userv/home_page.dart' as userv;
 import 'features/owner/owner_home_page.dart';
 import 'features/owner/widgets/become_owner_page.dart';
 import 'features/reservations/pages/reservations_page.dart';
-import 'common/ui/widgets/map_picker_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -52,7 +48,7 @@ class MyApp extends ConsumerWidget {
 
     return MaterialApp(
       navigatorKey: NotificationService.navigatorKey,
-      title: 'Mapa con Parqueos',
+      title: 'BeyGo',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.buildLight(),
       darkTheme: AppTheme.buildDark(),

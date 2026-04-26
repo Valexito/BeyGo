@@ -14,9 +14,9 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 // ⚠️ Point this to whichever path your geolocator helper is at.
 // If at lib/common/services/geolocator.dart:
-import 'package:mapbox_api/common/services/geolocator.dart' as helper;
+import 'package:beygo/common/services/geolocator.dart' as helper;
 // If at lib/features/reservations/services/geolocator.dart, change to:
-// import 'package:mapbox_api/features/reservations/services/geolocator.dart' as helper;
+// import 'package:beygo/features/reservations/services/geolocator.dart' as helper;
 
 /// One-shot current location — used for map initial position and route origin.
 /// Falls back to Xela, Guatemala if GPS is unavailable.

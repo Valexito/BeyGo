@@ -1,23 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import 'package:mapbox_api/common/services/app_preferences_service.dart';
-import 'package:mapbox_api/common/ui/components/app_styles.dart';
-import 'package:mapbox_api/common/ui/components/my_text.dart';
-import 'package:mapbox_api/features/auth/providers/auth_providers.dart'
+import 'package:beygo/common/common.dart';
+import 'package:beygo/features/auth/providers/auth_providers.dart'
     show authActionsProvider;
-import 'package:mapbox_api/features/core/pages/userv/legal_information_page.dart';
-import 'package:mapbox_api/features/core/pages/userv/report_problem_page.dart';
-import 'package:mapbox_api/features/core/providers/app_preferences_provider.dart';
-import 'package:mapbox_api/features/core/providers/firebase_providers.dart'
+import 'package:beygo/features/core/pages/userv/legal_information_page.dart';
+import 'package:beygo/features/core/pages/userv/report_problem_page.dart';
+import 'package:beygo/features/core/providers/app_preferences_provider.dart';
+import 'package:beygo/features/core/providers/firebase_providers.dart'
     show currentUserProvider;
-import 'package:mapbox_api/features/owner/widgets/become_owner_page.dart';
-import 'package:mapbox_api/features/reservations/pages/reservations_page.dart';
-import 'package:mapbox_api/features/users/pages/configure_profile_page.dart';
-import 'package:mapbox_api/features/users/providers/user_providers.dart'
-    show myNotificationSettingsStreamProvider, saveNotificationSettingsProvider;
-import 'package:mapbox_api/features/users/widgets/delete_account_dialog.dart';
+import 'package:beygo/features/owner/widgets/become_owner_page.dart';
+import 'package:beygo/features/reservations/pages/reservations_page.dart';
+import 'package:beygo/features/users/users.dart';
 
 class ConfigurationsPage extends ConsumerWidget {
   const ConfigurationsPage({super.key});
@@ -29,11 +23,7 @@ class ConfigurationsPage extends ConsumerWidget {
     final isDark = context.isDarkMode;
     final headerGradient =
         isDark
-            ? const [
-              Color(0xFF111827),
-              Color(0xFF0F172A),
-              Color(0xFF0B1220),
-            ]
+            ? const [Color(0xFF111827), Color(0xFF0F172A), Color(0xFF0B1220)]
             : const [AppColors.headerTop, AppColors.headerBottom];
 
     return Scaffold(
@@ -119,7 +109,8 @@ class ConfigurationsPage extends ConsumerWidget {
                                         ),
                                         SizedBox(height: 6),
                                         MyText(
-                                          text: 'Preferencias, cuenta y soporte',
+                                          text:
+                                              'Preferencias, cuenta y soporte',
                                           variant: MyTextVariant.subtitle,
                                           customColor: Colors.white70,
                                           textAlign: TextAlign.center,
@@ -535,9 +526,7 @@ class _SettingsBody extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 24),
-            _LogoutButton(
-              onTap: () => _logout(context, ref),
-            ),
+            _LogoutButton(onTap: () => _logout(context, ref)),
             const SizedBox(height: 18),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -698,9 +687,9 @@ class _SettingsBody extends ConsumerWidget {
         'Te recomiendo Parking App para encontrar y reservar parqueos de forma rápida.';
     await Clipboard.setData(const ClipboardData(text: message));
     if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Mensaje copiado para compartir.')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Mensaje copiado para compartir.')),
+    );
   }
 
   void _openLegal(BuildContext context, String section) {
@@ -1004,9 +993,9 @@ class _LogoutButton extends StatelessWidget {
         onPressed: onTap,
         style: OutlinedButton.styleFrom(
           foregroundColor: const Color(0xFFDC2626),
-          backgroundColor: const Color(0xFFDC2626).withValues(
-            alpha: context.isDarkMode ? 0.10 : 0.04,
-          ),
+          backgroundColor: const Color(
+            0xFFDC2626,
+          ).withValues(alpha: context.isDarkMode ? 0.10 : 0.04),
           side: BorderSide(
             color: const Color(0xFFDC2626).withValues(alpha: 0.45),
             width: 1.3,

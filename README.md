@@ -1,16 +1,29 @@
-# mapbox_api
+# BeyGo
 
-A new Flutter project.
+App móvil Flutter para encontrar y reservar parqueos cercanos en tiempo real.
 
-## Getting Started
+## Stack
+- Flutter (Dart 3.7+)
+- Google Maps + Places + Directions
+- Firebase (Auth, Firestore, Storage, Functions, Messaging, App Check)
+- Riverpod para state management
 
-This project is a starting point for a Flutter application.
+## Configuración local
 
-A few resources to get you started if this is your first Flutter project:
+1. Instala dependencias:
+   ```bash
+   flutter pub get
+   ```
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+2. Configura tus API keys (no se commitean):
+   - `android/local.properties` debe contener `MAPS_API_KEY=<tu_key>`
+   - `.vscode/launch.json` debe pasar `--dart-define=GOOGLE_MAPS_KEY=<tu_key>`
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+3. Corre la app:
+   ```bash
+   flutter run
+   ```
+
+## Build de release
+
+Ver instrucciones en `android/key.properties.template`.

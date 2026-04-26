@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mapbox_api/common/ui/components/app_styles.dart';
-import 'package:mapbox_api/common/ui/components/my_text.dart';
-
+import 'package:beygo/common/common.dart';
 class LegalInformationPage extends StatelessWidget {
   const LegalInformationPage({super.key, this.initialSection});
 

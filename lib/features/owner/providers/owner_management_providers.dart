@@ -1,9 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mapbox_api/features/core/providers/app_preferences_provider.dart';
-import 'package:mapbox_api/features/core/providers/firebase_providers.dart';
-import 'package:mapbox_api/features/reservations/providers/reservations_providers.dart';
-import 'package:mapbox_api/features/users/providers/user_providers.dart'
+import 'package:beygo/features/core/providers/app_preferences_provider.dart';
+import 'package:beygo/features/core/providers/firebase_providers.dart';
+import 'package:beygo/features/reservations/providers/reservations_providers.dart';
+import 'package:beygo/features/users/providers/user_providers.dart'
     show
         myNotificationSettingsStreamProvider,
         saveNotificationSettingsProvider;

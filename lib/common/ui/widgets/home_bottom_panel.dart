@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:mapbox_api/common/services/google_places_service.dart';
-import 'package:mapbox_api/common/ui/components/app_styles.dart';
-import 'package:mapbox_api/features/core/services/recent_searches.dart';
+import 'package:beygo/common/services/google_places_service.dart';
+import 'package:beygo/common/ui/components/app_styles.dart';
+import 'package:beygo/features/core/services/recent_searches.dart';
 
 class HomeBottomPanel extends StatefulWidget {
   const HomeBottomPanel({
@@ -263,7 +263,7 @@ class _HomeBottomPanelState extends State<HomeBottomPanel> {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF0F172A).withOpacity(0.12),
+                  color: const Color(0xFF0F172A).withValues(alpha: 0.12),
                   blurRadius: 24,
                   offset: const Offset(0, -6),
                 ),
@@ -341,7 +341,7 @@ class _HomeBottomPanelState extends State<HomeBottomPanel> {
                                           color:
                                               hasLocation
                                                   ? AppColors.headerBottom
-                                                      .withOpacity(0.7)
+                                                      .withValues(alpha: 0.7)
                                                   : context
                                                       .appTextSecondaryColor,
                                           fontWeight: FontWeight.w500,
@@ -363,7 +363,7 @@ class _HomeBottomPanelState extends State<HomeBottomPanel> {
                                     color:
                                         _hasFocus
                                             ? AppColors.headerBottom
-                                                .withOpacity(0.55)
+                                                .withValues(alpha: 0.55)
                                             : context.appBorderColor,
                                     width: _hasFocus ? 1.5 : 1,
                                   ),
@@ -372,8 +372,8 @@ class _HomeBottomPanelState extends State<HomeBottomPanel> {
                                       color:
                                           _hasFocus
                                               ? AppColors.headerBottom
-                                                  .withOpacity(0.10)
-                                              : Colors.black.withOpacity(0.03),
+                                                  .withValues(alpha: 0.10)
+                                              : Colors.black.withValues(alpha: 0.03),
                                       blurRadius: _hasFocus ? 16 : 8,
                                       offset: const Offset(0, 3),
                                     ),
@@ -507,7 +507,7 @@ class _HomeBottomPanelState extends State<HomeBottomPanel> {
                                                     BoxShadow(
                                                       color: AppColors
                                                           .headerBottom
-                                                          .withOpacity(0.28),
+                                                          .withValues(alpha: 0.28),
                                                       blurRadius: 10,
                                                       offset: const Offset(
                                                         0,
@@ -679,7 +679,7 @@ class _ResultTile extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: onTap,
-          splashColor: iconColor.withOpacity(0.06),
+          splashColor: iconColor.withValues(alpha: 0.06),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
@@ -687,7 +687,7 @@ class _ResultTile extends StatelessWidget {
               border: Border.all(color: context.appBorderColor),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.03),
+                  color: Colors.black.withValues(alpha: 0.03),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -699,7 +699,7 @@ class _ResultTile extends StatelessWidget {
                   width: 42,
                   height: 42,
                   decoration: BoxDecoration(
-                    color: iconColor.withOpacity(0.10),
+                    color: iconColor.withValues(alpha: 0.10),
                     borderRadius: BorderRadius.circular(13),
                   ),
                   child: Icon(icon, color: iconColor, size: 19),

@@ -8,14 +8,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:mapbox_api/common/ui/components/app_styles.dart';
-import 'package:mapbox_api/common/services/app_preferences_service.dart';
-import 'package:mapbox_api/common/ui/widgets/app_map_controls.dart';
-import 'package:mapbox_api/common/ui/widgets/app_drawer.dart';
-import 'package:mapbox_api/common/ui/widgets/home_bottom_panel.dart';
-import 'package:mapbox_api/features/core/components/map_widget.dart';
-import 'package:mapbox_api/features/core/providers/app_preferences_provider.dart';
-import 'package:mapbox_api/features/core/pages/userv/configurations_page.dart';
+import 'package:beygo/common/common.dart';
+import 'package:beygo/features/core/components/map_widget.dart';
+import 'package:beygo/features/core/providers/app_preferences_provider.dart';
+import 'package:beygo/features/core/pages/userv/configurations_page.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});

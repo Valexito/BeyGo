@@ -1,10 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:mapbox_api/features/core/providers/firebase_providers.dart';
-import 'package:mapbox_api/features/reservations/models/parking_space.dart';
-import 'package:mapbox_api/features/reservations/models/reservation.dart';
-import 'package:mapbox_api/features/reservations/models/parking.dart';
+import 'package:beygo/features/core/providers/firebase_providers.dart';
+import 'package:beygo/features/reservations/models/parking_space.dart';
+import 'package:beygo/features/reservations/models/reservation.dart';
+import 'package:beygo/features/reservations/models/parking.dart';
 
 final _dbProvider = firestoreProvider;
 

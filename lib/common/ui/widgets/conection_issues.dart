@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:mapbox_api/common/ui/components/app_styles.dart';
-import 'package:mapbox_api/common/ui/components/my_button.dart';
+import 'package:beygo/common/ui/components/app_styles.dart';
+import 'package:beygo/common/ui/components/my_button.dart';
 
 class AppNoConnection extends StatefulWidget {
   final VoidCallback? onRetry;
@@ -117,7 +117,7 @@ class _AppNoConnectionState extends State<AppNoConnection>
               width: 200,
               height: 200,
               decoration: BoxDecoration(
-                color: AppColors.headerTop.withOpacity(0.08),
+                color: AppColors.headerTop.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
             ),
@@ -129,7 +129,7 @@ class _AppNoConnectionState extends State<AppNoConnection>
               width: 160,
               height: 160,
               decoration: BoxDecoration(
-                color: AppColors.headerBottom.withOpacity(0.06),
+                color: AppColors.headerBottom.withValues(alpha: 0.06),
                 shape: BoxShape.circle,
               ),
             ),
@@ -150,7 +150,7 @@ class _AppNoConnectionState extends State<AppNoConnection>
         border: Border.all(color: AppColors.borderSoft),
         boxShadow: [
           BoxShadow(
-            color: AppColors.headerBottom.withOpacity(0.06),
+            color: AppColors.headerBottom.withValues(alpha: 0.06),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -185,7 +185,7 @@ class _AppNoConnectionState extends State<AppNoConnection>
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.headerBottom.withOpacity(
+                          color: AppColors.headerBottom.withValues(alpha: 
                             0.10 + 0.08 * _fade.value,
                           ),
                           blurRadius: 24,
@@ -196,7 +196,7 @@ class _AppNoConnectionState extends State<AppNoConnection>
                     child: Icon(
                       Icons.wifi_off_rounded,
                       size: compact ? 30 : 42,
-                      color: AppColors.headerBottom.withOpacity(0.7),
+                      color: AppColors.headerBottom.withValues(alpha: 0.7),
                     ),
                   ),
                 ),
@@ -245,7 +245,7 @@ class _AppNoConnectionState extends State<AppNoConnection>
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 11,
-                color: AppColors.textSecondary.withOpacity(0.6),
+                color: AppColors.textSecondary.withValues(alpha: 0.6),
               ),
             ),
           ],
@@ -286,7 +286,7 @@ class _NoConnectionSheet extends StatelessWidget {
             width: 64,
             height: 64,
             decoration: BoxDecoration(
-              color: AppColors.headerBottom.withOpacity(0.08),
+              color: AppColors.headerBottom.withValues(alpha: 0.08),
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -320,7 +320,7 @@ class _NoConnectionSheet extends StatelessWidget {
                     onPressed: () => Navigator.pop(context),
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(
-                        color: AppColors.headerBottom.withOpacity(0.25),
+                        color: AppColors.headerBottom.withValues(alpha: 0.25),
                       ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),

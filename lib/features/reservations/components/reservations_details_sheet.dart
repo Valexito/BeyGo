@@ -6,13 +6,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import 'package:mapbox_api/common/ui/components/app_styles.dart';
-import 'package:mapbox_api/common/ui/components/my_button.dart';
-import 'package:mapbox_api/common/ui/components/my_text.dart';
-import 'package:mapbox_api/features/reservations/components/reservation_dialogs.dart';
-import 'package:mapbox_api/features/reservations/models/reservation.dart';
-import 'package:mapbox_api/features/reservations/providers/reservations_providers.dart';
+import 'package:beygo/common/common.dart';
+import 'package:beygo/features/reservations/components/reservation_dialogs.dart';
+import 'package:beygo/features/reservations/models/reservation.dart';
+import 'package:beygo/features/reservations/providers/reservations_providers.dart';
 
 class ReservationDetailsSheet extends ConsumerStatefulWidget {
   final Reservation reservation;

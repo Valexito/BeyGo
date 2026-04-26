@@ -1,7 +1,6 @@
 // lib/features/core/pages/map_picker_page.dart
 //
 // ─── MIGRATION LOG ───────────────────────────────────────────────────────────
-//  v2 — Migrated from flutter_map + Mapbox tiles → google_maps_flutter
 //  • Tap to place pin (same UX as before)
 //  • Search bar with Google Places Autocomplete
 //  • Confirm button returns LatLng
@@ -10,13 +9,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:mapbox_api/common/services/geolocator.dart';
-import 'package:mapbox_api/common/services/google_places_service.dart';
-import 'package:mapbox_api/common/ui/components/app_styles.dart';
-import 'package:mapbox_api/common/ui/components/google_map_styles.dart';
-import 'package:mapbox_api/common/ui/components/my_button.dart';
-import 'package:mapbox_api/common/ui/components/navy_header.dart';
-import 'package:mapbox_api/common/ui/widgets/app_map_controls.dart';
+import 'package:beygo/common/services/geolocator.dart';
+import 'package:beygo/common/services/google_places_service.dart';
+import 'package:beygo/common/ui/components/app_styles.dart';
+import 'package:beygo/common/ui/components/google_map_styles.dart';
+import 'package:beygo/common/ui/components/my_button.dart';
+import 'package:beygo/common/ui/components/navy_header.dart';
+import 'package:beygo/common/ui/widgets/app_map_controls.dart';
 
 class MapPickerPage extends StatefulWidget {
   /// Optional initial position. If not provided, tries current location first

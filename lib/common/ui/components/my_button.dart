@@ -100,14 +100,14 @@ class MyButton extends StatelessWidget {
                           ? Colors.transparent
                           : (context.isDarkMode
                               ? context.appBorderColor
-                              : AppColors.headerBottom.withOpacity(0.18)),
+                              : AppColors.headerBottom.withValues(alpha: 0.18)),
                   width: _isFilled ? 0 : 1.1,
                 ),
                 boxShadow:
                     _isFilled
                         ? [
                           BoxShadow(
-                            color: AppColors.primary.withOpacity(0.22),
+                            color: AppColors.primary.withValues(alpha: 0.22),
                             blurRadius: 18,
                             offset: const Offset(0, 8),
                           ),

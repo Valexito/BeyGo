@@ -7,11 +7,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:mapbox_api/common/ui/components/app_styles.dart';
-import 'package:mapbox_api/common/ui/components/my_button.dart';
-import 'package:mapbox_api/features/users/models/vehicule.dart';
-import 'package:mapbox_api/features/users/providers/user_providers.dart';
-import 'package:mapbox_api/features/users/pages/edit_vehicles_page.dart';
+import 'package:beygo/common/common.dart';
+import 'package:beygo/features/users/models/vehicule.dart';
+import 'package:beygo/features/users/providers/user_providers.dart';
+import 'package:beygo/features/users/pages/edit_vehicles_page.dart';
 
 // ─── Country code model ────────────────────────────────────────────────────────
 class _CountryCode {

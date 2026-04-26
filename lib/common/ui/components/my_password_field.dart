@@ -78,7 +78,7 @@ class _MyPasswordFieldState extends State<MyPasswordField> {
     final focusedBorder = OutlineInputBorder(
       borderRadius: radius,
       borderSide: BorderSide(
-        color: AppColors.headerBottom.withOpacity(0.45),
+        color: AppColors.headerBottom.withValues(alpha: 0.45),
         width: 1,
       ),
     );
@@ -146,7 +146,7 @@ class _MyPasswordFieldState extends State<MyPasswordField> {
               _active
                   ? [
                     BoxShadow(
-                      color: AppColors.headerBottom.withOpacity(0.18),
+                      color: AppColors.headerBottom.withValues(alpha: 0.18),
                       blurRadius: 18,
                       spreadRadius: 0.5,
                       offset: const Offset(0, 6),

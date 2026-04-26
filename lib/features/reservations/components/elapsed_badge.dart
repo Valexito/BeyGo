@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mapbox_api/features/reservations/providers/ticker_provider.dart';
+import 'package:beygo/features/reservations/providers/ticker_provider.dart';
 
 /// Muestra el tiempo transcurrido desde [start], actualizándose cada segundo.
 /// Uso: ElapsedBadge(start: reservation.startedAt)
@@ -23,7 +23,7 @@ class ElapsedBadge extends ConsumerWidget {
       decoration: BoxDecoration(
         color: const Color(0xFFEAF0F7),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF1B3A57).withOpacity(.15)),
+        border: Border.all(color: const Color(0xFF1B3A57).withValues(alpha: .15)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

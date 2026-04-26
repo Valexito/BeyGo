@@ -1,19 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:mapbox_api/features/reservations/models/parking.dart';
+import 'package:beygo/features/reservations/models/parking.dart';
 
-/// Servicio para manejar /favorites asegurando compatibilidad con docs antiguos
-/// que pudieron crearse con auto-ID.
 class FavoriteService {
   FavoriteService._();
   static final instance = FavoriteService._();
 
   final _col = FirebaseFirestore.instance.collection('favorites');
 
-  /// ID determinista: {uid}_{parkingId} (lo usamos al escribir de ahora en adelante)
   String _docId(String uid, String parkingId) => '${uid}_$parkingId';
 
-  /// Añadir/actualizar favorito con los datos del parking.
-  /// Escribe en el doc determinista y limpia duplicados con auto-ID si los hay.
   Future<void> add(String uid, Parking p) async {
     if (p.id.isEmpty) {
       throw ArgumentError('Parking.id must not be empty');

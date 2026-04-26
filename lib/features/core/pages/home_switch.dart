@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mapbox_api/features/owner/owner_home_page.dart';
-import 'package:mapbox_api/features/core/pages/userv/home_page.dart';
-import 'package:mapbox_api/features/users/models/user_role.dart';
-import 'package:mapbox_api/features/users/providers/user_providers.dart'
+import 'package:beygo/features/owner/owner_home_page.dart';
+import 'package:beygo/features/core/pages/userv/home_page.dart';
+import 'package:beygo/features/users/models/user_role.dart';
+import 'package:beygo/features/users/providers/user_providers.dart'
     show myRoleStreamProvider;
 
 class HomeSwitch extends ConsumerWidget {

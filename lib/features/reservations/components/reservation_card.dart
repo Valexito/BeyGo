@@ -5,12 +5,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:mapbox_api/common/ui/components/app_styles.dart';
-import 'package:mapbox_api/common/ui/components/my_text.dart';
-import 'package:mapbox_api/features/reservations/components/reservations_details_sheet.dart';
-import 'package:mapbox_api/features/reservations/models/parking.dart';
-import 'package:mapbox_api/features/reservations/models/reservation.dart';
-import 'package:mapbox_api/features/reservations/providers/reservations_providers.dart';
+import 'package:beygo/common/common.dart';
+import 'package:beygo/features/reservations/components/reservations_details_sheet.dart';
+import 'package:beygo/features/reservations/models/parking.dart';
+import 'package:beygo/features/reservations/models/reservation.dart';
+import 'package:beygo/features/reservations/providers/reservations_providers.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ReservationCard extends ConsumerWidget {

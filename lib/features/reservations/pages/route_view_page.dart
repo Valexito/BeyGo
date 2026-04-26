@@ -1,6 +1,5 @@
 // lib/features/reservations/pages/route_view_page.dart
 //
-// Migrated from flutter_map + Mapbox tiles → google_maps_flutter
 // Uses GoogleDirectionsService (via directions_providers.dart)
 // Uses google_maps_flutter.LatLng everywhere (no latlong2)
 //
@@ -8,14 +7,10 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-
-import 'package:mapbox_api/common/ui/components/app_styles.dart';
-import 'package:mapbox_api/common/ui/components/google_map_styles.dart';
-import 'package:mapbox_api/common/ui/components/my_button.dart';
-import 'package:mapbox_api/common/ui/widgets/app_map_controls.dart';
-import 'package:mapbox_api/features/reservations/components/route_bottom_info_card.dart';
-import 'package:mapbox_api/features/reservations/providers/directions_providers.dart';
-import 'package:mapbox_api/features/reservations/providers/location_providers.dart';
+import 'package:beygo/common/common.dart';
+import 'package:beygo/features/reservations/components/route_bottom_info_card.dart';
+import 'package:beygo/features/reservations/providers/directions_providers.dart';
+import 'package:beygo/features/reservations/providers/location_providers.dart';
 
 class RouteViewPage extends ConsumerStatefulWidget {
   final LatLng destination;

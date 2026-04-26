@@ -1,11 +1,10 @@
 // lib/features/reservations/providers/directions_providers.dart
 //
-// Replaced MapboxDirectionsService → GoogleDirectionsService
 // latlong2.LatLng → google_maps_flutter.LatLng
 //
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:mapbox_api/common/services/google_directions_service.dart';
+import 'package:beygo/common/services/google_directions_service.dart';
 
 /// DI of the directions service.
 /// Uses Env.googleMapsKey automatically; falls back to OSRM if key is empty.

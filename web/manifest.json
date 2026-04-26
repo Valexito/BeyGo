@@ -1,11 +1,11 @@
 {
-    "name": "mapbox_api",
-    "short_name": "mapbox_api",
+    "name": "BeyGo",
+    "short_name": "BeyGo",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Encuentra y reserva parqueos cercanos en tiempo real.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

@@ -2,16 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import 'package:mapbox_api/features/core/providers/spaces_provider.dart';
-
-import 'package:mapbox_api/common/ui/components/app_styles.dart';
-import 'package:mapbox_api/common/ui/components/my_text.dart';
-import 'package:mapbox_api/features/core/providers/favorites_provider.dart';
-import 'package:mapbox_api/features/reservations/pages/reserve_space_page.dart';
-
-import 'package:mapbox_api/features/users/providers/user_providers.dart';
-import 'package:mapbox_api/features/users/models/user_role.dart';
-import 'package:mapbox_api/features/core/pages/home_switch.dart';
+import 'package:beygo/features/core/providers/spaces_provider.dart';
+import 'package:beygo/common/common.dart';
+import 'package:beygo/features/core/providers/favorites_provider.dart';
+import 'package:beygo/features/reservations/pages/reserve_space_page.dart';
+import 'package:beygo/features/users/users.dart';
+import 'package:beygo/features/core/pages/home_switch.dart';
 
 enum FavFilter { all, rating45, spaces }
 

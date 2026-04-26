@@ -12,12 +12,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:mapbox_api/common/services/geolocator.dart' as helper;
+import 'package:beygo/common/services/geolocator.dart' as helper;
 
 // ⚠️  Import whichever path matches YOUR project structure.
 //    If the file is at lib/features/reservations/services/geolocator.dart:
 //    If the file is at lib/common/services/geolocator.dart, change to:
-//    import 'package:mapbox_api/common/services/geolocator.dart' as helper;
+//    import 'package:beygo/common/services/geolocator.dart' as helper;
 
 /// One-shot current location (used for initial map position and route origin).
 /// Falls back to Xela coords if GPS fails or permission is denied.

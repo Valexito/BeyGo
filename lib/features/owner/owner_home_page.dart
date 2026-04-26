@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mapbox_api/common/ui/components/app_styles.dart';
-import 'package:mapbox_api/features/core/providers/app_preferences_provider.dart';
-import 'package:mapbox_api/features/owner/owner_reservations_page.dart';
-import 'package:mapbox_api/features/owner/owner_requests_page.dart';
-import 'package:mapbox_api/features/owner/owner_settings_page.dart';
-import 'package:mapbox_api/features/owner/owner_history_page.dart';
-import 'package:mapbox_api/features/owner/owner_walking_page.dart';
-import 'package:mapbox_api/features/owner/providers/dashboard_providers.dart';
-import 'package:mapbox_api/features/core/roles/role_utils.dart';
-import 'package:mapbox_api/features/reservations/models/reservation.dart';
+import 'package:beygo/common/ui/components/app_styles.dart';
+import 'package:beygo/features/core/core.dart';
+import 'package:beygo/features/owner/owner_reservations_page.dart';
+import 'package:beygo/features/owner/owner_requests_page.dart';
+import 'package:beygo/features/owner/owner_settings_page.dart';
+import 'package:beygo/features/owner/owner_history_page.dart';
+import 'package:beygo/features/owner/owner_walking_page.dart';
+import 'package:beygo/features/owner/providers/dashboard_providers.dart';
+import 'package:beygo/features/reservations/models/reservation.dart';
 
 class OwnerHomePage extends StatefulWidget {
   const OwnerHomePage({super.key});

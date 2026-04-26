@@ -11,10 +11,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:mapbox_api/common/ui/components/app_styles.dart';
-import 'package:mapbox_api/common/ui/components/my_button.dart';
-import 'package:mapbox_api/common/ui/components/my_text.dart';
-import 'package:mapbox_api/features/reservations/models/reservation.dart';
+import 'package:beygo/common/common.dart';
+import 'package:beygo/features/reservations/models/reservation.dart';
 
 /// Show the rating dialog. Returns true if rating was submitted.
 Future<bool> showRatingDialog(

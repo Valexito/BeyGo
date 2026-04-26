@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:mapbox_api/common/ui/components/app_styles.dart';
-import 'package:mapbox_api/common/ui/components/my_button.dart';
+import 'package:beygo/common/ui/components/app_styles.dart';
+import 'package:beygo/common/ui/components/my_button.dart';
 
 class AppDialog extends StatelessWidget {
   final IconData icon;

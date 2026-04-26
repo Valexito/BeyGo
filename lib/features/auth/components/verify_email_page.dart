@@ -1,10 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-
-import 'package:mapbox_api/common/ui/components/app_styles.dart';
-import 'package:mapbox_api/common/ui/components/my_button.dart';
-import 'package:mapbox_api/common/ui/widgets/app_loading_screen.dart';
-import 'package:mapbox_api/features/users/pages/complete_profile_page.dart';
+import 'package:beygo/common/common.dart';
+import 'package:beygo/features/users/pages/complete_profile_page.dart';
 
 class VerifyEmailPage extends StatefulWidget {
   final User user;
@@ -155,10 +152,10 @@ class _VerifyEmailPageState extends State<VerifyEmailPage>
                       width: 84,
                       height: 84,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.16),
+                        color: Colors.white.withValues(alpha: 0.16),
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.22),
+                          color: Colors.white.withValues(alpha: 0.22),
                           width: 1.4,
                         ),
                       ),
@@ -246,11 +243,11 @@ class _VerifyEmailPageState extends State<VerifyEmailPage>
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: AppColors.headerBottom.withOpacity(0.15),
+                                color: AppColors.headerBottom.withValues(alpha: 0.15),
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppColors.headerBottom.withOpacity(
+                                  color: AppColors.headerBottom.withValues(alpha: 
                                     0.05,
                                   ),
                                   blurRadius: 10,
@@ -264,7 +261,7 @@ class _VerifyEmailPageState extends State<VerifyEmailPage>
                                   width: 36,
                                   height: 36,
                                   decoration: BoxDecoration(
-                                    color: AppColors.headerBottom.withOpacity(
+                                    color: AppColors.headerBottom.withValues(alpha: 
                                       0.08,
                                     ),
                                     shape: BoxShape.circle,
@@ -367,7 +364,7 @@ class _VerifyEmailPageState extends State<VerifyEmailPage>
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                                 side: BorderSide(
-                                  color: AppColors.headerBottom.withOpacity(
+                                  color: AppColors.headerBottom.withValues(alpha: 
                                     0.28,
                                   ),
                                 ),
@@ -417,9 +414,9 @@ class _FeedbackBanner extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.07),
+        color: color.withValues(alpha: 0.07),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.22)),
+        border: Border.all(color: color.withValues(alpha: 0.22)),
       ),
       child: Row(
         children: [
@@ -457,7 +454,7 @@ class _Blob extends StatelessWidget {
     width: size,
     height: size,
     decoration: BoxDecoration(
-      color: Colors.white.withOpacity(opacity),
+      color: Colors.white.withValues(alpha: opacity),
       shape: BoxShape.circle,
     ),
   );

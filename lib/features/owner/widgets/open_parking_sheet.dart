@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mapbox_api/features/core/providers/favorites_provider.dart';
-
-import 'package:mapbox_api/features/core/components/home_bottom_parking_details.dart';
-import 'package:mapbox_api/features/reservations/models/parking.dart';
+import 'package:beygo/features/core/core.dart';import 'package:beygo/features/reservations/models/parking.dart';
 
 void openParkingSheet(BuildContext context, Parking parking) {
   showModalBottomSheet(
@@ -13,8 +10,8 @@ void openParkingSheet(BuildContext context, Parking parking) {
       borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
     ),
     builder: (_) {
-      return ProviderScope(
-        parent: ProviderScope.containerOf(context),
+      return UncontrolledProviderScope(
+        container: ProviderScope.containerOf(context),
         child: _ParkingSheet(parking: parking),
       );
     },

@@ -1,19 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mapbox_api/common/ui/components/app_styles.dart';
-import 'package:mapbox_api/features/core/providers/spaces_provider.dart';
-import 'package:mapbox_api/common/ui/components/my_button.dart';
-import 'package:mapbox_api/common/ui/components/my_text.dart';
-import 'package:mapbox_api/features/core/providers/favorites_provider.dart';
-import 'package:mapbox_api/features/reservations/models/parking.dart';
-import 'package:mapbox_api/features/reservations/pages/reserve_space_page.dart';
-import 'package:mapbox_api/features/reservations/providers/reservations_providers.dart';
+import 'package:beygo/common/common.dart';
+import 'package:beygo/features/core/providers/spaces_provider.dart';
+import 'package:beygo/features/core/providers/favorites_provider.dart';
+import 'package:beygo/features/reservations/reservations.dart';
 
 class HomeParkingDetailBottomSheet extends ConsumerStatefulWidget {
   final Parking parking;
 
-  /// Props legacy (opcionales). Si las pasas, las usamos como “estado inicial”
-  /// mientras el Stream resuelve por 1ª vez.
   final bool isFavorite;
   final VoidCallback? onToggleFavorite;
 
@@ -195,7 +189,9 @@ class _HomeParkingDetailBottomSheetState
                         color: Colors.white.withValues(alpha: 0.94),
                         borderRadius: BorderRadius.circular(18),
                         border: Border.all(
-                          color: const Color(0xFFFCD34D).withValues(alpha: 0.45),
+                          color: const Color(
+                            0xFFFCD34D,
+                          ).withValues(alpha: 0.45),
                         ),
                         boxShadow: [
                           BoxShadow(
@@ -219,7 +215,8 @@ class _HomeParkingDetailBottomSheetState
                           ),
                           const SizedBox(height: 4),
                           MyText(
-                            text: hasRating ? rating.toStringAsFixed(1) : 'Nuevo',
+                            text:
+                                hasRating ? rating.toStringAsFixed(1) : 'Nuevo',
                             variant: MyTextVariant.bodyBold,
                             fontSize: 13,
                             customColor:
@@ -301,9 +298,7 @@ class _HomeParkingDetailBottomSheetState
                           border: Border.all(color: context.appBorderColor),
                         ),
                         child: Column(
-                          children: [
-                            _buildOpenStatus(currentParking),
-                          ],
+                          children: [_buildOpenStatus(currentParking)],
                         ),
                       ),
                     ],

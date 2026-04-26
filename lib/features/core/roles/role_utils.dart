@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:mapbox_api/features/users/models/user_role.dart';
-import 'package:mapbox_api/features/users/providers/user_providers.dart'
+import 'package:beygo/features/users/models/user_role.dart';
+import 'package:beygo/features/users/providers/user_providers.dart'
     show myRoleStreamProvider;
 
 bool isOwnerLike(UserRole r) => r == UserRole.provider || r == UserRole.admin;

@@ -2,16 +2,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb;
-import 'package:mapbox_api/common/ui/components/app_styles.dart';
-
-import 'package:mapbox_api/features/core/pages/userv/configurations_page.dart';
-import 'package:mapbox_api/features/core/pages/userv/frequent_questions_page.dart';
-import 'package:mapbox_api/features/core/pages/userv/legal_information_page.dart';
-import 'package:mapbox_api/features/core/pages/userv/report_problem_page.dart';
-import 'package:mapbox_api/features/reservations/pages/reservations_page.dart';
-import 'package:mapbox_api/features/core/pages/userv/favorites_page.dart';
-import 'package:mapbox_api/features/users/pages/profile_page.dart';
-import 'package:mapbox_api/features/auth/providers/auth_providers.dart'
+import 'package:beygo/common/ui/components/app_styles.dart';
+import 'package:beygo/features/core/core.dart';
+import 'package:beygo/features/reservations/pages/reservations_page.dart';
+import 'package:beygo/features/users/pages/profile_page.dart';
+import 'package:beygo/features/auth/providers/auth_providers.dart'
     show authUserStreamProvider, authActionsProvider;
 
 final _drawerProfileProvider =

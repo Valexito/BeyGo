@@ -4,11 +4,8 @@
 //
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart'; // ← ADDED — fixes "Undefined class 'LatLng'"
-
-import 'package:mapbox_api/common/ui/components/app_styles.dart';
-import 'package:mapbox_api/common/ui/components/my_button.dart';
-import 'package:mapbox_api/common/ui/components/my_text.dart';
-import 'package:mapbox_api/features/reservations/models/reservation.dart';
+import 'package:beygo/common/common.dart';
+import 'package:beygo/features/reservations/models/reservation.dart';
 
 class ReservationDialogs {
   static Future<bool?> showConfirmReservationDialog(

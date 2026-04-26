@@ -1,19 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
-import 'package:mapbox_api/common/ui/components/app_styles.dart';
-import 'package:mapbox_api/common/ui/components/my_textfield.dart';
-import 'package:mapbox_api/common/ui/components/my_password_field.dart';
-import 'package:mapbox_api/common/ui/components/my_button.dart';
-
-import 'package:mapbox_api/features/auth/components/forgot_password_dialog.dart';
-import 'package:mapbox_api/features/auth/components/verify_email_page.dart';
-import 'package:mapbox_api/features/auth/providers/auth_providers.dart';
-
-import 'package:mapbox_api/features/users/pages/complete_profile_page.dart';
-import 'package:mapbox_api/features/users/providers/user_providers.dart';
-import 'package:mapbox_api/features/core/pages/home_switch.dart';
+import 'package:beygo/common/common.dart';
+import 'package:beygo/features/auth/components/forgot_password_dialog.dart';
+import 'package:beygo/features/auth/components/verify_email_page.dart';
+import 'package:beygo/features/auth/providers/auth_providers.dart';
+import 'package:beygo/features/users/users.dart';
+import 'package:beygo/features/core/pages/home_switch.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   final VoidCallback onShowRegister;
@@ -30,12 +23,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
 
   bool _loading = false;
 
-  // ── SEPARATE flag for Google — this is the fix for the double-tap bug ──────
-  // Root cause: GoogleSignIn.signIn() can return null on the first call on
-  // Android emulators and some physical devices due to a cold-start race with
-  // Play Services. Having a single _loading flag means the second tap fires
-  // while the first is still "in progress" (state not yet updated).
-  // Fix: use an independent flag so Google state is isolated.
   bool _googleLoading = false;
 
   bool _rememberMe = false;

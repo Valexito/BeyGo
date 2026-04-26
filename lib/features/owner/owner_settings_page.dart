@@ -2,20 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mapbox_api/common/services/app_preferences_service.dart';
-import 'package:mapbox_api/common/ui/components/app_styles.dart';
-import 'package:mapbox_api/features/core/providers/app_preferences_provider.dart';
-import 'package:mapbox_api/features/core/providers/firebase_providers.dart';
-import 'package:mapbox_api/features/core/pages/userv/legal_information_page.dart';
-import 'package:mapbox_api/features/core/pages/userv/report_problem_page.dart';
-import 'package:mapbox_api/features/core/roles/role_utils.dart';
-import 'package:mapbox_api/features/owner/widgets/app_header.dart';
-import 'package:mapbox_api/features/owner/pages/edit_owner_parking_page.dart';
-import 'package:mapbox_api/features/owner/pages/edit_owner_profile_page.dart';
-import 'package:mapbox_api/features/owner/providers/owner_management_providers.dart';
-import 'package:mapbox_api/features/auth/providers/auth_providers.dart'
+import 'package:beygo/common/common.dart';
+import 'package:beygo/features/core/core.dart';
+import 'package:beygo/features/core/providers/firebase_providers.dart';
+import 'package:beygo/features/owner/widgets/app_header.dart';
+import 'package:beygo/features/owner/pages/edit_owner_parking_page.dart';
+import 'package:beygo/features/owner/pages/edit_owner_profile_page.dart';
+import 'package:beygo/features/owner/providers/owner_management_providers.dart';
+import 'package:beygo/features/auth/providers/auth_providers.dart'
     show authActionsProvider;
-import 'package:mapbox_api/features/reservations/providers/reservations_providers.dart';
+import 'package:beygo/features/reservations/providers/reservations_providers.dart';
 
 class OwnerSettingsPage extends ConsumerStatefulWidget {
   const OwnerSettingsPage({super.key});

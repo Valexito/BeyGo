@@ -5,14 +5,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:mapbox_api/common/ui/components/app_styles.dart';
-import 'package:mapbox_api/common/ui/components/my_button.dart';
-import 'package:mapbox_api/common/ui/widgets/app_widgets.dart';
-import 'package:mapbox_api/common/ui/widgets/conection_issues.dart';
-import 'package:mapbox_api/features/owner/providers/provider_request_submit_provider.dart';
-import 'package:mapbox_api/features/core/pages/userv/map_pick_page_become_owner.dart';
-import 'package:mapbox_api/features/core/providers/firebase_providers.dart';
-
+import 'package:beygo/common/common.dart';
+import 'package:beygo/features/owner/providers/provider_request_submit_provider.dart';
+import 'package:beygo/features/core/core.dart';
+import 'package:beygo/features/core/providers/firebase_providers.dart';
 // ─── Country code (same as configure_profile_page) ───────────────────────────
 class _CountryCode {
   final String flag;

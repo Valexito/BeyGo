@@ -1,10 +1,6 @@
-// lib/features/auth/components/forgot_password_dialog.dart
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
-import 'package:mapbox_api/common/ui/components/app_styles.dart';
-import 'package:mapbox_api/common/ui/components/my_button.dart';
-import 'package:mapbox_api/common/ui/components/my_textfield.dart';
+import 'package:beygo/common/common.dart';
 
 class ForgotPasswordDialog extends StatefulWidget {
   const ForgotPasswordDialog({super.key});
@@ -202,14 +198,22 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
                       decoration: BoxDecoration(
                         color:
                             _sent
-                                ? const Color(0xFF16A34A).withValues(alpha: 0.08)
-                                : const Color(0xFFDC2626).withValues(alpha: 0.07),
+                                ? const Color(
+                                  0xFF16A34A,
+                                ).withValues(alpha: 0.08)
+                                : const Color(
+                                  0xFFDC2626,
+                                ).withValues(alpha: 0.07),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color:
                               _sent
-                                  ? const Color(0xFF16A34A).withValues(alpha: 0.25)
-                                  : const Color(0xFFDC2626).withValues(alpha: 0.20),
+                                  ? const Color(
+                                    0xFF16A34A,
+                                  ).withValues(alpha: 0.25)
+                                  : const Color(
+                                    0xFFDC2626,
+                                  ).withValues(alpha: 0.20),
                         ),
                       ),
                       child: Row(

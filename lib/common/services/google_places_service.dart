@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
-import 'package:mapbox_api/common/env/env.dart';
+import 'package:beygo/common/env/env.dart';
 
 class GooglePlacesService {
   static const Duration _timeout = Duration(seconds: 6);

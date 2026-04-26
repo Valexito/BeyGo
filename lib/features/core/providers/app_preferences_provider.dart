@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mapbox_api/common/services/app_preferences_service.dart';
+import 'package:beygo/common/services/app_preferences_service.dart';
 
 final appPreferencesServiceProvider = Provider<AppPreferencesService>((ref) {
   return AppPreferencesService.instance;

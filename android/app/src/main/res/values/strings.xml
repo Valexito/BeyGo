@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Nombre público de la app que verán los usuarios bajo el ícono. -->
+    <string name="app_name">BeyGo</string>
+</resources>

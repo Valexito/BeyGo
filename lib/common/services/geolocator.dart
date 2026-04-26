@@ -1,11 +1,3 @@
-// lib/common/services/geolocator.dart
-//
-// ✅ NO latlong2 — returns google_maps_flutter.LatLng directly.
-// Place this file at BOTH locations if you have two copies:
-//   lib/common/services/geolocator.dart
-//   lib/features/reservations/services/geolocator.dart
-// (same content, just copy it)
-//
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
@@ -33,7 +25,7 @@ Future<LatLng> getCurrentLocation() async {
   }
 
   final position = await Geolocator.getCurrentPosition(
-    desiredAccuracy: LocationAccuracy.high,
+    locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
   );
 
   return LatLng(position.latitude, position.longitude);

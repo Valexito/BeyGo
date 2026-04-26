@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mapbox_api/common/ui/components/app_styles.dart';
+import 'package:beygo/common/ui/components/app_styles.dart';
 
 class AppMapControls extends StatelessWidget {
   final VoidCallback onZoomIn;

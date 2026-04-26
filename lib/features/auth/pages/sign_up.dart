@@ -1,9 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mapbox_api/common/ui/components/app_styles.dart';
-import 'package:mapbox_api/common/ui/components/my_button.dart';
-import 'package:mapbox_api/features/auth/components/verify_email_page.dart';
+import 'package:beygo/common/common.dart';
+import 'package:beygo/features/auth/components/verify_email_page.dart';
 import '../providers/auth_providers.dart';
 
 class SignUpPage extends ConsumerStatefulWidget {

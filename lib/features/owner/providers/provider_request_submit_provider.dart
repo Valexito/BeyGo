@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:uuid/uuid.dart';
 
-import 'package:mapbox_api/features/core/providers/firebase_providers.dart';
+import 'package:beygo/features/core/providers/firebase_providers.dart';
 
 final submitProviderRequestProvider = Provider<
   Future<void> Function({

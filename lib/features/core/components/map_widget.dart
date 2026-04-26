@@ -4,14 +4,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:mapbox_api/common/services/geolocator.dart';
-import 'package:mapbox_api/common/ui/components/app_styles.dart';
-import 'package:mapbox_api/common/ui/components/google_map_styles.dart';
-import 'package:mapbox_api/features/core/components/home_bottom_parking_details.dart';
-import 'package:mapbox_api/features/core/services/favorite_service.dart';
-import 'package:mapbox_api/features/reservations/models/parking.dart';
-import 'package:mapbox_api/features/reservations/providers/parking_service_provider.dart';
-
+import 'package:beygo/common/common.dart';
+import 'package:beygo/features/core/components/home_bottom_parking_details.dart';
+import 'package:beygo/features/core/services/favorite_service.dart';
+import 'package:beygo/features/reservations/reservations.dart';
 class MapWidget extends ConsumerStatefulWidget {
   /// Called when the user taps the map background (not a marker).
   final VoidCallback? onMapTap;

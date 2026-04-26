@@ -6,10 +6,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:mapbox_api/common/services/app_preferences_service.dart';
-import 'package:mapbox_api/features/owner/owner_requests_page.dart';
-import 'package:mapbox_api/features/owner/owner_reservations_page.dart';
-import 'package:mapbox_api/features/reservations/pages/reservations_page.dart';
+import 'package:beygo/common/services/app_preferences_service.dart';
+import 'package:beygo/features/owner/owner.dart';
+import 'package:beygo/features/reservations/pages/reservations_page.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {

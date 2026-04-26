@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:mapbox_api/features/core/providers/firebase_providers.dart';
+import 'package:beygo/features/core/providers/firebase_providers.dart';
 
 /// ===============================
 /// STREAM: ALL PROVIDER REQUESTS

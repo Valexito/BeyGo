@@ -6,11 +6,9 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:mapbox_api/common/ui/components/app_styles.dart';
-import 'package:mapbox_api/common/ui/components/my_button.dart';
-import 'package:mapbox_api/common/ui/widgets/app_country_picker.dart';
-import 'package:mapbox_api/features/owner/widgets/app_header.dart';
-import 'package:mapbox_api/features/users/providers/user_providers.dart';
+import 'package:beygo/common/common.dart';
+import 'package:beygo/features/owner/widgets/app_header.dart';
+import 'package:beygo/features/users/providers/user_providers.dart';
 
 class EditOwnerProfilePage extends ConsumerStatefulWidget {
   const EditOwnerProfilePage({super.key});

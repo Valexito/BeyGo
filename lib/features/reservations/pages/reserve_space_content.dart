@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mapbox_api/common/ui/components/app_styles.dart';
-import 'package:mapbox_api/common/ui/components/my_button.dart';
-import 'package:mapbox_api/common/ui/components/my_text.dart';
-import 'package:mapbox_api/features/reservations/models/parking.dart';
-import 'package:mapbox_api/features/reservations/providers/reservations_providers.dart';
-import 'package:mapbox_api/features/users/models/vehicule.dart';
+import 'package:beygo/common/common.dart';
+import 'package:beygo/features/reservations/models/parking.dart';
+import 'package:beygo/features/reservations/providers/reservations_providers.dart';
+import 'package:beygo/features/users/models/vehicule.dart';
 
 class ReserveSpaceContent extends ConsumerStatefulWidget {
   final Parking parking;
