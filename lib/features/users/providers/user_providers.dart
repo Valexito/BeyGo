@@ -37,12 +37,23 @@ final isProfileCompleteProvider = FutureProvider.family<bool, String>((
   final hasVehicleType = s(d['vehicleType']).isNotEmpty;
   final completed = d['profileCompleted'] == true;
 
-  return (hasName &&
+  if ((hasName &&
           hasPhone &&
           hasRole &&
           hasVehiclePlate &&
           hasVehicleType) ||
-      completed;
+      completed) {
+    return true;
+  }
+
+  final vehicleDocs = await ref
+      .read(userDocRefProvider(uid))
+      .collection('vehicles')
+      .limit(1)
+      .get();
+
+  final hasSavedVehicle = vehicleDocs.docs.isNotEmpty;
+  return hasName && hasPhone && hasRole && hasSavedVehicle;
 });
 
 // ---------- Guardado de perfil ----------
@@ -239,11 +250,8 @@ final canEnterAppProvider = FutureProvider.family<bool, String>((
   }
 
   Future<bool> _check() async {
-    final doc = await db
-        .collection('users')
-        .doc(uid)
-        .get()
-        .timeout(const Duration(seconds: 8));
+    final userRef = db.collection('users').doc(uid);
+    final doc = await userRef.get().timeout(const Duration(seconds: 8));
 
     if (!doc.exists) return false;
 
@@ -266,6 +274,16 @@ final canEnterAppProvider = FutureProvider.family<bool, String>((
 
     if ((hasName && hasPhone && hasRole && hasVehiclePlate && hasVehicleType) ||
         completed) {
+      return true;
+    }
+
+    final vehicleDocs = await userRef
+        .collection('vehicles')
+        .limit(1)
+        .get()
+        .timeout(const Duration(seconds: 8));
+
+    if (hasName && hasPhone && hasRole && vehicleDocs.docs.isNotEmpty) {
       return true;
     }
 
