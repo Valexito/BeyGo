@@ -17,10 +17,16 @@ class GooglePlacesService {
   }) async {
     final query = input.trim();
     if (query.isEmpty) return const [];
+    final apiKey = await Env.resolveGoogleMapsKey();
+    if (apiKey.isEmpty) {
+      throw Exception(
+        'Google Places no está configurado. Falta la API key de Maps/Places.',
+      );
+    }
 
     final params = <String, String>{
       'input': query,
-      'key': Env.googleMapsKey,
+      'key': apiKey,
       'language': language,
       'types': types,
       'components': 'country:$countryCode',
@@ -70,13 +76,15 @@ class GooglePlacesService {
 
   Future<LatLng?> fetchPlaceLocation(String placeId) async {
     if (placeId.isEmpty) return null;
+    final apiKey = await Env.resolveGoogleMapsKey();
+    if (apiKey.isEmpty) return null;
 
     final uri = Uri.https(
       'maps.googleapis.com',
       '/maps/api/place/details/json',
       {
         'place_id': placeId,
-        'key': Env.googleMapsKey,
+        'key': apiKey,
         'fields': 'geometry,name,formatted_address',
       },
     );

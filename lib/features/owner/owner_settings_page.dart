@@ -1477,6 +1477,7 @@ class _RevenuePinDialogState extends State<_RevenuePinDialog> {
         widget.requireConfirmation
             ? Icons.lock_outline_rounded
             : Icons.verified_user_outlined;
+    final screenHeight = MediaQuery.of(context).size.height;
 
     InputDecoration pinDecoration(String hint) => InputDecoration(
       counterText: '',
@@ -1489,6 +1490,7 @@ class _RevenuePinDialogState extends State<_RevenuePinDialog> {
       ),
       filled: true,
       fillColor: context.appInputBackground,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(18),
         borderSide: BorderSide(color: context.appBorderColor),
@@ -1503,13 +1505,12 @@ class _RevenuePinDialogState extends State<_RevenuePinDialog> {
       ),
     );
 
-    return AnimatedPadding(
-      duration: const Duration(milliseconds: 180),
-      curve: Curves.easeOut,
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 22, vertical: 24),
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 22, vertical: 24),
+      alignment: Alignment.center,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: screenHeight * 0.82),
         child: SingleChildScrollView(
           child: Container(
             decoration: BoxDecoration(
@@ -1527,15 +1528,15 @@ class _RevenuePinDialogState extends State<_RevenuePinDialog> {
               ],
             ),
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(22, 22, 22, 18),
+              padding: const EdgeInsets.fromLTRB(22, 20, 22, 18),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Center(
                     child: Container(
-                      width: 58,
-                      height: 58,
+                      width: 56,
+                      height: 56,
                       decoration: BoxDecoration(
                         color: AppColors.headerBottom.withValues(alpha: 0.12),
                         shape: BoxShape.circle,
@@ -1546,40 +1547,42 @@ class _RevenuePinDialogState extends State<_RevenuePinDialog> {
                       child: Icon(
                         titleIcon,
                         color: AppColors.headerBottom,
-                        size: 28,
+                        size: 27,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 18),
-                  Center(
-                    child: Text(
-                      widget.title,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: context.appTextPrimaryColor,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                      ),
+                  const SizedBox(height: 16),
+                  Text(
+                    widget.title,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: context.appTextPrimaryColor,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Center(
-                    child: Text(
-                      widget.subtitle,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: context.appTextSecondaryColor,
-                        fontSize: 13,
-                        height: 1.35,
-                      ),
+                  Text(
+                    widget.subtitle,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: context.appTextSecondaryColor,
+                      fontSize: 13,
+                      height: 1.35,
                     ),
                   ),
                   const SizedBox(height: 18),
                   TextField(
                     controller: _pinCtrl,
                     keyboardType: TextInputType.number,
+                    textInputAction:
+                        widget.requireConfirmation
+                            ? TextInputAction.next
+                            : TextInputAction.done,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     obscureText: true,
                     maxLength: 4,
+                    scrollPadding: const EdgeInsets.only(bottom: 140),
                     style: TextStyle(color: context.appTextPrimaryColor),
                     decoration: pinDecoration('PIN de 4 dígitos'),
                   ),
@@ -1588,10 +1591,16 @@ class _RevenuePinDialogState extends State<_RevenuePinDialog> {
                     TextField(
                       controller: _confirmCtrl,
                       keyboardType: TextInputType.number,
+                      textInputAction: TextInputAction.done,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                      ],
                       obscureText: true,
                       maxLength: 4,
+                      scrollPadding: const EdgeInsets.only(bottom: 140),
                       style: TextStyle(color: context.appTextPrimaryColor),
                       decoration: pinDecoration('Confirmar PIN'),
+                      onSubmitted: (_) => _submit(),
                     ),
                   ],
                   if (_error != null) ...[
@@ -1737,230 +1746,247 @@ class _RevenueOtpDialogState extends State<_RevenueOtpDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.symmetric(horizontal: 22, vertical: 24),
-      child: Container(
-        decoration: BoxDecoration(
-          color: context.appCardBackground,
-          borderRadius: BorderRadius.circular(28),
-          border: Border.all(color: context.appBorderColor),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(
-                alpha: context.isDarkMode ? 0.28 : 0.10,
-              ),
-              blurRadius: 28,
-              offset: const Offset(0, 14),
+      alignment: Alignment.center,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: screenHeight * 0.84),
+        child: SingleChildScrollView(
+          child: Container(
+            decoration: BoxDecoration(
+              color: context.appCardBackground,
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(color: context.appBorderColor),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(
+                    alpha: context.isDarkMode ? 0.28 : 0.10,
+                  ),
+                  blurRadius: 28,
+                  offset: const Offset(0, 14),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(22, 22, 22, 18),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 58,
-                  height: 58,
-                  decoration: BoxDecoration(
-                    color: AppColors.headerBottom.withValues(alpha: 0.12),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: AppColors.headerBottom.withValues(alpha: 0.18),
-                    ),
-                  ),
-                  child: const Icon(
-                    Icons.mark_email_read_outlined,
-                    color: AppColors.headerBottom,
-                    size: 28,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 18),
-              Center(
-                child: Text(
-                  'Verificar OTP',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: context.appTextPrimaryColor,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Te enviamos un código al correo registrado del proveedor para restablecer el PIN de ingresos.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: context.appTextSecondaryColor,
-                  fontSize: 13,
-                  height: 1.35,
-                ),
-              ),
-              const SizedBox(height: 14),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  color: context.appCardBackgroundSoft,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: context.appBorderColor),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 34,
-                      height: 34,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(22, 20, 22, 18),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 56,
+                      height: 56,
                       decoration: BoxDecoration(
-                        color: AppColors.headerBottom.withValues(alpha: 0.10),
-                        borderRadius: BorderRadius.circular(10),
+                        color: AppColors.headerBottom.withValues(alpha: 0.12),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: AppColors.headerBottom.withValues(alpha: 0.18),
+                        ),
                       ),
                       child: const Icon(
-                        Icons.alternate_email_rounded,
+                        Icons.mark_email_read_outlined,
                         color: AppColors.headerBottom,
-                        size: 18,
+                        size: 27,
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Verificar OTP',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: context.appTextPrimaryColor,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Te enviamos un código al correo registrado del proveedor para restablecer el PIN de ingresos.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: context.appTextSecondaryColor,
+                      fontSize: 13,
+                      height: 1.35,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: context.appCardBackgroundSoft,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: context.appBorderColor),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 34,
+                          height: 34,
+                          decoration: BoxDecoration(
+                            color: AppColors.headerBottom.withValues(alpha: 0.10),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            Icons.alternate_email_rounded,
+                            color: AppColors.headerBottom,
+                            size: 18,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            widget.emailMasked,
+                            style: TextStyle(
+                              color: context.appTextPrimaryColor,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  TextField(
+                    controller: _codeCtrl,
+                    keyboardType: TextInputType.number,
+                    textInputAction: TextInputAction.done,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    autofocus: true,
+                    maxLength: 6,
+                    scrollPadding: const EdgeInsets.only(bottom: 160),
+                    style: TextStyle(color: context.appTextPrimaryColor),
+                    decoration: InputDecoration(
+                      counterText: '',
+                      hintText: 'Código OTP',
+                      hintStyle: TextStyle(color: context.appTextSecondaryColor),
+                      prefixIcon: Icon(
+                        Icons.password_rounded,
+                        size: 18,
+                        color: context.appTextSecondaryColor,
+                      ),
+                      filled: true,
+                      fillColor: context.appInputBackground,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 18,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(18),
+                        borderSide: BorderSide(color: context.appBorderColor),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(18),
+                        borderSide: BorderSide(color: context.appBorderColor),
+                      ),
+                      focusedBorder: const OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(18)),
+                        borderSide: BorderSide(
+                          color: AppColors.headerBottom,
+                          width: 1.5,
+                        ),
+                      ),
+                    ),
+                    onSubmitted: (_) => _loading ? null : _submit(),
+                  ),
+                  if (_error != null) ...[
+                    const SizedBox(height: 6),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFDC2626).withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: const Color(0xFFDC2626).withValues(alpha: 0.18),
+                        ),
+                      ),
                       child: Text(
-                        widget.emailMasked,
-                        style: TextStyle(
-                          color: context.appTextPrimaryColor,
-                          fontWeight: FontWeight.w800,
+                        _error!,
+                        style: const TextStyle(
+                          color: Color(0xFFDC2626),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
                   ],
-                ),
-              ),
-              const SizedBox(height: 14),
-              TextField(
-                controller: _codeCtrl,
-                keyboardType: TextInputType.number,
-                autofocus: true,
-                maxLength: 6,
-                style: TextStyle(color: context.appTextPrimaryColor),
-                decoration: InputDecoration(
-                  counterText: '',
-                  hintText: 'Código OTP',
-                  hintStyle: TextStyle(color: context.appTextSecondaryColor),
-                  prefixIcon: Icon(
-                    Icons.password_rounded,
-                    size: 18,
-                    color: context.appTextSecondaryColor,
-                  ),
-                  filled: true,
-                  fillColor: context.appInputBackground,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(18),
-                    borderSide: BorderSide(color: context.appBorderColor),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(18),
-                    borderSide: BorderSide(color: context.appBorderColor),
-                  ),
-                  focusedBorder: const OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(18)),
-                    borderSide: BorderSide(
-                      color: AppColors.headerBottom,
-                      width: 1.5,
-                    ),
-                  ),
-                ),
-              ),
-              if (_error != null) ...[
-                const SizedBox(height: 6),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFDC2626).withValues(alpha: 0.10),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: const Color(0xFFDC2626).withValues(alpha: 0.18),
-                    ),
-                  ),
-                  child: Text(
-                    _error!,
-                    style: const TextStyle(
-                      color: Color(0xFFDC2626),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: TextButton.icon(
-                  onPressed: _loading || _resending ? null : _resend,
-                  icon: Icon(
-                    Icons.refresh_rounded,
-                    size: 18,
-                    color:
-                        _loading || _resending
-                            ? context.appTextSecondaryColor
-                            : AppColors.headerBottom,
-                  ),
-                  label: Text(
-                    _resending ? 'Reenviando código...' : 'Reenviar código',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      color:
-                          _loading || _resending
-                              ? context.appTextSecondaryColor
-                              : AppColors.headerBottom,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: _loading ? null : () => Navigator.pop(context),
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: const Size.fromHeight(50),
-                        side: BorderSide(color: context.appBorderColor),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: TextButton.icon(
+                      onPressed: _loading || _resending ? null : _resend,
+                      icon: Icon(
+                        Icons.refresh_rounded,
+                        size: 18,
+                        color:
+                            _loading || _resending
+                                ? context.appTextSecondaryColor
+                                : AppColors.headerBottom,
+                      ),
+                      label: Text(
+                        _resending ? 'Reenviando código...' : 'Reenviar código',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color:
+                              _loading || _resending
+                                  ? context.appTextSecondaryColor
+                                  : AppColors.headerBottom,
                         ),
                       ),
-                      child: const Text('Cancelar'),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: _loading ? null : _submit,
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: const Size.fromHeight(50),
-                        backgroundColor: AppColors.headerBottom,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed:
+                              _loading ? null : () => Navigator.pop(context),
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
+                            side: BorderSide(color: context.appBorderColor),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                          ),
+                          child: const Text('Cancelar'),
                         ),
                       ),
-                      child: Text(_loading ? 'Verificando...' : 'Verificar'),
-                    ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: _loading ? null : _submit,
+                          style: ElevatedButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
+                            backgroundColor: AppColors.headerBottom,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                          ),
+                          child: Text(
+                            _loading ? 'Verificando...' : 'Verificar',
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
         ),
       ),

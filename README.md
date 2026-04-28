@@ -17,7 +17,8 @@ App móvil Flutter para encontrar y reservar parqueos cercanos en tiempo real.
 
 2. Configura tus API keys (no se commitean):
    - `android/local.properties` debe contener `MAPS_API_KEY=<tu_key>`
-   - `.vscode/launch.json` debe pasar `--dart-define=GOOGLE_MAPS_KEY=<tu_key>`
+   - opcional en debug: `.vscode/launch.json` puede pasar `--dart-define=GOOGLE_MAPS_KEY=<tu_key>`
+   - en Android, Places y Maps ahora pueden reutilizar la misma key del `AndroidManifest`
 
 3. Corre la app:
    ```bash

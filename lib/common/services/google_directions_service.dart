@@ -6,9 +6,9 @@ import 'package:beygo/common/common.dart';
 
 class GoogleDirectionsService {
   GoogleDirectionsService({String? apiKey})
-    : _key = apiKey ?? Env.googleMapsKey;
+    : _keyOverride = apiKey;
 
-  final String _key;
+  final String? _keyOverride;
 
   // ── Public API ─────────────────────────────────────────────────────────────
 
@@ -30,9 +30,13 @@ class GoogleDirectionsService {
   // ── Internal ───────────────────────────────────────────────────────────────
 
   Future<_RouteData> _fetch(LatLng o, LatLng d) async {
-    if (_key.isNotEmpty) {
+    final key = (_keyOverride?.trim().isNotEmpty ?? false)
+        ? _keyOverride!.trim()
+        : await Env.resolveGoogleMapsKey();
+
+    if (key.isNotEmpty) {
       try {
-        return await _fetchGoogle(o, d);
+        return await _fetchGoogle(o, d, key);
       } catch (e) {
         print('[DIRECTIONS] Google failed → OSRM fallback: $e');
         return _fetchOsrm(o, d);
@@ -43,13 +47,13 @@ class GoogleDirectionsService {
   }
 
   /// Google Directions API — returns encoded polyline
-  Future<_RouteData> _fetchGoogle(LatLng o, LatLng d) async {
+  Future<_RouteData> _fetchGoogle(LatLng o, LatLng d, String key) async {
     final uri = Uri.https('maps.googleapis.com', '/maps/api/directions/json', {
       'origin': '${o.latitude},${o.longitude}',
       'destination': '${d.latitude},${d.longitude}',
       'mode': 'driving',
       'language': 'es',
-      'key': _key,
+      'key': key,
     });
 
     final resp = await http.get(uri).timeout(const Duration(seconds: 8));
