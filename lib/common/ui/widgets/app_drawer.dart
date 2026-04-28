@@ -7,7 +7,7 @@ import 'package:beygo/features/core/core.dart';
 import 'package:beygo/features/reservations/reservations.dart';
 import 'package:beygo/features/users/users.dart';
 import 'package:beygo/features/auth/providers/auth_providers.dart'
-    show authUserStreamProvider, authActionsProvider;
+    show authUserStreamProvider, signOutAndNavigateToAuth;
 
 final _drawerProfileProvider =
     StreamProvider.autoDispose<Map<String, dynamic>?>((ref) {
@@ -36,9 +36,7 @@ class AppDrawer extends ConsumerWidget {
 
   Future<void> _signOut(BuildContext context, WidgetRef ref) async {
     Navigator.of(context).pop();
-    await ref.read(authActionsProvider).signOut();
-    if (!context.mounted) return;
-    Navigator.pushNamedAndRemoveUntil(context, '/auth', (_) => false);
+    await signOutAndNavigateToAuth(context);
   }
 
   String? _resolvePhoto(fb.User? u, Map<String, dynamic>? profile) {

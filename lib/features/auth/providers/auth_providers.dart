@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -42,6 +43,42 @@ final authActionsProvider = Provider<_AuthActions>((ref) {
   final auth = ref.watch(firebaseAuthProvider);
   return _AuthActions(auth, ref);
 });
+
+Future<void> signOutAndNavigateToAuth(
+  BuildContext context, {
+  String message = 'Cerrando sesión...',
+  String submessage = 'Saliendo de tu cuenta de forma segura.',
+}) async {
+  final navigator = Navigator.of(context, rootNavigator: true);
+  final container = ProviderScope.containerOf(context, listen: false);
+
+  showGeneralDialog<void>(
+    context: navigator.context,
+    barrierDismissible: false,
+    barrierLabel: 'Cerrando sesión',
+    barrierColor: Colors.black.withValues(alpha: 0.20),
+    transitionDuration: const Duration(milliseconds: 180),
+    pageBuilder:
+        (_, __, ___) => AppLoadingScreen(
+          message: message,
+          submessage: submessage,
+          variant: LoadingVariant.general,
+        ),
+    transitionBuilder: (_, animation, __, child) {
+      return FadeTransition(opacity: animation, child: child);
+    },
+  );
+
+  await Future<void>.delayed(const Duration(milliseconds: 80));
+
+  try {
+    await container.read(authActionsProvider).signOut();
+  } finally {
+    if (navigator.mounted) {
+      navigator.pushNamedAndRemoveUntil('/auth', (_) => false);
+    }
+  }
+}
 
 class _AuthActions {
   _AuthActions(this._auth, this._ref);

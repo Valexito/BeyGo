@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:beygo/common/common.dart';
 import 'package:beygo/features/core/core.dart';
+import 'package:beygo/features/auth/providers/auth_providers.dart'
+    show signOutAndNavigateToAuth;
 import 'package:beygo/features/users/users.dart';
 import 'package:beygo/features/reservations/reservations.dart';
 import 'package:beygo/features/owner/owner.dart';
@@ -451,13 +453,7 @@ class _ActionItem extends StatelessWidget {
         );
         break;
       case _Go.signout:
-        await FirebaseAuth.instance.signOut();
-
-        if (!context.mounted) return;
-
-        Navigator.of(
-          context,
-        ).pushNamedAndRemoveUntil('/auth', (route) => false);
+        await signOutAndNavigateToAuth(context);
         break;
       default:
         break;

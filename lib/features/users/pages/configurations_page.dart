@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:beygo/common/common.dart';
 import 'package:beygo/features/auth/providers/auth_providers.dart'
-    show authActionsProvider;
+    show signOutAndNavigateToAuth;
 import 'package:beygo/features/core/core.dart';
 import 'package:beygo/features/owner/owner.dart';
 import 'package:beygo/features/reservations/reservations.dart';
@@ -668,14 +668,7 @@ class _SettingsBody extends ConsumerWidget {
     );
 
     if (confirmed != true) return;
-    try {
-      await ref.read(authActionsProvider).signOut();
-    } catch (_) {}
-    if (!context.mounted) return;
-    Navigator.of(
-      context,
-      rootNavigator: true,
-    ).pushNamedAndRemoveUntil('/auth', (_) => false);
+    await signOutAndNavigateToAuth(context);
   }
 
   Future<void> _shareApp(BuildContext context) async {

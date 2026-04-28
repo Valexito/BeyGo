@@ -1,6 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:beygo/common/common.dart';
+import 'package:beygo/features/auth/providers/auth_providers.dart'
+    show signOutAndNavigateToAuth;
+
 enum ProfileCredentialAction { password, email }
 
 class ProfileSecurityDialogs {
@@ -116,7 +119,12 @@ class ProfileSecurityDialogs {
                       'Te enviamos un correo de verificación a $nextEmail. Después de confirmarlo, inicia sesión nuevamente con tu nuevo correo para completar el cambio.',
                 );
 
-                await FirebaseAuth.instance.signOut();
+                await signOutAndNavigateToAuth(
+                  context,
+                  message: 'Actualizando sesión...',
+                  submessage:
+                      'Te llevaremos al acceso para completar el cambio.',
+                );
               } on FirebaseAuthException catch (e) {
                 _showSnack(context, _firebaseMessage(e));
               } catch (_) {

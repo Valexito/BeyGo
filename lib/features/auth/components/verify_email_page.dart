@@ -1,6 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:beygo/common/common.dart';
+import 'package:beygo/features/auth/providers/auth_providers.dart'
+    show signOutAndNavigateToAuth;
 import 'package:beygo/features/users/users.dart';
 
 class VerifyEmailPage extends StatefulWidget {
@@ -92,9 +94,11 @@ class _VerifyEmailPageState extends State<VerifyEmailPage>
   }
 
   Future<void> _backToLogin() async {
-    await FirebaseAuth.instance.signOut();
-    if (!mounted) return;
-    Navigator.popUntil(context, (route) => route.isFirst);
+    await signOutAndNavigateToAuth(
+      context,
+      message: 'Saliendo...',
+      submessage: 'Volviendo al acceso de BeyGo.',
+    );
   }
 
   @override

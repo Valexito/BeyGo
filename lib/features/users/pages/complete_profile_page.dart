@@ -7,7 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:beygo/common/common.dart';
 import 'package:beygo/features/users/users.dart';
 import 'package:beygo/features/auth/providers/auth_providers.dart'
-    show authActionsProvider;
+    show signOutAndNavigateToAuth;
 
 // ─── Country code model ────────────────────────────────────────────────────────
 class _CountryCode {
@@ -128,7 +128,11 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
     if (_isGoingBack) return;
     setState(() => _isGoingBack = true);
     try {
-      await ref.read(authActionsProvider).signOut();
+      await signOutAndNavigateToAuth(
+        context,
+        message: 'Saliendo...',
+        submessage: 'Volviendo al acceso de BeyGo.',
+      );
     } catch (_) {
       if (mounted) setState(() => _isGoingBack = false);
     }
