@@ -14,11 +14,11 @@ class FrequentQuestionsPage extends StatelessWidget {
       ),
       (
         q: '¿Puedo cancelar una reserva?',
-        a: 'Sí. Puedes cancelarla desde Mis reservaciones siempre que no haya iniciado. Algunos parqueos ofrecen cancelación gratuita por un tiempo definido por el proveedor de parqueo (mínimo 5 minutos). Si cancelas fuera de ese tiempo, puede aplicarse una penalización o strike en tu cuenta.',
+        a: 'Sí. Puedes cancelarla desde Mis reservaciones siempre que no haya iniciado. Algunos parqueos ofrecen cancelación gratuita por un tiempo definido por el proveedor de parqueo (mínimo 5 minutos). Si cancelas fuera de ese tiempo, puede aplicarse una penalización en tu cuenta.',
       ),
       (
         q: '¿Qué hago si se bloquea mi cuenta?',
-        a: 'Si ya no puedes reservar porque sobrepasaste el límite de strikes o penalizaciones, debes ir a la opción de Reportar un problema, llenar el formulario y enviarlo. Nuestro equipo revisará tu caso y te dará seguimiento.',
+        a: 'Si ya no puedes reservar porque sobrepasaste el límite de penalizaciones, debes ir a la opción de Reportar un problema, llenar el formulario y enviarlo. Nuestro equipo revisará tu caso y te dará seguimiento.',
       ),
       (
         q: '¿Qué métodos de inicio de sesión hay?',

@@ -12,7 +12,7 @@
 //   4. firebase deploy --only functions
 //   5. Enable Firebase Blaze plan (required for Cloud Functions)
 //
-const { onDocumentWritten } = require("firebase-functions/v2/firestore");
+const { onDocumentWritten, onDocumentCreated } = require("firebase-functions/v2/firestore");
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { defineSecret } = require("firebase-functions/params");
 const admin = require("firebase-admin");
@@ -55,6 +55,18 @@ function generateResetToken() {
     return crypto.randomBytes(24).toString("hex");
 }
 
+async function sendMailSafe({ to, subject, text, html }) {
+    if (!to) return;
+    const transport = getMailTransport();
+    await transport.sendMail({
+        from: ownerSecurityEmail.value(),
+        to,
+        subject,
+        text,
+        html,
+    });
+}
+
 async function assertOwnerUser(uid) {
     const parkingSnap = await db
         .collection("parkings")
@@ -80,6 +92,36 @@ async function assertOwnerUser(uid) {
     }
 
     return { email };
+}
+
+async function assertReservationOwnerAction(uid, reservationId) {
+    const reservationRef = db.collection("reservations").doc(reservationId);
+    const reservationSnap = await reservationRef.get();
+
+    if (!reservationSnap.exists) {
+        throw new HttpsError("not-found", "La reservación ya no existe.");
+    }
+
+    const reservation = reservationSnap.data() || {};
+    const ownerId = `${reservation.ownerId || ""}`.trim();
+    const parkingId = `${reservation.parkingId || ""}`.trim();
+
+    let allowed = ownerId === uid;
+
+    if (!allowed && parkingId) {
+        const parkingSnap = await db.collection("parkings").doc(parkingId).get();
+        const parkingOwnerId = `${parkingSnap.data()?.ownerID || ""}`.trim();
+        allowed = parkingOwnerId === uid;
+    }
+
+    if (!allowed) {
+        throw new HttpsError(
+            "permission-denied",
+            "No tienes permisos para gestionar esta reservación."
+        );
+    }
+
+    return { reservationRef };
 }
 
 exports.requestOwnerRevenuePinOtp = onCall({
@@ -229,6 +271,205 @@ exports.verifyOwnerRevenuePinOtp = onCall(async (request) => {
         ok: true,
         resetToken,
     };
+});
+
+exports.ownerForceFinalizeReservation = onCall(async (request) => {
+    if (!request.auth?.uid) {
+        throw new HttpsError("unauthenticated", "Debes iniciar sesión.");
+    }
+
+    const uid = request.auth.uid;
+    const reservationId = `${request.data?.reservationId ?? ""}`.trim();
+    const rawReason = `${request.data?.reason ?? ""}`.trim();
+    const reason =
+        rawReason.length > 0
+            ? rawReason.slice(0, 200)
+            : "Cancelado por el propietario";
+
+    if (!reservationId) {
+        throw new HttpsError(
+            "invalid-argument",
+            "Falta el identificador de la reservación."
+        );
+    }
+
+    const { reservationRef } = await assertReservationOwnerAction(uid, reservationId);
+    const now = new Date();
+
+    await db.runTransaction(async (tx) => {
+        const reservationSnap = await tx.get(reservationRef);
+        if (!reservationSnap.exists) {
+            throw new HttpsError("not-found", "La reservación ya no existe.");
+        }
+
+        const latest = reservationSnap.data() || {};
+        const state = `${latest.state || ""}`.trim();
+
+        if (state !== "active" && state !== "pending") {
+            throw new HttpsError(
+                "failed-precondition",
+                "La reservación no puede ser finalizada."
+            );
+        }
+
+        const userId = `${latest.userId || ""}`.trim();
+        const parkingId = `${latest.parkingId || ""}`.trim();
+        const spaceNumber = latest.spaceNumber;
+
+        if (!userId || !parkingId || typeof spaceNumber !== "number") {
+            throw new HttpsError(
+                "failed-precondition",
+                "La reservación no tiene datos suficientes para finalizarse."
+            );
+        }
+
+        const controlRef = db
+            .collection("users")
+            .doc(userId)
+            .collection("reservation_control")
+            .doc("main");
+        const spaceRef = db
+            .collection("parkings")
+            .doc(parkingId)
+            .collection("spaces")
+            .doc(`${spaceNumber}`);
+        const controlSnap = await tx.get(controlRef);
+        const spaceSnap = await tx.get(spaceRef);
+        const controlData = controlSnap.data() || {};
+        const spaceData = spaceSnap.data() || {};
+
+        const currentAttempts = Number(controlData.cancelAttempts || 0);
+        const nextAttempts = currentAttempts + 1;
+        const maxAttempts = 2;
+        const cooldownDays = 15;
+        const limitReached = nextAttempts >= maxAttempts;
+        const restrictedUntil = limitReached
+            ? admin.firestore.Timestamp.fromDate(
+                new Date(now.getTime() + cooldownDays * 24 * 60 * 60 * 1000)
+            )
+            : null;
+
+        tx.update(reservationRef, {
+            state: "cancelled",
+            endedAt: admin.firestore.Timestamp.fromDate(now),
+            cancellationReason: reason,
+            cancellationPenaltyApplied: true,
+            providerApprovalStatus: "approved",
+            cancelAttempts: Number(latest.cancelAttempts || 0) + 1,
+            userCancelAttempts: nextAttempts,
+            restrictedUntil,
+        });
+
+        if (controlSnap.exists) {
+            tx.update(controlRef, {
+                cancelAttempts: nextAttempts,
+                restrictedUntil,
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+        } else {
+            tx.set(controlRef, {
+                userId,
+                cancelAttempts: nextAttempts,
+                restrictedUntil,
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+        }
+
+        const currentStatus = `${spaceData.status || "free"}`
+            .toLowerCase()
+            .trim();
+
+        if (
+            (currentStatus === "occupied" || currentStatus === "requested") &&
+            spaceData.currentReservationId === reservationId
+        ) {
+            tx.set(
+                spaceRef,
+                {
+                    status: "free",
+                    currentReservationId: null,
+                    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                },
+                { merge: true }
+            );
+        }
+    });
+
+    return { ok: true };
+});
+
+exports.onSupportReportCreated = onDocumentCreated({
+    document: "support_reports/{reportId}",
+    secrets: [ownerSecurityEmail, ownerSecurityEmailPassword],
+}, async (event) => {
+    const data = event.data?.data();
+    if (!data) return;
+
+    const to = `${data.userEmail || ""}`.trim();
+    if (!to) return;
+
+    const reportNumber = `${data.reportNumber || data.reportId || "N/A"}`;
+    const reportType = `${data.reportType || "Reporte"}`;
+    const subjectLine = `${data.subject || "Sin asunto"}`;
+
+    await sendMailSafe({
+        to,
+        subject: `BeyGo: recibimos tu reporte ${reportNumber}`,
+        text:
+            `Hola,\n\n` +
+            `Recibimos tu reporte en BeyGo correctamente.\n\n` +
+            `Número de reporte: ${reportNumber}\n` +
+            `Tipo: ${reportType}\n` +
+            `Asunto: ${subjectLine}\n\n` +
+            `Nuestro equipo revisará el caso y te dará seguimiento si es necesario.\n\n` +
+            `Gracias por ayudarnos a mejorar BeyGo.`,
+        html:
+            `<div style="font-family:Arial,sans-serif;padding:16px">` +
+            `<h2>Reporte recibido</h2>` +
+            `<p>Recibimos tu reporte en <strong>BeyGo</strong> correctamente.</p>` +
+            `<p><strong>Número de reporte:</strong> ${reportNumber}</p>` +
+            `<p><strong>Tipo:</strong> ${reportType}</p>` +
+            `<p><strong>Asunto:</strong> ${subjectLine}</p>` +
+            `<p>Nuestro equipo revisará el caso y te dará seguimiento si es necesario.</p>` +
+            `<p>Gracias por ayudarnos a mejorar BeyGo.</p>` +
+            `</div>`,
+    });
+});
+
+exports.onProviderRequestCreated = onDocumentCreated({
+    document: "provider_requests/{requestId}",
+    secrets: [ownerSecurityEmail, ownerSecurityEmailPassword],
+}, async (event) => {
+    const data = event.data?.data();
+    if (!data) return;
+
+    const to = `${data.email || ""}`.trim();
+    if (!to) return;
+
+    const requestNumber = `${data.requestNumber || data.requestId || "N/A"}`;
+    const parkingName = `${data.parkingName || "tu parqueo"}`;
+
+    await sendMailSafe({
+        to,
+        subject: `BeyGo: recibimos tu solicitud ${requestNumber}`,
+        text:
+            `Hola,\n\n` +
+            `Tu solicitud para convertirte en owner fue enviada correctamente.\n\n` +
+            `Número de solicitud: ${requestNumber}\n` +
+            `Parqueo: ${parkingName}\n\n` +
+            `Nuestro equipo de soporte revisará tu información y se pondrá en contacto contigo para continuar el proceso.\n\n` +
+            `Gracias por confiar en BeyGo.`,
+        html:
+            `<div style="font-family:Arial,sans-serif;padding:16px">` +
+            `<h2>Solicitud recibida</h2>` +
+            `<p>Tu solicitud para convertirte en <strong>owner</strong> fue enviada correctamente.</p>` +
+            `<p><strong>Número de solicitud:</strong> ${requestNumber}</p>` +
+            `<p><strong>Parqueo:</strong> ${parkingName}</p>` +
+            `<p>Nuestro equipo de soporte revisará tu información y se pondrá en contacto contigo para continuar el proceso.</p>` +
+            `<p>Gracias por confiar en BeyGo.</p>` +
+            `</div>`,
+    });
 });
 
 // ─── Helper: get FCM token for a user ──────────────────────────────────────

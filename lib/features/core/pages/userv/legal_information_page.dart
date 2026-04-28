@@ -11,7 +11,7 @@ class LegalInformationPage extends StatelessWidget {
       (
         title: 'Términos de servicio',
         body:
-            'Al usar Parking App aceptas utilizar la plataforma de forma responsable. La app facilita la conexión entre usuarios y proveedores de parqueo, pero cada proveedor administra su disponibilidad, horarios, tarifas y condiciones del establecimiento. El uso indebido, fraude, datos falsos, abuso de reservaciones o incumplimiento de políticas puede resultar en restricciones, strikes o suspensión de la cuenta.',
+            'Al usar BeyGo aceptas utilizar la plataforma de forma responsable. La app facilita la conexión entre usuarios y proveedores de parqueo, pero cada proveedor administra su disponibilidad, horarios, tarifas y condiciones del establecimiento. El uso indebido, fraude, datos falsos, abuso de reservaciones o incumplimiento de políticas puede resultar en restricciones, penalizaciones o suspensión de la cuenta.',
       ),
       (
         title: 'Privacidad',

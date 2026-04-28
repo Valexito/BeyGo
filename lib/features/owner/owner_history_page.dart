@@ -1198,7 +1198,7 @@ class _OwnerHistoryCard extends StatelessWidget {
       case 'manual_completed':
         return 'PRESENCIAL';
       case 'cancelled':
-        return penalty ? 'CANCELADA •STRIKE' : 'CANCELADA';
+        return penalty ? 'CANCELADA •PENALIZADA' : 'CANCELADA';
       case 'cancellation_requested':
         return 'SOLICITUD CANCEL.';
       default:

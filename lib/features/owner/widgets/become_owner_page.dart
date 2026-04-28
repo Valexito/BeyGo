@@ -339,7 +339,7 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
       final submit = ref.read(submitProviderRequestProvider);
       final fullPhone = '${_selectedCountry.code} ${_phoneNumber.text.trim()}';
 
-      await submit(
+      final requestNumber = await submit(
         uid: uid,
         companyName: _companyName.text.trim(),
         parkingName: _parkingName.text.trim(),
@@ -368,7 +368,9 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
         icon: Icons.check_circle_outline_rounded,
         title: '¡Solicitud enviada!',
         message:
-            'Gracias por tu solicitud. Nuestro equipo revisará tu información y se comunicará contigo por correo o teléfono para continuar el proceso.',
+            'Gracias por tu solicitud.\n\n'
+            'Número de solicitud: $requestNumber\n\n'
+            'Te enviaremos un correo de confirmación y soporte se comunicará contigo por correo o teléfono para continuar el proceso.',
         showCancel: false,
         confirmText: 'Entendido',
       );

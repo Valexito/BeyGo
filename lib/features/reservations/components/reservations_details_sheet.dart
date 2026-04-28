@@ -506,8 +506,8 @@ class _ReservationDetailsSheetState
                     MyText(
                       text:
                           freeWindow
-                              ? 'Estás dentro del tiempo permitido. No se agregará strike.'
-                              : 'Esta cancelación agregará un strike a tu cuenta.',
+                              ? 'Estás dentro del tiempo permitido. No se agregará penalización.'
+                              : 'Esta cancelación agregará una penalización a tu cuenta.',
                       variant: MyTextVariant.bodyMuted,
                       textAlign: TextAlign.center,
                       fontSize: 12,
@@ -526,7 +526,7 @@ class _ReservationDetailsSheetState
                       child: Column(
                         children: [
                           const MyText(
-                            text: 'Strikes',
+                            text: 'Penalizaciones',
                             variant: MyTextVariant.bodyMuted,
                             fontSize: 12,
                           ),

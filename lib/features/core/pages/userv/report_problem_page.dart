@@ -75,7 +75,7 @@ class _ReportProblemPageState extends ConsumerState<ReportProblemPage> {
     try {
       final submitReport = ref.read(submitReportProvider);
 
-      await submitReport(
+      final reportNumber = await submitReport(
         reportType: _selectedReportType!,
         subject: _subject.text.trim(),
         message: _message.text.trim(),
@@ -84,10 +84,19 @@ class _ReportProblemPageState extends ConsumerState<ReportProblemPage> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(
+      await AppDialog.show(
         context,
-      ).showSnackBar(const SnackBar(content: Text('¡Reporte enviado!')));
+        icon: Icons.check_circle_outline_rounded,
+        title: '¡Reporte enviado!',
+        message:
+            'Tu reporte se registró correctamente.\n\n'
+            'Número de reporte: $reportNumber\n\n'
+            'También te enviaremos un correo de confirmación si hay una dirección disponible.',
+        showCancel: false,
+        confirmText: 'Entendido',
+      );
 
+      if (!mounted) return;
       Navigator.pop(context);
     } catch (e) {
       ScaffoldMessenger.of(

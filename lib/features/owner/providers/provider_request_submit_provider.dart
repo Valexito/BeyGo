@@ -7,7 +7,7 @@ import 'package:uuid/uuid.dart';
 import 'package:beygo/features/core/providers/firebase_providers.dart';
 
 final submitProviderRequestProvider = Provider<
-  Future<void> Function({
+  Future<String> Function({
     required String uid,
     required String companyName,
     required String parkingName,
@@ -75,6 +75,7 @@ final submitProviderRequestProvider = Provider<
       final userRef = db.collection('users').doc(uid);
       final requestRef = db.collection('provider_requests').doc();
       final requestId = requestRef.id;
+      final requestNumber = 'OWN-${requestId.substring(0, 6).toUpperCase()}';
 
       /// UPLOAD FILES
       final dpiFrontUrl = await _upload(
@@ -104,6 +105,8 @@ final submitProviderRequestProvider = Provider<
 
       /// SAVE REQUEST
       await requestRef.set({
+        'requestId': requestId,
+        'requestNumber': requestNumber,
         'uid': uid,
         'companyName': companyName,
         'parkingName': parkingName,
@@ -134,6 +137,7 @@ final submitProviderRequestProvider = Provider<
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
       print('✅ SUCCESS submitProviderRequest');
+      return requestNumber;
     } catch (e, st) {
       print('❌ ERROR submitProviderRequest: $e');
       print(st);

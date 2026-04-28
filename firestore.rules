@@ -94,6 +94,7 @@ service cloud.firestore {
       allow create: if signedIn()
         && request.resource.data.userId == request.auth.uid
         && request.resource.data.reportId is string
+        && request.resource.data.reportNumber is string
         && request.resource.data.reportType is string
         && request.resource.data.subject is string
         && request.resource.data.message is string;

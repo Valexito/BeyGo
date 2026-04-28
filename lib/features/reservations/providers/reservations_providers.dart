@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:beygo/features/core/providers/firebase_providers.dart';
 import 'package:beygo/features/reservations/models/parking_space.dart';
@@ -757,107 +758,25 @@ final ownerApproveReservationProvider =
       };
     });
 
-/// Force-completes an active reservation as the owner.
-/// Cancels the reservation, frees the space, stores the reason as evidence,
-/// and applies a strike to the user.
+/// Force-completes an active reservation as the owner and applies the
+/// corresponding penalization server-side.
 final ownerForceCancelProvider = Provider<
   Future<void> Function({
     required Reservation reservation,
     required String reason,
   })
 >((ref) {
-  final db = ref.watch(_dbProvider);
+  final functions = FirebaseFunctions.instance;
 
   return ({required Reservation reservation, required String reason}) async {
-    final reservationRef = _reservationDoc(db, reservation.id);
-    final spaceRef = _spaceDoc(
-      db,
-      reservation.parkingId,
-      reservation.spaceNumber,
-    );
-    final controlRef = _userReservationControlDoc(db, reservation.userId);
-
-    final now = DateTime.now();
-
-    await db.runTransaction((tx) async {
-      final reservationSnap = await tx.get(reservationRef);
-      final spaceSnap = await tx.get(spaceRef);
-      final controlSnap = await tx.get(controlRef);
-
-      if (!reservationSnap.exists) {
-        throw StateError('La reservación ya no existe.');
-      }
-
-      final latest = Reservation.fromDoc(
-        reservationSnap,
-      );
-
-      if (latest.state != 'active' && latest.state != 'pending') {
-        throw StateError('La reservación no puede ser cancelada.');
-      }
-
-      final controlData = controlSnap.data() ?? <String, dynamic>{};
-      final currentAttempts =
-          (controlData['cancelAttempts'] as num?)?.toInt() ?? 0;
-      final nextAttempts = currentAttempts + 1;
-      final limitReached = nextAttempts >= maxCancellationAttempts;
-      final restrictedUntil =
-          limitReached
-              ? now.add(const Duration(days: reservationCooldownDays))
-              : null;
-
-      tx.update(reservationRef, {
-        'state': 'cancelled',
-        'endedAt': Timestamp.fromDate(now),
-        'cancellationReason':
-            reason.trim().isEmpty
-                ? 'Cancelado por el propietario'
-                : reason.trim(),
-        'cancellationPenaltyApplied': true,
-        'providerApprovalStatus': 'approved',
-        'cancelAttempts': latest.cancelAttempts + 1,
-        'userCancelAttempts': nextAttempts,
-        'restrictedUntil':
-            restrictedUntil != null
-                ? Timestamp.fromDate(restrictedUntil)
-                : null,
+    try {
+      await functions.httpsCallable('ownerForceFinalizeReservation').call({
+        'reservationId': reservation.id,
+        'reason': reason.trim(),
       });
-
-      if (controlSnap.exists) {
-        tx.update(controlRef, {
-          'cancelAttempts': nextAttempts,
-          'restrictedUntil':
-              restrictedUntil != null
-                  ? Timestamp.fromDate(restrictedUntil)
-                  : null,
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
-      } else {
-        tx.set(controlRef, {
-          'userId': reservation.userId,
-          'cancelAttempts': nextAttempts,
-          'restrictedUntil':
-              restrictedUntil != null
-                  ? Timestamp.fromDate(restrictedUntil)
-                  : null,
-          'createdAt': FieldValue.serverTimestamp(),
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
-      }
-
-      final spaceData = spaceSnap.data() ?? <String, dynamic>{};
-      final currentStatus =
-          (spaceData['status'] ?? 'free').toString().toLowerCase().trim();
-
-      if ((currentStatus == 'occupied' || currentStatus == 'requested') &&
-          spaceData['currentReservationId'] == reservation.id) {
-        tx.set(spaceRef, {
-          'status': 'free',
-          'currentReservationId': null,
-          'updatedAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
-      }
-    });
+    } on FirebaseFunctionsException catch (e) {
+      throw StateError(e.message ?? 'No se pudo finalizar la reservación.');
+    }
   };
 });
 

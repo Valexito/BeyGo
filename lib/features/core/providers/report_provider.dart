@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:uuid/uuid.dart';
 
 final submitReportProvider = Provider<
-  Future<void> Function({
+  Future<String> Function({
     required String reportType,
     required String subject,
     required String message,
@@ -24,9 +24,11 @@ final submitReportProvider = Provider<
     if (user == null) throw Exception('User not authenticated');
 
     final reportId = const Uuid().v4();
+    final reportNumber = 'REP-${reportId.split('-').first.toUpperCase()}';
 
     await db.collection('support_reports').doc(reportId).set({
       'reportId': reportId,
+      'reportNumber': reportNumber,
       'userId': user.uid,
       'userEmail': email ?? user.email,
       'reportType': reportType,
@@ -34,5 +36,7 @@ final submitReportProvider = Provider<
       'message': message,
       'createdAt': FieldValue.serverTimestamp(),
     });
+
+    return reportNumber;
   };
 });
