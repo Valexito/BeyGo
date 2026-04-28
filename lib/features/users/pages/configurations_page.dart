@@ -4,8 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:beygo/common/common.dart';
 import 'package:beygo/features/auth/providers/auth_providers.dart'
     show authActionsProvider;
-import 'package:beygo/features/core/pages/userv/legal_information_page.dart';
-import 'package:beygo/features/core/pages/userv/report_problem_page.dart';
+import 'package:beygo/features/core/pages/legal_information_page.dart';
+import 'package:beygo/features/core/pages/report_problem_page.dart';
 import 'package:beygo/features/core/providers/app_preferences_provider.dart';
 import 'package:beygo/features/core/providers/firebase_providers.dart'
     show currentUserProvider;

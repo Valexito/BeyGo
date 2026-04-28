@@ -9,7 +9,7 @@ import 'package:beygo/features/reservations/pages/route_view_page.dart';
 import 'firebase_options.dart';
 import 'features/auth/pages/auth_gate.dart';
 import 'features/core/pages/home_switch.dart';
-import 'features/core/pages/userv/home_page.dart' as userv;
+import 'features/users/pages/home_page.dart' as userv;
 import 'features/owner/owner_home_page.dart';
 import 'features/owner/widgets/become_owner_page.dart';
 import 'features/reservations/pages/reservations_page.dart';

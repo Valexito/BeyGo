@@ -11,7 +11,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:beygo/common/common.dart';
 import 'package:beygo/features/core/components/map_widget.dart';
 import 'package:beygo/features/core/providers/app_preferences_provider.dart';
-import 'package:beygo/features/core/pages/userv/configurations_page.dart';
+import 'package:beygo/features/users/pages/configurations_page.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -146,9 +146,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             left: 72,
             right: 72,
             child: IgnorePointer(
-              child: Center(
-                child: _BrandBadge(compact: true),
-              ),
+              child: Center(child: _BrandBadge(compact: true)),
             ),
           ),
 
@@ -196,7 +194,9 @@ class _TopBtn extends StatelessWidget {
         border: Border.all(color: context.appBorderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: context.isDarkMode ? 0.24 : 0.13),
+            color: Colors.black.withValues(
+              alpha: context.isDarkMode ? 0.24 : 0.13,
+            ),
             blurRadius: 14,
             offset: const Offset(0, 4),
           ),
@@ -227,7 +227,9 @@ class _BrandBadge extends StatelessWidget {
         border: Border.all(color: context.appBorderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: context.isDarkMode ? 0.22 : 0.10),
+            color: Colors.black.withValues(
+              alpha: context.isDarkMode ? 0.22 : 0.10,
+            ),
             blurRadius: 14,
             offset: const Offset(0, 4),
           ),
@@ -329,9 +331,7 @@ class _SettingsSheet extends ConsumerWidget {
               Navigator.pop(context);
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => const ConfigurationsPage(),
-                ),
+                MaterialPageRoute(builder: (_) => const ConfigurationsPage()),
               );
             },
           ),
