@@ -3,8 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:beygo/common/common.dart';
 import 'package:beygo/features/auth/auth.dart';
-import 'package:beygo/features/users/users.dart';
-import 'package:beygo/features/core/core.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   final VoidCallback onShowRegister;
@@ -66,24 +64,12 @@ class _LoginPageState extends ConsumerState<LoginPage>
       return;
     }
 
-    final ready = await ref.read(canEnterAppProvider(current.uid).future);
     if (!mounted) return;
 
-    if (ready) {
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const HomeSwitch()),
-        (_) => false,
-      );
-    } else {
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(
-          builder: (_) => CompleteProfilePage(user: current, isNewUser: false),
-        ),
-        (_) => false,
-      );
-    }
+    // Deja que AuthGate resuelva el destino final. Esto evita mandar por
+    // error a "Completar perfil" si Firestore/App Check todavía está
+    // estabilizándose justo después del login.
+    Navigator.of(context).pushNamedAndRemoveUntil('/auth', (_) => false);
   }
 
   // ── Google Sign-In — double-tap fixed ──────────────────────────────────────

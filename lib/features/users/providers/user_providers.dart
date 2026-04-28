@@ -1,11 +1,41 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 
 import 'package:beygo/features/core/providers/firebase_providers.dart'
     show firestoreProvider, currentUserProvider;
 
 import 'package:beygo/features/users/users.dart';
+
+bool _looksLikeCompletedUserProfile(
+  Map<String, dynamic> data, {
+  required bool hasSavedVehicle,
+}) {
+  final authUser = FirebaseAuth.instance.currentUser;
+
+  String s(dynamic v) => (v as String? ?? '').trim();
+
+  final hasName =
+      s(data['name']).isNotEmpty ||
+      s(data['displayName']).isNotEmpty ||
+      s(authUser?.displayName).isNotEmpty;
+  final hasPhone =
+      s(data['phone']).isNotEmpty || s(authUser?.phoneNumber).isNotEmpty;
+  final hasEmail = s(data['email']).isNotEmpty || s(authUser?.email).isNotEmpty;
+  final hasVehiclePlate = s(data['vehiclePlate']).isNotEmpty;
+  final hasVehicleType = s(data['vehicleType']).isNotEmpty;
+  final completed = data['profileCompleted'] == true;
+
+  if (completed) return true;
+
+  final hasPrimaryVehicleData = hasVehiclePlate && hasVehicleType;
+  final hasIdentity = hasName || hasEmail;
+
+  return (hasName && hasPhone && hasPrimaryVehicleData) ||
+      (hasIdentity && hasPrimaryVehicleData) ||
+      (hasIdentity && hasSavedVehicle);
+}
 
 // ---------- Refs ----------
 final userDocRefProvider =
@@ -27,32 +57,16 @@ final isProfileCompleteProvider = FutureProvider.family<bool, String>((
 
   final d = snap.data() ?? <String, dynamic>{};
 
-  String s(dynamic v) => (v as String? ?? '').trim();
-
-  final hasName = s(d['name']).isNotEmpty || s(d['displayName']).isNotEmpty;
-  final hasPhone = s(d['phone']).isNotEmpty;
-  final hasRole = s(d['role']).isNotEmpty;
-  final hasVehiclePlate = s(d['vehiclePlate']).isNotEmpty;
-  final hasVehicleType = s(d['vehicleType']).isNotEmpty;
-  final completed = d['profileCompleted'] == true;
-
-  if ((hasName &&
-          hasPhone &&
-          hasRole &&
-          hasVehiclePlate &&
-          hasVehicleType) ||
-      completed) {
-    return true;
-  }
-
   final vehicleDocs = await ref
       .read(userDocRefProvider(uid))
       .collection('vehicles')
       .limit(1)
       .get();
 
-  final hasSavedVehicle = vehicleDocs.docs.isNotEmpty;
-  return hasName && hasPhone && hasRole && hasSavedVehicle;
+  return _looksLikeCompletedUserProfile(
+    d,
+    hasSavedVehicle: vehicleDocs.docs.isNotEmpty,
+  );
 });
 
 // ---------- Guardado de perfil ----------
@@ -252,27 +266,18 @@ final canEnterAppProvider = FutureProvider.family<bool, String>((
     final userRef = db.collection('users').doc(uid);
     final doc = await userRef.get().timeout(const Duration(seconds: 8));
 
-    if (!doc.exists) return false;
+    if (!doc.exists) {
+      debugPrint('[canEnter] uid=$uid doc.exists=false');
+      return false;
+    }
 
     final data = doc.data() ?? <String, dynamic>{};
 
     final roleStr = ((data['role'] as String?) ?? '').trim();
     final role = parseRole(roleStr);
 
-    if (role == UserRole.provider || role == UserRole.admin) return true;
-
-    String s(dynamic v) => (v as String? ?? '').trim();
-
-    final hasName =
-        s(data['name']).isNotEmpty || s(data['displayName']).isNotEmpty;
-    final hasPhone = s(data['phone']).isNotEmpty;
-    final hasRole = roleStr.isNotEmpty;
-    final hasVehiclePlate = s(data['vehiclePlate']).isNotEmpty;
-    final hasVehicleType = s(data['vehicleType']).isNotEmpty;
-    final completed = data['profileCompleted'] == true;
-
-    if ((hasName && hasPhone && hasRole && hasVehiclePlate && hasVehicleType) ||
-        completed) {
+    if (role == UserRole.provider || role == UserRole.admin) {
+      debugPrint('[canEnter] uid=$uid role=$roleStr -> allow owner/admin');
       return true;
     }
 
@@ -282,7 +287,23 @@ final canEnterAppProvider = FutureProvider.family<bool, String>((
         .get()
         .timeout(const Duration(seconds: 8));
 
-    if (hasName && hasPhone && hasRole && vehicleDocs.docs.isNotEmpty) {
+    final looksComplete = _looksLikeCompletedUserProfile(
+      data,
+      hasSavedVehicle: vehicleDocs.docs.isNotEmpty,
+    );
+
+    debugPrint(
+      '[canEnter] uid=$uid role=$roleStr completed=${data['profileCompleted']} '
+      'name=${data['name'] ?? data['displayName'] ?? '-'} '
+      'phone=${data['phone'] ?? '-'} '
+      'email=${data['email'] ?? '-'} '
+      'vehiclePlate=${data['vehiclePlate'] ?? '-'} '
+      'vehicleType=${data['vehicleType'] ?? '-'} '
+      'savedVehicle=${vehicleDocs.docs.isNotEmpty} '
+      'looksComplete=$looksComplete',
+    );
+
+    if (looksComplete) {
       return true;
     }
 
@@ -293,12 +314,14 @@ final canEnterAppProvider = FutureProvider.family<bool, String>((
         .get()
         .timeout(const Duration(seconds: 8));
 
+    debugPrint('[canEnter] uid=$uid ownsParking=${owns.docs.isNotEmpty}');
     return owns.docs.isNotEmpty;
   }
 
   try {
     return await _check();
   } catch (e) {
+    debugPrint('[canEnter] uid=$uid first-check error: $e');
     // PERMISSION_DENIED / App Check / timeouts durante cambio de sesión o
     // primeras instalaciones de debug → reintenta antes de concluir que el
     // perfil no existe.
@@ -310,6 +333,7 @@ final canEnterAppProvider = FutureProvider.family<bool, String>((
       try {
         return await _check();
       } catch (retryError) {
+        debugPrint('[canEnter] uid=$uid retry error: $retryError');
         if (isRecoverableAccessError(retryError)) {
           throw StateError(
             'No se pudo validar el perfil en este momento. '
