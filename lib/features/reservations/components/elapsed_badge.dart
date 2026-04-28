@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:beygo/features/reservations/providers/ticker_provider.dart';
+import 'package:beygo/features/reservations/reservations.dart';
 
 /// Muestra el tiempo transcurrido desde [start], actualizándose cada segundo.
 /// Uso: ElapsedBadge(start: reservation.startedAt)

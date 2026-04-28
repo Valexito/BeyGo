@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:beygo/common/common.dart';
-import 'package:beygo/features/users/models/vehicule.dart';
+import 'package:beygo/features/users/users.dart';
 
 class EditVehiclesPage extends StatefulWidget {
   const EditVehiclesPage({super.key});

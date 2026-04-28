@@ -5,8 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:beygo/common/common.dart';
-import 'package:beygo/features/users/models/vehicule.dart';
-import 'package:beygo/features/users/providers/user_providers.dart';
+import 'package:beygo/features/users/users.dart';
 import 'package:beygo/features/auth/providers/auth_providers.dart'
     show authActionsProvider;
 

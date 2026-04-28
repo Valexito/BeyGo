@@ -1,9 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:beygo/common/services/google_places_service.dart';
-import 'package:beygo/common/ui/components/app_styles.dart';
-import 'package:beygo/features/core/services/recent_searches.dart';
+import 'package:beygo/common/common.dart';
+import 'package:beygo/features/core/core.dart';
 
 class HomeBottomPanel extends StatefulWidget {
   const HomeBottomPanel({

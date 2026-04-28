@@ -3,12 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:beygo/common/common.dart';
 import 'package:beygo/features/core/core.dart';
-import 'package:beygo/features/users/widgets/delete_account_dialog.dart';
-import 'package:beygo/features/users/widgets/profile_security_dialogs.dart';
-import 'package:beygo/features/users/pages/configure_profile_page.dart';
-import 'package:beygo/features/users/providers/user_providers.dart';
-import 'package:beygo/features/reservations/pages/reservations_page.dart';
-import 'package:beygo/features/owner/widgets/become_owner_page.dart';
+import 'package:beygo/features/users/users.dart';
+import 'package:beygo/features/reservations/reservations.dart';
+import 'package:beygo/features/owner/owner.dart';
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});

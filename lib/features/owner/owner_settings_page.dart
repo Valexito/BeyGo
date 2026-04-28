@@ -4,14 +4,10 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:beygo/common/common.dart';
 import 'package:beygo/features/core/core.dart';
-import 'package:beygo/features/core/providers/firebase_providers.dart';
-import 'package:beygo/features/owner/widgets/app_header.dart';
-import 'package:beygo/features/owner/pages/edit_owner_parking_page.dart';
-import 'package:beygo/features/owner/pages/edit_owner_profile_page.dart';
-import 'package:beygo/features/owner/providers/owner_management_providers.dart';
+import 'package:beygo/features/owner/owner.dart';
 import 'package:beygo/features/auth/providers/auth_providers.dart'
     show authActionsProvider;
-import 'package:beygo/features/reservations/providers/reservations_providers.dart';
+import 'package:beygo/features/reservations/reservations.dart';
 
 class OwnerSettingsPage extends ConsumerStatefulWidget {
   const OwnerSettingsPage({super.key});

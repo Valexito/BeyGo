@@ -5,8 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:beygo/features/core/providers/firebase_providers.dart'
     show firestoreProvider, currentUserProvider;
 
-import 'package:beygo/features/users/models/vehicule.dart';
-import 'package:beygo/features/users/models/user_role.dart';
+import 'package:beygo/features/users/users.dart';
 
 // ---------- Refs ----------
 final userDocRefProvider =

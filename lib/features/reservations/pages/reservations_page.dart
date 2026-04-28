@@ -2,12 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:beygo/common/common.dart';
 import 'package:beygo/features/core/core.dart';
-import 'package:beygo/features/core/providers/firebase_providers.dart';
-import 'package:beygo/features/reservations/components/rating_dialog.dart';
-import 'package:beygo/features/reservations/components/reservations_details_sheet.dart';
-import 'package:beygo/features/reservations/components/reservation_card.dart';
-import 'package:beygo/features/reservations/models/reservation.dart';
-import 'package:beygo/features/reservations/providers/reservations_providers.dart';
+import 'package:beygo/features/reservations/reservations.dart';
 
 enum _ReservationsPeriodFilter { week, month, all, custom }
 

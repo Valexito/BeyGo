@@ -8,9 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:beygo/common/common.dart';
-import 'package:beygo/features/users/models/vehicule.dart';
-import 'package:beygo/features/users/providers/user_providers.dart';
-import 'package:beygo/features/users/pages/edit_vehicles_page.dart';
+import 'package:beygo/features/users/users.dart';
 
 // ─── Country code model ────────────────────────────────────────────────────────
 class _CountryCode {

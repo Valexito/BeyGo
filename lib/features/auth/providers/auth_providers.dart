@@ -2,10 +2,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
-import 'package:beygo/common/services/notification_service.dart';
+import 'package:beygo/common/common.dart';
 import 'package:beygo/features/core/providers/firebase_providers.dart'
     show firebaseAuthProvider;
-import 'package:beygo/features/users/providers/user_providers.dart';
+import 'package:beygo/features/users/users.dart';
 
 final authUserStreamProvider = StreamProvider<User?>((ref) {
   final auth = ref.watch(firebaseAuthProvider);

@@ -5,8 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:beygo/common/common.dart';
-import 'package:beygo/features/core/components/home_bottom_parking_details.dart';
-import 'package:beygo/features/core/services/favorite_service.dart';
+import 'package:beygo/features/core/core.dart';
 import 'package:beygo/features/reservations/reservations.dart';
 class MapWidget extends ConsumerStatefulWidget {
   /// Called when the user taps the map background (not a marker).

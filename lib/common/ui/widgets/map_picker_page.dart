@@ -9,13 +9,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:beygo/common/services/geolocator.dart';
-import 'package:beygo/common/services/google_places_service.dart';
-import 'package:beygo/common/ui/components/app_styles.dart';
-import 'package:beygo/common/ui/components/google_map_styles.dart';
-import 'package:beygo/common/ui/components/my_button.dart';
-import 'package:beygo/common/ui/components/navy_header.dart';
-import 'package:beygo/common/ui/widgets/app_map_controls.dart';
+import 'package:beygo/common/common.dart';
 
 class MapPickerPage extends StatefulWidget {
   /// Optional initial position. If not provided, tries current location first

@@ -6,8 +6,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:beygo/common/common.dart';
-import 'package:beygo/features/owner/widgets/app_header.dart';
-import 'package:beygo/features/core/roles/role_utils.dart';
+import 'package:beygo/features/owner/owner.dart';
+import 'package:beygo/features/core/core.dart';
 import 'package:beygo/features/reservations/reservations.dart';
 enum OwnerReservationsTab { active, pending }
 

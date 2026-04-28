@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:beygo/common/common.dart';
-import 'package:beygo/features/core/providers/spaces_provider.dart';
-import 'package:beygo/features/core/providers/favorites_provider.dart';
+import 'package:beygo/features/core/core.dart';
 import 'package:beygo/features/reservations/reservations.dart';
 
 class HomeParkingDetailBottomSheet extends ConsumerStatefulWidget {

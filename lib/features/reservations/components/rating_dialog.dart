@@ -12,7 +12,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:beygo/common/common.dart';
-import 'package:beygo/features/reservations/models/reservation.dart';
+import 'package:beygo/features/reservations/reservations.dart';
 
 /// Show the rating dialog. Returns true if rating was submitted.
 Future<bool> showRatingDialog(

@@ -2,10 +2,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb;
-import 'package:beygo/common/ui/components/app_styles.dart';
+import 'package:beygo/common/common.dart';
 import 'package:beygo/features/core/core.dart';
-import 'package:beygo/features/reservations/pages/reservations_page.dart';
-import 'package:beygo/features/users/pages/profile_page.dart';
+import 'package:beygo/features/reservations/reservations.dart';
+import 'package:beygo/features/users/users.dart';
 import 'package:beygo/features/auth/providers/auth_providers.dart'
     show authUserStreamProvider, authActionsProvider;
 

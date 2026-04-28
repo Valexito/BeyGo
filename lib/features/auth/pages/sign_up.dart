@@ -2,8 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:beygo/common/common.dart';
-import 'package:beygo/features/auth/components/verify_email_page.dart';
-import '../providers/auth_providers.dart';
+import 'package:beygo/features/auth/auth.dart';
 
 class SignUpPage extends ConsumerStatefulWidget {
   final VoidCallback onBackToLogin;

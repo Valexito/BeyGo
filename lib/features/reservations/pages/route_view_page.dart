@@ -8,9 +8,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:beygo/common/common.dart';
-import 'package:beygo/features/reservations/components/route_bottom_info_card.dart';
-import 'package:beygo/features/reservations/providers/directions_providers.dart';
-import 'package:beygo/features/reservations/providers/location_providers.dart';
+import 'package:beygo/features/reservations/reservations.dart';
 
 class RouteViewPage extends ConsumerStatefulWidget {
   final LatLng destination;

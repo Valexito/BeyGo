@@ -4,13 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:beygo/common/common.dart';
 import 'package:beygo/features/auth/providers/auth_providers.dart'
     show authActionsProvider;
-import 'package:beygo/features/core/pages/legal_information_page.dart';
-import 'package:beygo/features/core/pages/report_problem_page.dart';
-import 'package:beygo/features/core/providers/app_preferences_provider.dart';
-import 'package:beygo/features/core/providers/firebase_providers.dart'
-    show currentUserProvider;
-import 'package:beygo/features/owner/widgets/become_owner_page.dart';
-import 'package:beygo/features/reservations/pages/reservations_page.dart';
+import 'package:beygo/features/core/core.dart';
+import 'package:beygo/features/owner/owner.dart';
+import 'package:beygo/features/reservations/reservations.dart';
 import 'package:beygo/features/users/users.dart';
 
 class ConfigurationsPage extends ConsumerWidget {

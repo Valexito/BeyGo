@@ -6,9 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:beygo/common/common.dart';
-import 'package:beygo/features/owner/providers/provider_request_submit_provider.dart';
+import 'package:beygo/features/owner/owner.dart';
 import 'package:beygo/features/core/core.dart';
-import 'package:beygo/features/core/providers/firebase_providers.dart';
 // ─── Country code (same as configure_profile_page) ───────────────────────────
 class _CountryCode {
   final String flag;

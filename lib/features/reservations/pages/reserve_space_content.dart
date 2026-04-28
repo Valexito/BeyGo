@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:beygo/common/common.dart';
-import 'package:beygo/features/reservations/models/parking.dart';
-import 'package:beygo/features/reservations/providers/reservations_providers.dart';
-import 'package:beygo/features/users/models/vehicule.dart';
+import 'package:beygo/features/reservations/reservations.dart';
+import 'package:beygo/features/users/users.dart';
 
 class ReserveSpaceContent extends ConsumerStatefulWidget {
   final Parking parking;

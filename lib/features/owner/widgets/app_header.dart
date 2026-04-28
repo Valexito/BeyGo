@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:beygo/common/common.dart';
-import 'package:beygo/features/owner/owner_home_page.dart';
+import 'package:beygo/features/owner/owner.dart';
 
 class AppHeader extends StatelessWidget {
   final String title;

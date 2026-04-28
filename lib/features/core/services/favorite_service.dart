@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:beygo/features/reservations/models/parking.dart';
+import 'package:beygo/features/reservations/reservations.dart';
 
 class FavoriteService {
   FavoriteService._();

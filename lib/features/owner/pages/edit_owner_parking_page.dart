@@ -6,9 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:beygo/common/common.dart';
-import 'package:beygo/features/owner/providers/owner_management_providers.dart';
-import 'package:beygo/features/owner/widgets/app_header.dart';
-import 'package:beygo/features/reservations/providers/parking_service_provider.dart';
+import 'package:beygo/features/owner/owner.dart';
+import 'package:beygo/features/reservations/reservations.dart';
 
 class EditOwnerParkingPage extends ConsumerStatefulWidget {
   const EditOwnerParkingPage({super.key});

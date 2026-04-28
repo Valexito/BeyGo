@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:beygo/common/common.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:beygo/features/users/providers/delete_account_provider.dart';
+import 'package:beygo/features/users/users.dart';
 
 class DeleteAccountDialog extends ConsumerStatefulWidget {
   const DeleteAccountDialog({super.key});

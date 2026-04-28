@@ -9,9 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:beygo/common/common.dart';
-import 'package:beygo/features/core/components/map_widget.dart';
-import 'package:beygo/features/core/providers/app_preferences_provider.dart';
-import 'package:beygo/features/users/pages/configurations_page.dart';
+import 'package:beygo/features/core/core.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});

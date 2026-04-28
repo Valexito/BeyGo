@@ -1,7 +1,7 @@
 // lib/common/utils/components/ui/app_loading_screen.dart
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:beygo/common/ui/components/app_styles.dart';
+import 'package:beygo/common/common.dart';
 
 enum LoadingVariant { route, map, profile, general }
 

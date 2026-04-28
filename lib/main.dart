@@ -4,15 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:beygo/common/common.dart';
-import 'package:beygo/features/core/providers/app_preferences_provider.dart';
-import 'package:beygo/features/reservations/pages/route_view_page.dart';
+import 'package:beygo/features/core/core.dart';
+import 'package:beygo/features/reservations/reservations.dart';
 import 'firebase_options.dart';
-import 'features/auth/pages/auth_gate.dart';
-import 'features/core/pages/home_switch.dart';
+import 'package:beygo/features/auth/auth.dart';
 import 'features/users/pages/home_page.dart' as userv;
-import 'features/owner/owner_home_page.dart';
-import 'features/owner/widgets/become_owner_page.dart';
-import 'features/reservations/pages/reservations_page.dart';
+import 'package:beygo/features/owner/owner.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

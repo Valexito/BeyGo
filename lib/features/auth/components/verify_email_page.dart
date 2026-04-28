@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:beygo/common/common.dart';
-import 'package:beygo/features/users/pages/complete_profile_page.dart';
+import 'package:beygo/features/users/users.dart';
 
 class VerifyEmailPage extends StatefulWidget {
   final User user;

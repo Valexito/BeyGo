@@ -5,7 +5,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart'; // ← ADDED — fixes "Undefined class 'LatLng'"
 import 'package:beygo/common/common.dart';
-import 'package:beygo/features/reservations/models/reservation.dart';
+import 'package:beygo/features/reservations/reservations.dart';
 
 class ReservationDialogs {
   static Future<bool?> showConfirmReservationDialog(

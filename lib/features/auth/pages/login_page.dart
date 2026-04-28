@@ -2,11 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:beygo/common/common.dart';
-import 'package:beygo/features/auth/components/forgot_password_dialog.dart';
-import 'package:beygo/features/auth/components/verify_email_page.dart';
-import 'package:beygo/features/auth/providers/auth_providers.dart';
+import 'package:beygo/features/auth/auth.dart';
 import 'package:beygo/features/users/users.dart';
-import 'package:beygo/features/core/pages/home_switch.dart';
+import 'package:beygo/features/core/core.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   final VoidCallback onShowRegister;

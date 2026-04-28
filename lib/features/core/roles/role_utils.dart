@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:beygo/features/users/models/user_role.dart';
-import 'package:beygo/features/users/providers/user_providers.dart'
-    show myRoleStreamProvider;
+import 'package:beygo/features/users/users.dart';
 
 bool isOwnerLike(UserRole r) => r == UserRole.provider || r == UserRole.admin;
 bool isUserOnly(UserRole r) => r == UserRole.user;

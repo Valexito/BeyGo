@@ -15,7 +15,9 @@ export 'pages/legal_information_page.dart';
 export '../users/pages/map_pick_page_become_owner.dart';
 export 'pages/report_problem_page.dart';
 export 'providers/app_preferences_provider.dart';
-export 'providers/favorites_provider.dart';
+export 'providers/favorites_provider.dart'
+    hide firestoreProvider, firebaseAuthProviderCore, authStateProvider;
+export 'providers/firebase_providers.dart';
 export 'providers/location_provider.dart';
 export 'providers/map_providers.dart';
 export 'providers/recent_searches_provider.dart';

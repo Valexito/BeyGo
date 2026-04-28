@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:beygo/common/common.dart';
-import 'package:beygo/features/core/providers/report_provider.dart';
+import 'package:beygo/features/core/core.dart';
 
 class ReportProblemPage extends ConsumerStatefulWidget {
   const ReportProblemPage({

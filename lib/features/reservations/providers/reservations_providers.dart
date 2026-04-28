@@ -3,9 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:beygo/features/core/providers/firebase_providers.dart';
-import 'package:beygo/features/reservations/models/parking_space.dart';
-import 'package:beygo/features/reservations/models/reservation.dart';
-import 'package:beygo/features/reservations/models/parking.dart';
+import 'package:beygo/features/reservations/reservations.dart';
 
 final _dbProvider = firestoreProvider;
 

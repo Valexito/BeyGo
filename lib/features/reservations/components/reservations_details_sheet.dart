@@ -7,9 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:beygo/common/common.dart';
-import 'package:beygo/features/reservations/components/reservation_dialogs.dart';
-import 'package:beygo/features/reservations/models/reservation.dart';
-import 'package:beygo/features/reservations/providers/reservations_providers.dart';
+import 'package:beygo/features/reservations/reservations.dart';
 
 class ReservationDetailsSheet extends ConsumerStatefulWidget {
   final Reservation reservation;

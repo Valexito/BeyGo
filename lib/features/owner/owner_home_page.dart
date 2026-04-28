@@ -1,14 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:beygo/common/ui/components/app_styles.dart';
+import 'package:beygo/common/common.dart';
 import 'package:beygo/features/core/core.dart';
-import 'package:beygo/features/owner/owner_reservations_page.dart';
-import 'package:beygo/features/owner/owner_requests_page.dart';
-import 'package:beygo/features/owner/owner_settings_page.dart';
-import 'package:beygo/features/owner/owner_history_page.dart';
-import 'package:beygo/features/owner/owner_walking_page.dart';
-import 'package:beygo/features/owner/providers/dashboard_providers.dart';
-import 'package:beygo/features/reservations/models/reservation.dart';
+import 'package:beygo/features/owner/owner.dart';
+import 'package:beygo/features/reservations/reservations.dart';
 
 class OwnerHomePage extends StatefulWidget {
   const OwnerHomePage({super.key});

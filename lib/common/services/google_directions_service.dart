@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-import 'package:beygo/common/env/env.dart';
+import 'package:beygo/common/common.dart';
 
 class GoogleDirectionsService {
   GoogleDirectionsService({String? apiKey})

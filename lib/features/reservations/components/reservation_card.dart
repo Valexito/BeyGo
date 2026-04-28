@@ -6,10 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:beygo/common/common.dart';
-import 'package:beygo/features/reservations/components/reservations_details_sheet.dart';
-import 'package:beygo/features/reservations/models/parking.dart';
-import 'package:beygo/features/reservations/models/reservation.dart';
-import 'package:beygo/features/reservations/providers/reservations_providers.dart';
+import 'package:beygo/features/reservations/reservations.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ReservationCard extends ConsumerWidget {
