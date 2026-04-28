@@ -80,7 +80,7 @@ class FavoriteItem {
     return FavoriteItem(
       id: id,
       parkingId: (m['parkingId'] ?? '') as String,
-      name: m['name'] ?? 'Parking',
+      name: m['name'] ?? 'Parqueo',
       ownerID: m['ownerID'] ?? '',
       spaces: (m['spaces'] ?? 0) as int,
       rating: _d(m['rating'] ?? 0),

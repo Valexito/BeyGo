@@ -989,7 +989,7 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
                                   ),
                                   Expanded(
                                     child: Text(
-                                      'Acepto enviar mis datos para revisión del equipo de Parking App.',
+                                      'Acepto enviar mis datos para revisión del equipo de BeyGo.',
                                       style: TextStyle(
                                         fontSize: 13,
                                         color: context.appTextPrimaryColor,

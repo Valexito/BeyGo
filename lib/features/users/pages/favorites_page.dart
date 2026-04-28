@@ -274,7 +274,7 @@ class _FavoriteCard extends ConsumerWidget {
     const accentBlue = Color(0xFF2563EB);
 
     final heroImg =
-        item.heroImage ?? 'https://via.placeholder.com/800x450?text=Parking';
+        item.heroImage ?? 'https://via.placeholder.com/800x450?text=Parqueo';
     final spacesAsync = ref.watch(availableSpacesProvider(item.parkingId));
 
     return InkWell(

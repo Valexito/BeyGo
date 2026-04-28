@@ -121,10 +121,10 @@ class ParkingService {
     // verifica que el doc exista y sea tuyo (evita 403s confusos)
     final snap = await _firestore.collection('parkings').doc(parkingId).get();
     if (!snap.exists) {
-      throw Exception('El parking $parkingId no existe.');
+      throw Exception('El parqueo $parkingId no existe.');
     }
     if (snap.data()?['ownerID'] != ownerID) {
-      throw Exception('No eres el dueño de este parking.');
+      throw Exception('No eres el dueño de este parqueo.');
     }
 
     final urls = await _uploadImages(

@@ -37,7 +37,7 @@ class _ReserveSpacePageState extends ConsumerState<ReserveSpacePage> {
     if (g.isEmpty && cover.isNotEmpty) g.add(cover);
     if (g.isEmpty && image.isNotEmpty) g.add(image);
     if (g.isEmpty) {
-      g.add('https://via.placeholder.com/800x400?text=Parking');
+      g.add('https://via.placeholder.com/800x400?text=Parqueo');
     }
     return g.toSet().toList();
   }

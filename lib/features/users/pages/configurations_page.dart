@@ -680,7 +680,7 @@ class _SettingsBody extends ConsumerWidget {
 
   Future<void> _shareApp(BuildContext context) async {
     const message =
-        'Te recomiendo Parking App para encontrar y reservar parqueos de forma rápida.';
+        'Te recomiendo BeyGo para encontrar y reservar parqueos de forma rápida.';
     await Clipboard.setData(const ClipboardData(text: message));
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(

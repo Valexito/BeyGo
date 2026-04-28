@@ -408,7 +408,7 @@ class _DashboardHeader extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'BeyGo Owner',
+                      'BeyGo Proveedor',
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.78),
                         fontSize: 12,

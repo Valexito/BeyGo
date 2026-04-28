@@ -23,9 +23,9 @@ class NotificationService {
   final _fcm = FirebaseMessaging.instance;
   final _localNotif = FlutterLocalNotificationsPlugin();
 
-  static const _channelId = 'parking_app_channel';
-  static const _channelName = 'Parking App';
-  static const _channelDesc = 'Reservations and parking notifications';
+  static const _channelId = 'beygo_notifications';
+  static const _channelName = 'BeyGo';
+  static const _channelDesc = 'Notificaciones de reservas y parqueos de BeyGo';
 
   Future<void> init() async {
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);

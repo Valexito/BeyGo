@@ -140,7 +140,7 @@ class _EditOwnerProfilePageState extends ConsumerState<EditOwnerProfilePage> {
           );
 
       if (!mounted) return;
-      _toast('Perfil de owner actualizado.');
+      _toast('Perfil de proveedor actualizado.');
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
@@ -220,7 +220,7 @@ class _EditOwnerProfilePageState extends ConsumerState<EditOwnerProfilePage> {
                           ),
                           const SizedBox(height: 18),
                           Text(
-                            'No incluimos vehículos aquí para mantener separado tu perfil de owner del perfil de usuario.',
+                            'No incluimos vehículos aquí para mantener separado tu perfil de proveedor del perfil de usuario.',
                             style: TextStyle(
                               color: context.appTextSecondaryColor,
                               fontSize: 12,

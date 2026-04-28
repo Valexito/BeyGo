@@ -210,7 +210,7 @@ class _OwnerSettingsPageState extends ConsumerState<OwnerSettingsPage> {
                           icon: Icons.person_outline_rounded,
                           iconColor: AppColors.headerBottom,
                           label: 'Editar perfil',
-                          subtitle: 'Datos de cuenta y contacto del owner',
+                          subtitle: 'Datos de cuenta y contacto del proveedor',
                           onTap:
                               () => Navigator.push(
                                 context,
@@ -513,7 +513,7 @@ class _OwnerSettingsPageState extends ConsumerState<OwnerSettingsPage> {
 
   Future<void> _shareApp() async {
     const message =
-        'Te recomiendo Parking App para encontrar, reservar y administrar parqueos de forma rápida.';
+        'Te recomiendo BeyGo para encontrar, reservar y administrar parqueos de forma rápida.';
     await Clipboard.setData(const ClipboardData(text: message));
     if (!mounted) return;
     _toast('Mensaje copiado para compartir.');
@@ -535,7 +535,7 @@ class _OwnerSettingsPageState extends ConsumerState<OwnerSettingsPage> {
         builder:
             (_) => const ReportProblemPage(
               initialReportType: 'Problema con mi parqueo',
-              initialSubject: 'Soporte owner',
+              initialSubject: 'Soporte de proveedor',
             ),
       ),
     );
@@ -1800,7 +1800,7 @@ class _RevenueOtpDialogState extends State<_RevenueOtpDialog> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Te enviamos un código al correo registrado del owner para restablecer el PIN de ingresos.',
+                'Te enviamos un código al correo registrado del proveedor para restablecer el PIN de ingresos.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: context.appTextSecondaryColor,

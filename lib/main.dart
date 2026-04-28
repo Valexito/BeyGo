@@ -5,10 +5,10 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:beygo/common/common.dart';
 import 'package:beygo/features/core/core.dart';
+import 'package:beygo/features/users/users.dart' as userv;
 import 'package:beygo/features/reservations/reservations.dart';
 import 'firebase_options.dart';
 import 'package:beygo/features/auth/auth.dart';
-import 'features/users/pages/home_page.dart' as userv;
 import 'package:beygo/features/owner/owner.dart';
 
 Future<void> main() async {
