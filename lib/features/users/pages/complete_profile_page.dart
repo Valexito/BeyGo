@@ -60,6 +60,7 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
   bool _isSaving = false;
   bool _isGoingBack = false;
   final List<_VehicleEntry> _vehicles = [];
+  String _existingPhotoUrl = '';
 
   _CountryCode _selectedCountry = _kCountryCodes.first;
 
@@ -84,6 +85,9 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
     if ((u.displayName ?? '').trim().isNotEmpty) {
       _nameController.text = u.displayName!.trim();
     }
+    _existingPhotoUrl = (u.photoURL ?? '').trim();
+    _applyPhoneValue((u.phoneNumber ?? '').trim());
+    _loadExistingProfile();
 
     _vehicles.add(_VehicleEntry());
   }
@@ -122,6 +126,56 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
   bool _isValidCorrelative(String value) {
     final clean = value.toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]'), '');
     return clean.length >= 4;
+  }
+
+  Future<void> _loadExistingProfile() async {
+    try {
+      await widget.user.reload();
+      final refreshedUser = FirebaseAuth.instance.currentUser ?? widget.user;
+      final doc =
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(refreshedUser.uid)
+              .get();
+      final data = doc.data() ?? {};
+      final firestoreName = (data['name'] as String? ?? '').trim();
+      final firestorePhone = (data['phone'] as String? ?? '').trim();
+      final firestorePhoto = (data['photoURL'] as String? ?? '').trim();
+      final authPhoto =
+          (refreshedUser.photoURL ?? widget.user.photoURL ?? '').trim();
+      final authPhone =
+          (refreshedUser.phoneNumber ?? widget.user.phoneNumber ?? '').trim();
+
+      if (!mounted) return;
+      setState(() {
+        if (firestoreName.isNotEmpty) {
+          _nameController.text = firestoreName;
+        }
+        _existingPhotoUrl =
+            firestorePhoto.isNotEmpty ? firestorePhoto : authPhoto;
+        _applyPhoneValue(
+          firestorePhone.isNotEmpty ? firestorePhone : authPhone,
+        );
+      });
+    } catch (_) {}
+  }
+
+  void _applyPhoneValue(String rawPhone) {
+    if (rawPhone.isEmpty) return;
+
+    _CountryCode matched = _kCountryCodes.first;
+    String numberPart = rawPhone.trim();
+
+    for (final c in _kCountryCodes) {
+      if (numberPart.startsWith(c.code)) {
+        matched = c;
+        numberPart = numberPart.substring(c.code.length).trim();
+        break;
+      }
+    }
+
+    _selectedCountry = matched;
+    _phoneNumberCtrl.text = numberPart;
   }
 
   Future<void> _goBack() async {
@@ -491,10 +545,24 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
                           width: 1.4,
                         ),
                       ),
-                      child: const Icon(
-                        Icons.badge_outlined,
-                        size: 36,
-                        color: Colors.white,
+                      child: ClipOval(
+                        child:
+                            _existingPhotoUrl.isNotEmpty
+                                ? Image.network(
+                                  _existingPhotoUrl,
+                                  fit: BoxFit.cover,
+                                  errorBuilder:
+                                      (_, __, ___) => const Icon(
+                                        Icons.badge_outlined,
+                                        size: 36,
+                                        color: Colors.white,
+                                      ),
+                                )
+                                : const Icon(
+                                  Icons.badge_outlined,
+                                  size: 36,
+                                  color: Colors.white,
+                                ),
                       ),
                     ),
                   ),

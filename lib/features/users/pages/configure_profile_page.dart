@@ -124,41 +124,58 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage>
     super.dispose();
   }
 
+  void _applyPhoneValue(String rawPhone) {
+    _CountryCode matched = _kCountryCodes.first;
+    String numberPart = rawPhone.trim();
+
+    for (final c in _kCountryCodes) {
+      if (numberPart.startsWith(c.code)) {
+        matched = c;
+        numberPart = numberPart.substring(c.code.length).trim();
+        break;
+      }
+    }
+
+    _selectedCountry = matched;
+    _phoneNumberCtrl.text = numberPart;
+  }
+
+  _VehicleEditEntry? _resolvePrimaryVehicleEntry() {
+    if (_vehicles.isNotEmpty) return _vehicles.first;
+    return null;
+  }
+
   Future<void> _loadUserData() async {
     try {
       final u = _auth.currentUser;
       if (u == null) return;
+      await u.reload();
+      final refreshedUser = _auth.currentUser ?? u;
 
       final db = FirebaseFirestore.instance;
-      final doc = await db.collection('users').doc(u.uid).get();
+      final doc = await db.collection('users').doc(refreshedUser.uid).get();
       final data = doc.data() ?? {};
+      final rawGender = (data['gender'] as String?)?.trim() ?? '';
+      final firestorePhoto = (data['photoURL'] as String?)?.trim() ?? '';
+      final authPhoto = (refreshedUser.photoURL ?? u.photoURL ?? '').trim();
+      final firestorePhone = (data['phone'] as String?)?.trim() ?? '';
+      final authPhone = (refreshedUser.phoneNumber ?? u.phoneNumber ?? '').trim();
 
-      _nameCtrl.text = (data['name'] as String? ?? u.displayName ?? '').trim();
+      _nameCtrl.text =
+          (data['name'] as String? ?? refreshedUser.displayName ?? '').trim();
       _dobCtrl.text = (data['dob'] as String?) ?? '';
-      _gender =
-          ((data['gender'] as String?) ?? 'male').isNotEmpty
-              ? (data['gender'] as String)
-              : 'male';
-      _existingPhotoUrl =
-          (data['photoURL'] as String? ?? u.photoURL ?? '').trim();
+      _gender = rawGender.isNotEmpty ? rawGender : 'male';
+      _existingPhotoUrl = firestorePhoto.isNotEmpty ? firestorePhoto : authPhoto;
 
-      // Parse phone — split country code from number
-      final rawPhone = (data['phone'] as String?) ?? '';
-      _CountryCode matched = _kCountryCodes.first;
-      String numberPart = rawPhone;
-      for (final c in _kCountryCodes) {
-        if (rawPhone.startsWith(c.code)) {
-          matched = c;
-          numberPart = rawPhone.substring(c.code.length).trim();
-          break;
-        }
-      }
-      _selectedCountry = matched;
-      _phoneNumberCtrl.text = numberPart;
+      _applyPhoneValue(firestorePhone.isNotEmpty ? firestorePhone : authPhone);
 
       // Load vehicles
       final vehicleSnap =
-          await db.collection('users').doc(u.uid).collection('vehicles').get();
+          await db
+              .collection('users')
+              .doc(refreshedUser.uid)
+              .collection('vehicles')
+              .get();
 
       if (vehicleSnap.docs.isNotEmpty) {
         for (final vDoc in vehicleSnap.docs) {
@@ -465,12 +482,15 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage>
         }, SetOptions(merge: true));
       }
 
-      // Update main doc primary vehicle for backwards compat
-      batch.set(userRef, {
-        'vehiclePlate': _vehicles.first.fullPlate,
-        'vehicleType': _vehicles.first.type.value,
-        'plateType': _vehicles.first.type.platePrefix,
-      }, SetOptions(merge: true));
+      // Update main doc primary vehicle for backwards compat when available.
+      final primaryVehicle = _resolvePrimaryVehicleEntry();
+      if (primaryVehicle != null) {
+        batch.set(userRef, {
+          'vehiclePlate': primaryVehicle.fullPlate,
+          'vehicleType': primaryVehicle.type.value,
+          'plateType': primaryVehicle.type.platePrefix,
+        }, SetOptions(merge: true));
+      }
 
       await batch.commit();
 
