@@ -85,7 +85,9 @@ flutter_launcher_icons:
   remove_alpha_ios: true
   image_path: "assets/branding/icon.png"
   min_sdk_android: 23
-  adaptive_icon_background: "#1757A0"
+  # Cream claro que casa con el fondo del logo (evita "escalon" visible
+  # cuando el adaptive icon shape recorta el contenido).
+  adaptive_icon_background: "#F1F3F6"
   adaptive_icon_foreground: "assets/branding/icon_foreground.png"
   web:
     generate: false
@@ -96,11 +98,12 @@ flutter_launcher_icons:
 # Corre:  dart run flutter_native_splash:create
 # ──────────────────────────────────────────────────────────────────────────────
 flutter_native_splash:
-  color: "#1757A0"
+  # Mismo cream del logo para que el splash se vea uniforme.
+  color: "#F1F3F6"
   image: "assets/branding/splash.png"
   android_12:
     image: "assets/branding/splash.png"
-    icon_background_color: "#1757A0"
+    icon_background_color: "#F1F3F6"
   android: true
   ios: true
   web: false
