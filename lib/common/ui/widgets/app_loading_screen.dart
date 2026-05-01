@@ -108,18 +108,34 @@ class _AppLoadingScreenState extends State<AppLoadingScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F4F8),
+      backgroundColor: const Color(0xFF0E1D36),
       body: FadeTransition(
         opacity: _fade,
         child: Stack(
           children: [
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: const [
+                      Color(0xFF18345E),
+                      Color(0xFF102648),
+                      Color(0xFF09172C),
+                    ],
+                    stops: const [0.0, 0.48, 1.0],
+                  ),
+                ),
+              ),
+            ),
             // Background gradient blobs
             Positioned(
               top: -80,
               right: -60,
               child: _GradientBlob(
                 size: 260,
-                color: AppColors.headerTop.withValues(alpha: 0.12),
+                color: Colors.white.withValues(alpha: 0.06),
               ),
             ),
             Positioned(
@@ -127,7 +143,15 @@ class _AppLoadingScreenState extends State<AppLoadingScreen>
               left: -40,
               child: _GradientBlob(
                 size: 200,
-                color: AppColors.headerBottom.withValues(alpha: 0.10),
+                color: AppColors.primarySoft.withValues(alpha: 0.10),
+              ),
+            ),
+            Positioned(
+              top: 180,
+              left: -24,
+              child: _GradientBlob(
+                size: 140,
+                color: AppColors.headerTop.withValues(alpha: 0.12),
               ),
             ),
 
@@ -163,9 +187,9 @@ class _AppLoadingScreenState extends State<AppLoadingScreen>
                     widget.message,
                     textAlign: TextAlign.center,
                     style: const TextStyle(
-                      fontSize: 20,
+                      fontSize: 22,
                       fontWeight: FontWeight.w800,
-                      color: Color(0xFF1E293B),
+                      color: Colors.white,
                       letterSpacing: -0.4,
                     ),
                   ),
@@ -192,7 +216,7 @@ class _AppLoadingScreenState extends State<AppLoadingScreen>
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         fontSize: 13,
-                        color: Color(0xFF8A94A6),
+                        color: Color(0xFFB8C6DA),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -212,9 +236,9 @@ class _AppLoadingScreenState extends State<AppLoadingScreen>
                         decoration: BoxDecoration(
                                   color:
                                       i == _dotIndex
-                                          ? AppColors.headerBottom
-                                          : AppColors.headerBottom.withValues(
-                                            alpha: 0.20,
+                                          ? Colors.white
+                                          : Colors.white.withValues(
+                                            alpha: 0.22,
                                           ),
                           borderRadius: BorderRadius.circular(99),
                         ),

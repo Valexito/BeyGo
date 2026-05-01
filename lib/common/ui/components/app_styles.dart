@@ -1,30 +1,33 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  static const primary = Color(0xFF3B82F6);
-  static const primaryDark = Color(0xFF1E3A5F);
-  static const primarySoft = Color(0xFF93C5FD);
+  static const primary = Color(0xFF2D4D82);
+  static const primaryDark = Color(0xFF102648);
+  static const primarySoft = Color(0xFF6F8FBE);
 
-  // 🔵 MAIN HEADER COLORS (use these everywhere)
-  static const headerTop = Color(0xFF4F8FF7);
-  static const headerBottom = Color(0xFF1E5FD8);
+  // Navy branding from the new logo.
+  static const headerTop = Color(0xFF2E4E86);
+  static const headerBottom = Color(0xFF102648);
+  static const headerMid = Color(0xFF1A3764);
 
   // 🔁 Aliases (so old code doesn't break)
   static const navyTop = headerTop;
   static const navyBottom = headerBottom;
 
-  static const pageBg = Color(0xFFF7FAFC);
-  static const cardBg = Colors.white;
-  static const formFieldBg = Color(0xFFF1F5F9);
+  static const pageBg = Color(0xFFEAF0F8);
+  static const pageBgSoft = Color(0xFFF4F7FC);
+  static const cardBg = Color(0xFFFDFEFF);
+  static const cardBgSoft = Color(0xFFF4F8FD);
+  static const formFieldBg = Color(0xFFE9F0F8);
 
-  static const textPrimary = Color(0xFF0F172A);
-  static const textSecondary = Color(0xFF64748B);
-  static const textHint = Color(0xFF94A3B8);
+  static const textPrimary = Color(0xFF13233D);
+  static const textSecondary = Color(0xFF5D6B81);
+  static const textHint = Color(0xFF8C9AB0);
 
-  static const borderSoft = Color(0xFFE2E8F0);
-  static const iconCircle = Color(0xFFEAF2FF);
+  static const borderSoft = Color(0xFFD9E3F0);
+  static const iconCircle = Color(0xFFDCE8F8);
 
-  static const cardDivider = Color(0xFFE5E7EB);
+  static const cardDivider = Color(0xFFDCE3EE);
 
   static const success = Color(0xFF22C55E);
   static const warning = Color(0xFFF59E0B);
@@ -60,14 +63,72 @@ class AppTheme {
         secondary: AppColors.primaryDark,
         surface: AppColors.cardBg,
       ),
+      cardColor: AppColors.cardBg,
+      canvasColor: AppColors.pageBgSoft,
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.headerBottom,
         elevation: 0,
         foregroundColor: Colors.white,
         centerTitle: true,
       ),
+      cardTheme: CardThemeData(
+        color: AppColors.cardBg,
+        elevation: 0,
+        shadowColor: AppColors.headerBottom.withValues(alpha: 0.08),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: const BorderSide(color: AppColors.borderSoft),
+        ),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: AppColors.cardBg,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: AppColors.formFieldBg,
+        hintStyle: const TextStyle(color: AppColors.textHint),
+        labelStyle: const TextStyle(color: AppColors.textSecondary),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppDims.radiusLg),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppDims.radiusLg),
+          borderSide: BorderSide(
+            color: AppColors.headerBottom.withValues(alpha: 0.55),
+            width: 1.2,
+          ),
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.headerBottom,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          shadowColor: AppColors.headerBottom.withValues(alpha: 0.28),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppDims.radiusLg),
+          ),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.headerBottom,
+          side: BorderSide(
+            color: AppColors.headerBottom.withValues(alpha: 0.24),
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppDims.radiusLg),
+          ),
+        ),
+      ),
       iconTheme: const IconThemeData(color: AppColors.primaryDark),
       dividerColor: AppColors.borderSoft,
+      textTheme: base.textTheme.apply(
+        bodyColor: AppColors.textPrimary,
+        displayColor: AppColors.textPrimary,
+      ),
     );
   }
 
@@ -119,13 +180,13 @@ extension AppThemeContext on BuildContext {
       isDarkMode ? const Color(0xFF0B1220) : AppColors.pageBg;
 
   Color get appSectionBackground =>
-      isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC);
+      isDarkMode ? const Color(0xFF0F172A) : AppColors.pageBgSoft;
 
   Color get appCardBackground =>
-      isDarkMode ? const Color(0xFF111827) : Colors.white;
+      isDarkMode ? const Color(0xFF111827) : AppColors.cardBg;
 
   Color get appCardBackgroundSoft =>
-      isDarkMode ? const Color(0xFF162033) : const Color(0xFFF4F8FC);
+      isDarkMode ? const Color(0xFF162033) : AppColors.cardBgSoft;
 
   Color get appInputBackground =>
       isDarkMode ? const Color(0xFF162033) : AppColors.formFieldBg;
