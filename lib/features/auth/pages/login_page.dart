@@ -251,22 +251,35 @@ class _LoginPageState extends ConsumerState<LoginPage>
                 child: Column(
                   children: [
                     Container(
-                      width: 74,
-                      height: 74,
+                      width: 88,
+                      height: 88,
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.03),
-                        borderRadius: BorderRadius.circular(20),
+                        color: Colors.white.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(24),
                         border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.05),
-                          width: 0.25,
+                          color: Colors.white.withValues(alpha: 0.12),
+                          width: 0.8,
                         ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.18),
+                            blurRadius: 18,
+                            offset: const Offset(0, 10),
+                          ),
+                        ],
                       ),
-                      padding: const EdgeInsets.all(4),
+                      padding: const EdgeInsets.all(8),
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(18),
                         child: Image.asset(
-                          'assets/branding/icon.png',
-                          fit: BoxFit.cover,
+                          'assets/branding/BEYGO_icon_master_1024.png',
+                          fit: BoxFit.contain,
+                          errorBuilder:
+                              (_, __, ___) => Icon(
+                                Icons.local_parking_rounded,
+                                size: 42,
+                                color: Colors.white.withValues(alpha: 0.92),
+                              ),
                         ),
                       ),
                     ),
@@ -460,7 +473,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                               Expanded(
                                 child: _SocialButton(
                                   label: 'Google',
-                                  imagePath: 'assets/images/google.png',
+                                  imagePath: 'assets/branding/google.png',
                                   loading: _googleLoading,
                                   disabled: anyLoading,
                                   onTap: _signInWithGoogle,
