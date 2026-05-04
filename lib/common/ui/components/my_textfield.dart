@@ -89,7 +89,8 @@ class _MyTextFieldState extends State<MyTextField> {
   Widget? _buildPrefix() {
     if (widget.prefixIcon == null) return null;
 
-    final color = _active ? AppColors.headerBottom : AppColors.primary;
+    final color =
+        _active ? context.appBrandIconColor : context.appTextSecondaryColor;
 
     if (!widget.circularPrefix) {
       return Padding(

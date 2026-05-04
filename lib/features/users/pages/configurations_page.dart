@@ -344,7 +344,7 @@ class _SettingsBody extends ConsumerWidget {
               children: [
                 _NavRow(
                   icon: Icons.edit_outlined,
-                  iconColor: AppColors.headerBottom,
+                  iconColor: context.appBrandIconColor,
                   label: 'Editar perfil',
                   subtitle: 'Datos personales, foto y vehículos',
                   onTap:
@@ -395,7 +395,7 @@ class _SettingsBody extends ConsumerWidget {
               children: [
                 _NavRow(
                   icon: Icons.palette_outlined,
-                  iconColor: AppColors.headerBottom,
+                  iconColor: context.appBrandIconColor,
                   label: 'Tema',
                   subtitle: _themeLabel(preferences.themePreference),
                   onTap: () => _showThemePicker(context, ref),
@@ -435,7 +435,7 @@ class _SettingsBody extends ConsumerWidget {
               children: [
                 _NavRow(
                   icon: Icons.lock_outline_rounded,
-                  iconColor: AppColors.headerBottom,
+                  iconColor: context.appBrandIconColor,
                   label: 'Política de privacidad',
                   onTap: () => _openLegal(context, 'Privacidad'),
                 ),
@@ -465,7 +465,7 @@ class _SettingsBody extends ConsumerWidget {
               children: [
                 _NavRow(
                   icon: Icons.email_outlined,
-                  iconColor: AppColors.headerBottom,
+                  iconColor: context.appBrandIconColor,
                   label: 'Contactar soporte',
                   subtitle: 'Envíanos un reporte si algo no está funcionando',
                   onTap:
@@ -716,7 +716,7 @@ class _SectionHeader extends StatelessWidget {
               color: AppColors.headerBottom.withValues(alpha: 0.10),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, size: 18, color: AppColors.headerBottom),
+            child: Icon(icon, size: 18, color: context.appBrandIconColor),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -1057,9 +1057,9 @@ Future<void> _showThemePicker(BuildContext context, WidgetRef ref) async {
               return ListTile(
                 tileColor:
                     selected
-                        ? AppColors.headerBottom.withValues(
-                          alpha: context.isDarkMode ? 0.16 : 0.08,
-                        )
+                        ? context.appBrandIconColor.withValues(
+                            alpha: context.isDarkMode ? 0.16 : 0.08,
+                          )
                         : Colors.transparent,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
@@ -1073,7 +1073,7 @@ Future<void> _showThemePicker(BuildContext context, WidgetRef ref) async {
                   },
                   color:
                       selected
-                          ? AppColors.headerBottom
+                          ? context.appBrandIconColor
                           : context.appTextPrimaryColor,
                 ),
                 title: Text(
@@ -1082,9 +1082,9 @@ Future<void> _showThemePicker(BuildContext context, WidgetRef ref) async {
                 ),
                 trailing:
                     selected
-                        ? const Icon(
+                        ? Icon(
                           Icons.check_rounded,
-                          color: AppColors.headerBottom,
+                          color: context.appBrandIconColor,
                         )
                         : null,
                 onTap: () async {

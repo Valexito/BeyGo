@@ -1175,7 +1175,7 @@ class _FormField extends StatelessWidget {
           fontSize: 13,
           color: context.appTextSecondaryColor,
         ),
-        prefixIcon: Icon(icon, size: 18, color: AppColors.headerBottom),
+        prefixIcon: Icon(icon, size: 18, color: context.appBrandIconColor),
         filled: true,
         fillColor: context.appInputBackgroundActive,
         contentPadding: const EdgeInsets.symmetric(
@@ -1673,7 +1673,7 @@ class _DocUploadCard extends StatelessWidget {
                   color: AppColors.headerBottom.withValues(alpha: 0.08),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(icon, size: 20, color: AppColors.headerBottom),
+                child: Icon(icon, size: 20, color: context.appBrandIconColor),
               ),
               const SizedBox(width: 12),
               Column(

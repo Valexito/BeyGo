@@ -144,7 +144,7 @@ class _OwnerSettingsPageState extends ConsumerState<OwnerSettingsPage> {
                         _Divider(),
                         _SwitchRow(
                           icon: Icons.directions_car_outlined,
-                          iconColor: AppColors.headerBottom,
+                          iconColor: context.appBrandIconColor,
                           label: 'Requerir placa al ingresar',
                           sublabel:
                               'Valida la placa antes de activar la reserva',
@@ -208,7 +208,7 @@ class _OwnerSettingsPageState extends ConsumerState<OwnerSettingsPage> {
                       children: [
                         _NavRow(
                           icon: Icons.person_outline_rounded,
-                          iconColor: AppColors.headerBottom,
+                          iconColor: context.appBrandIconColor,
                           label: 'Editar perfil',
                           subtitle: 'Datos de cuenta y contacto del proveedor',
                           onTap:
@@ -276,7 +276,7 @@ class _OwnerSettingsPageState extends ConsumerState<OwnerSettingsPage> {
                         _Divider(),
                         _NavRow(
                           icon: Icons.share_outlined,
-                          iconColor: AppColors.headerBottom,
+                          iconColor: context.appBrandIconColor,
                           label: 'Compartir app',
                           subtitle: 'Copia un mensaje para recomendar la app',
                           onTap: _shareApp,
@@ -284,7 +284,7 @@ class _OwnerSettingsPageState extends ConsumerState<OwnerSettingsPage> {
                         _Divider(),
                         _NavRow(
                           icon: Icons.info_outline_rounded,
-                          iconColor: AppColors.headerBottom,
+                          iconColor: context.appBrandIconColor,
                           label: 'Versión de la app',
                           trailing: const Text(
                             'v1.0.0',
@@ -307,21 +307,21 @@ class _OwnerSettingsPageState extends ConsumerState<OwnerSettingsPage> {
                       children: [
                         _NavRow(
                           icon: Icons.lock_outline_rounded,
-                          iconColor: AppColors.headerBottom,
+                          iconColor: context.appBrandIconColor,
                           label: 'Política de privacidad',
                           onTap: () => _openLegal('Privacidad'),
                         ),
                         _Divider(),
                         _NavRow(
                           icon: Icons.description_outlined,
-                          iconColor: AppColors.headerBottom,
+                          iconColor: context.appBrandIconColor,
                           label: 'Términos y condiciones',
                           onTap: () => _openLegal('Términos de servicio'),
                         ),
                         _Divider(),
                         _NavRow(
                           icon: Icons.cookie_outlined,
-                          iconColor: AppColors.headerBottom,
+                          iconColor: context.appBrandIconColor,
                           label: 'Política de cookies',
                           onTap: () => _openLegal('Política de cookies'),
                         ),
@@ -339,7 +339,7 @@ class _OwnerSettingsPageState extends ConsumerState<OwnerSettingsPage> {
                       children: [
                         _NavRow(
                           icon: Icons.email_outlined,
-                          iconColor: AppColors.headerBottom,
+                          iconColor: context.appBrandIconColor,
                           label: 'Contactar soporte',
                           subtitle: 'Envía un reporte al equipo de soporte',
                           onTap: () => _openSupport(),
@@ -347,7 +347,7 @@ class _OwnerSettingsPageState extends ConsumerState<OwnerSettingsPage> {
                         _Divider(),
                         _NavRow(
                           icon: Icons.chat_bubble_outline_rounded,
-                          iconColor: AppColors.headerBottom,
+                          iconColor: context.appBrandIconColor,
                           label: 'Enviar feedback',
                           subtitle: 'Cuéntanos cómo mejorar la app',
                           onTap: () => _openFeedback(),
@@ -630,7 +630,7 @@ class _OwnerSettingsPageState extends ConsumerState<OwnerSettingsPage> {
                     },
                     color:
                         selected
-                            ? AppColors.headerBottom
+                            ? context.appBrandIconColor
                             : context.appTextPrimaryColor,
                   ),
                   title: Text(
@@ -973,7 +973,7 @@ class _SectionHeader extends StatelessWidget {
               color: AppColors.headerBottom.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, size: 17, color: AppColors.headerBottom),
+            child: Icon(icon, size: 17, color: context.appBrandIconColor),
           ),
           const SizedBox(width: 10),
           Column(
@@ -1301,7 +1301,7 @@ class _ThemeActionItem extends StatelessWidget {
                   shape: BoxShape.circle,
                 ),
                 alignment: Alignment.center,
-                child: Icon(icon, size: 20, color: AppColors.headerBottom),
+                child: Icon(icon, size: 20, color: iconColor),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -1546,7 +1546,7 @@ class _RevenuePinDialogState extends State<_RevenuePinDialog> {
                       ),
                       child: Icon(
                         titleIcon,
-                        color: AppColors.headerBottom,
+                        color: context.appBrandIconColor,
                         size: 27,
                       ),
                     ),
@@ -1787,9 +1787,9 @@ class _RevenueOtpDialogState extends State<_RevenueOtpDialog> {
                           color: AppColors.headerBottom.withValues(alpha: 0.18),
                         ),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.mark_email_read_outlined,
-                        color: AppColors.headerBottom,
+                        color: context.appBrandIconColor,
                         size: 27,
                       ),
                     ),

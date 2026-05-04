@@ -351,8 +351,13 @@ class _DrawerItemState extends State<_DrawerItem> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = context.isDarkMode;
     final Color activeColor =
         widget.danger ? const Color(0xFFDC2626) : AppColors.headerBottom;
+    final Color defaultIconColor =
+        widget.danger
+            ? const Color(0xFFDC2626)
+            : (isDark ? const Color(0xFFE5E7EB) : AppColors.headerBottom);
     final Color bg =
         _pressed ? activeColor.withValues(alpha: 0.08) : Colors.transparent;
     final Color textColor =
@@ -393,7 +398,11 @@ class _DrawerItemState extends State<_DrawerItem> {
                                 : context.appIconCircleColor),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(widget.icon, size: 18, color: activeColor),
+                  child: Icon(
+                    widget.icon,
+                    size: 18,
+                    color: _pressed ? activeColor : defaultIconColor,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(

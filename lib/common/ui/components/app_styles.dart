@@ -205,4 +205,10 @@ extension AppThemeContext on BuildContext {
 
   Color get appIconCircleColor =>
       isDarkMode ? const Color(0xFF1E293B) : AppColors.iconCircle;
+
+  Color get appBrandIconColor =>
+      isDarkMode ? const Color(0xFFE5E7EB) : AppColors.headerBottom;
+
+  Color get appBrandTextColor =>
+      isDarkMode ? const Color(0xFFF8FAFC) : AppColors.headerBottom;
 }

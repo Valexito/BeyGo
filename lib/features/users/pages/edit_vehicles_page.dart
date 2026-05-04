@@ -695,7 +695,7 @@ class _VehicleCardState extends State<_VehicleCard> {
                         ? Icons.two_wheeler_outlined
                         : Icons.directions_bus_outlined,
                     size: 17,
-                    color: AppColors.headerBottom,
+                    color: context.appBrandIconColor,
                   ),
                 ),
                 const SizedBox(width: 10),

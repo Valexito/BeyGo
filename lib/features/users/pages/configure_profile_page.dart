@@ -871,7 +871,7 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage>
                                               child: Icon(
                                                 Icons.directions_car_outlined,
                                                 size: 18,
-                                                color: AppColors.headerBottom,
+                                                color: context.appBrandIconColor,
                                               ),
                                             ),
                                             const SizedBox(width: 12),
@@ -907,7 +907,7 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage>
                                             Icon(
                                               Icons.chevron_right_rounded,
                                               color:
-                                                  context.appTextSecondaryColor,
+                                                  context.appBrandIconColor,
                                               size: 20,
                                             ),
                                           ],
@@ -1041,7 +1041,7 @@ class _VehicleEditCardState extends State<_VehicleEditCard> {
                   child: Icon(
                     Icons.directions_car_outlined,
                     size: 17,
-                    color: AppColors.headerBottom,
+                    color: context.appBrandIconColor,
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -1347,7 +1347,7 @@ class _StyledField extends StatelessWidget {
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: TextStyle(fontSize: 13, color: context.appTextSecondaryColor),
-        prefixIcon: Icon(icon, size: 18, color: AppColors.headerBottom),
+        prefixIcon: Icon(icon, size: 18, color: context.appBrandIconColor),
         filled: true,
         fillColor: context.appInputBackgroundActive,
         contentPadding: const EdgeInsets.symmetric(
@@ -1554,7 +1554,7 @@ class _SectionHeader extends StatelessWidget {
             color: AppColors.headerBottom.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(9),
           ),
-          child: Icon(icon, size: 16, color: AppColors.headerBottom),
+          child: Icon(icon, size: 16, color: context.appBrandIconColor),
         ),
         const SizedBox(width: 9),
         Text(

@@ -463,8 +463,12 @@ class _ActionItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDanger = go == _Go.signout || go == _Go.deleteProfile;
-
-    final iconColor = isDanger ? Colors.red : AppColors.headerBottom;
+    final iconColor =
+        isDanger
+            ? Colors.red
+            : (context.isDarkMode
+                ? const Color(0xFFE5E7EB)
+                : AppColors.headerBottom);
     final textColor = isDanger ? Colors.red : context.appTextPrimaryColor;
     final bgColor =
         isDanger
@@ -566,7 +570,12 @@ class _Shortcut extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDanger = go == _Go.deleteProfile;
     final textColor = isDanger ? Colors.red : context.appTextPrimaryColor;
-    final iconColor = isDanger ? Colors.red : AppColors.headerBottom;
+    final iconColor =
+        isDanger
+            ? Colors.red
+            : (context.isDarkMode
+                ? const Color(0xFFE5E7EB)
+                : AppColors.headerBottom);
     final bgColor =
         isDanger
             ? Colors.red.withValues(alpha: 0.08)

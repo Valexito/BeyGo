@@ -51,7 +51,8 @@ class _MyPasswordFieldState extends State<MyPasswordField> {
 
   Widget? _buildPrefix() {
     final icon = widget.prefixIcon ?? Icons.lock_outline;
-    final color = _active ? AppColors.headerBottom : AppColors.primary;
+    final color =
+        _active ? context.appBrandIconColor : context.appTextSecondaryColor;
 
     return Padding(
       padding: const EdgeInsetsDirectional.only(start: 8, end: 4),
@@ -110,7 +111,7 @@ class _MyPasswordFieldState extends State<MyPasswordField> {
         icon: Icon(
           _obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined,
           color:
-              _active ? AppColors.headerBottom : context.appTextSecondaryColor,
+              _active ? context.appBrandIconColor : context.appTextSecondaryColor,
         ),
       ),
     );
