@@ -73,35 +73,34 @@ flutter:
 
 # ──────────────────────────────────────────────────────────────────────────────
 # flutter_launcher_icons
-# 1) Coloca tu PNG en assets/branding/icon.png  (1024x1024, sin transparencia)
-# 2) Coloca el "foreground" de adaptive icon en assets/branding/icon_foreground.png
-#    (1024x1024, contenido centrado en un círculo de seguridad ~660px)
+# 1) Usa el maestro en assets/branding/BEYGO_icon_master_1024.png
+# 2) Usa el foreground adaptive en assets/branding/ic_launcher_foreground_432.png
 # 3) Corre:  dart run flutter_launcher_icons
 # ──────────────────────────────────────────────────────────────────────────────
 flutter_launcher_icons:
   android: "ic_launcher"
   ios: true
   remove_alpha_ios: true
-  image_path: "assets/branding/icon.png"
+  image_path: "assets/branding/BEYGO_icon_master_1024.png"
   min_sdk_android: 23
   # Azul marino del nuevo branding para que Android use el mismo look
   # premium/moderno del icono maestro.
   adaptive_icon_background: "#213F73"
-  adaptive_icon_foreground: "assets/branding/icon_foreground.png"
+  adaptive_icon_foreground: "assets/branding/ic_launcher_foreground_432.png"
   web:
     generate: false
 
 # ──────────────────────────────────────────────────────────────────────────────
 # flutter_native_splash
-# Coloca el logo en assets/branding/splash.png  (1152x1152 transparente recomendado)
+# Usa el foreground del logo para evitar el círculo oscuro del icono maestro
 # Corre:  dart run flutter_native_splash:create
 # ──────────────────────────────────────────────────────────────────────────────
 flutter_native_splash:
   # Splash alineado con el nuevo branding azul marino.
   color: "#213F73"
-  image: "assets/branding/splash.png"
+  image: "assets/branding/ic_launcher_foreground_432.png"
   android_12:
-    image: "assets/branding/splash.png"
+    image: "assets/branding/ic_launcher_foreground_432.png"
     icon_background_color: "#213F73"
   android: true
   ios: true

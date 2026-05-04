@@ -82,7 +82,13 @@ class AppHeader extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 14),
-                      const SizedBox(height: 10),
+                      const BeygoLogo(
+                        size: 42,
+                        padding: 4,
+                        borderRadius: 14,
+                        backgroundColor: Color(0xFF102648),
+                      ),
+                      const SizedBox(height: 12),
                       MyText(
                         text: title.toUpperCase(),
                         variant: MyTextVariant.title,

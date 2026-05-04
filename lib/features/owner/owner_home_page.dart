@@ -375,12 +375,11 @@ class _DashboardHeader extends StatelessWidget {
                   ),
                 ),
                 padding: const EdgeInsets.all(6),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(14),
-                  child: Image.asset(
-                    'assets/branding/icon.png',
-                    fit: BoxFit.cover,
-                  ),
+                child: const BeygoLogo(
+                  size: 42,
+                  padding: 4,
+                  borderRadius: 14,
+                  monogramOnly: true,
                 ),
               ),
               const SizedBox(width: 14),

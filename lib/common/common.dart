@@ -11,6 +11,7 @@ export 'services/google_directions_service.dart';
 export 'services/google_places_service.dart';
 export 'services/notification_service.dart';
 export 'ui/components/app_styles.dart';
+export 'ui/components/beygo_logo.dart';
 export 'ui/components/google_map_styles.dart';
 export 'ui/components/my_button.dart';
 export 'ui/components/my_password_field.dart';

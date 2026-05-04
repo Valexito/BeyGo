@@ -236,16 +236,11 @@ class _BrandBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: compact ? 30 : 36,
-            height: compact ? 30 : 36,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              image: const DecorationImage(
-                image: AssetImage('assets/branding/icon.png'),
-                fit: BoxFit.cover,
-              ),
-            ),
+          BeygoLogo(
+            size: compact ? 30 : 36,
+            padding: compact ? 3.5 : 4,
+            borderRadius: compact ? 10 : 12,
+            monogramOnly: true,
           ),
           SizedBox(width: compact ? 8 : 10),
           Column(
