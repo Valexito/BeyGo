@@ -19,7 +19,7 @@ class AppMapControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = accentColor ?? AppColors.headerBottom;
+    final accent = accentColor ?? context.appBrandIconColor;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -36,7 +36,7 @@ class AppMapControls extends StatelessWidget {
                     : Icons.my_location_rounded,
             onTap: onMyLocation,
             loading: loadingMyLocation,
-            accent: true,
+            accent: false,
             accentColor: accent,
           ),
         ],
@@ -89,7 +89,12 @@ class _MapCtrlBtn extends StatelessWidget {
               : Icon(
                 icon,
                 size: 20,
-                color: accent ? Colors.white : accentColor,
+                color:
+                    accent
+                        ? Colors.white
+                        : (context.isDarkMode
+                            ? context.appBrandIconColor
+                            : accentColor),
               ),
     ),
   );

@@ -143,7 +143,9 @@ class _ReservationsPageState extends ConsumerState<ReservationsPage>
                   },
                   tileColor:
                       selected
-                          ? AppColors.headerBottom.withValues(alpha: 0.10)
+                          ? (ctx.isDarkMode
+                              ? ctx.appBrandIconColor.withValues(alpha: 0.10)
+                              : AppColors.headerBottom.withValues(alpha: 0.10))
                           : ctx.appCardBackgroundSoft,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
@@ -153,16 +155,21 @@ class _ReservationsPageState extends ConsumerState<ReservationsPage>
                     style: TextStyle(
                       color:
                           selected
-                              ? AppColors.headerBottom
+                              ? (ctx.isDarkMode
+                                  ? ctx.appBrandTextColor
+                                  : AppColors.headerBottom)
                               : ctx.appTextPrimaryColor,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                   trailing:
                       selected
-                          ? const Icon(
+                          ? Icon(
                             Icons.check_rounded,
-                            color: AppColors.headerBottom,
+                            color:
+                                ctx.isDarkMode
+                                    ? ctx.appBrandIconColor
+                                    : AppColors.headerBottom,
                           )
                           : null,
                 );
@@ -452,9 +459,7 @@ class _ReservationsPageState extends ConsumerState<ReservationsPage>
                           ),
                           prefixIcon: Icon(
                             Icons.search_rounded,
-                            color: AppColors.headerBottom.withValues(
-                              alpha: 0.6,
-                            ),
+                            color: context.appTextSecondaryColor,
                             size: 20,
                           ),
                           suffixIcon:
@@ -742,7 +747,14 @@ class _EmptyReservationsState extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Icon(icon, size: 34, color: AppColors.headerBottom),
+              child: Icon(
+                icon,
+                size: 34,
+                color:
+                    context.isDarkMode
+                        ? context.appBrandIconColor
+                        : AppColors.headerBottom,
+              ),
             ),
             const SizedBox(height: 18),
             MyText(
@@ -782,6 +794,8 @@ class _ReservationsFilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final activeContentColor =
+        context.isDarkMode ? context.appBrandTextColor : activeColor;
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -807,7 +821,8 @@ class _ReservationsFilterChip extends StatelessWidget {
             Icon(
               icon,
               size: 14,
-              color: active ? activeColor : context.appTextSecondaryColor,
+              color:
+                  active ? activeContentColor : context.appTextSecondaryColor,
             ),
             const SizedBox(width: 6),
             ConstrainedBox(
@@ -818,7 +833,8 @@ class _ReservationsFilterChip extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: active ? activeColor : context.appTextPrimaryColor,
+                  color:
+                      active ? activeContentColor : context.appTextPrimaryColor,
                 ),
               ),
             ),

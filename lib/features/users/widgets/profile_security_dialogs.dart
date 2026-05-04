@@ -136,68 +136,48 @@ class ProfileSecurityDialogs {
               }
             }
 
-            return AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(22),
-              ),
-              title: const MyText(
-                text: 'Actualizar correo',
-                variant: MyTextVariant.title,
-                customColor: AppColors.headerBottom,
-              ),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    MyTextField(
-                      controller: newEmail,
-                      hintText: 'Nuevo correo electrónico',
-                      keyboardType: TextInputType.emailAddress,
-                      prefixIcon: Icons.mail_outline_rounded,
-                      margin: EdgeInsets.zero,
-                    ),
-                    const SizedBox(height: 12),
-                    MyTextField(
-                      controller: password,
-                      hintText: 'Contraseña actual',
-                      obscureText: obscurePassword,
-                      prefixIcon: Icons.lock_outline_rounded,
-                      margin: EdgeInsets.zero,
-                      suffix: IconButton(
-                        onPressed: () {
-                          setState(() => obscurePassword = !obscurePassword);
-                        },
-                        icon: Icon(
-                          obscurePassword
-                              ? Icons.visibility_off_outlined
-                              : Icons.visibility_outlined,
-                          color: AppColors.textSecondary,
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              actions: [
-                TextButton(
-                  onPressed:
-                      isLoading
-                          ? null
-                          : () => Navigator.of(dialogContext).pop(),
-                  child: const Text('Cancelar'),
-                ),
-                SizedBox(
-                  width: 150,
-                  child: MyButton(
-                    text: isLoading ? 'Guardando...' : 'Guardar',
-                    loading: isLoading,
-                    onTap: isLoading ? null : submit,
+            return _buildDialogShell(
+              context: context,
+              title: 'Actualizar correo',
+              icon: Icons.mail_outline_rounded,
+              body: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  MyTextField(
+                    controller: newEmail,
+                    hintText: 'Nuevo correo electrónico',
+                    keyboardType: TextInputType.emailAddress,
+                    prefixIcon: Icons.mail_outline_rounded,
                     margin: EdgeInsets.zero,
                   ),
-                ),
-              ],
+                  const SizedBox(height: 12),
+                  MyTextField(
+                    controller: password,
+                    hintText: 'Contraseña actual',
+                    obscureText: obscurePassword,
+                    prefixIcon: Icons.lock_outline_rounded,
+                    margin: EdgeInsets.zero,
+                    suffix: IconButton(
+                      onPressed: () {
+                        setState(() => obscurePassword = !obscurePassword);
+                      },
+                      icon: Icon(
+                        obscurePassword
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                        color: context.appTextSecondaryColor,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              actions: _buildDialogActions(
+                context: context,
+                isLoading: isLoading,
+                onCancel: () => Navigator.of(dialogContext).pop(),
+                onConfirm: submit,
+              ),
             );
           },
         );
@@ -288,100 +268,80 @@ class ProfileSecurityDialogs {
               }
             }
 
-            return AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(22),
-              ),
-              title: const MyText(
-                text: 'Actualizar contraseña',
-                variant: MyTextVariant.title,
-                customColor: AppColors.headerBottom,
-              ),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    MyTextField(
-                      controller: currentPassword,
-                      hintText: 'Contraseña actual',
-                      obscureText: obscureCurrent,
-                      prefixIcon: Icons.lock_outline_rounded,
-                      margin: EdgeInsets.zero,
-                      suffix: IconButton(
-                        onPressed: () {
-                          setState(() => obscureCurrent = !obscureCurrent);
-                        },
-                        icon: Icon(
-                          obscureCurrent
-                              ? Icons.visibility_off_outlined
-                              : Icons.visibility_outlined,
-                          color: AppColors.textSecondary,
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    MyTextField(
-                      controller: newPassword,
-                      hintText: 'Nueva contraseña',
-                      obscureText: obscureNew,
-                      prefixIcon: Icons.lock_reset_outlined,
-                      margin: EdgeInsets.zero,
-                      suffix: IconButton(
-                        onPressed: () {
-                          setState(() => obscureNew = !obscureNew);
-                        },
-                        icon: Icon(
-                          obscureNew
-                              ? Icons.visibility_off_outlined
-                              : Icons.visibility_outlined,
-                          color: AppColors.textSecondary,
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    MyTextField(
-                      controller: confirmPassword,
-                      hintText: 'Confirmar nueva contraseña',
-                      obscureText: obscureConfirm,
-                      prefixIcon: Icons.verified_user_outlined,
-                      margin: EdgeInsets.zero,
-                      suffix: IconButton(
-                        onPressed: () {
-                          setState(() => obscureConfirm = !obscureConfirm);
-                        },
-                        icon: Icon(
-                          obscureConfirm
-                              ? Icons.visibility_off_outlined
-                              : Icons.visibility_outlined,
-                          color: AppColors.textSecondary,
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              actions: [
-                TextButton(
-                  onPressed:
-                      isLoading
-                          ? null
-                          : () => Navigator.of(dialogContext).pop(),
-                  child: const Text('Cancelar'),
-                ),
-                SizedBox(
-                  width: 150,
-                  child: MyButton(
-                    text: isLoading ? 'Guardando...' : 'Guardar',
-                    loading: isLoading,
-                    onTap: isLoading ? null : submit,
+            return _buildDialogShell(
+              context: context,
+              title: 'Actualizar contraseña',
+              icon: Icons.lock_reset_outlined,
+              body: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  MyTextField(
+                    controller: currentPassword,
+                    hintText: 'Contraseña actual',
+                    obscureText: obscureCurrent,
+                    prefixIcon: Icons.lock_outline_rounded,
                     margin: EdgeInsets.zero,
+                    suffix: IconButton(
+                      onPressed: () {
+                        setState(() => obscureCurrent = !obscureCurrent);
+                      },
+                      icon: Icon(
+                        obscureCurrent
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                        color: context.appTextSecondaryColor,
+                        size: 20,
+                      ),
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 12),
+                  MyTextField(
+                    controller: newPassword,
+                    hintText: 'Nueva contraseña',
+                    obscureText: obscureNew,
+                    prefixIcon: Icons.lock_reset_outlined,
+                    margin: EdgeInsets.zero,
+                    suffix: IconButton(
+                      onPressed: () {
+                        setState(() => obscureNew = !obscureNew);
+                      },
+                      icon: Icon(
+                        obscureNew
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                        color: context.appTextSecondaryColor,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  MyTextField(
+                    controller: confirmPassword,
+                    hintText: 'Confirmar nueva contraseña',
+                    obscureText: obscureConfirm,
+                    prefixIcon: Icons.verified_user_outlined,
+                    margin: EdgeInsets.zero,
+                    suffix: IconButton(
+                      onPressed: () {
+                        setState(() => obscureConfirm = !obscureConfirm);
+                      },
+                      icon: Icon(
+                        obscureConfirm
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                        color: context.appTextSecondaryColor,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              actions: _buildDialogActions(
+                context: context,
+                isLoading: isLoading,
+                onCancel: () => Navigator.of(dialogContext).pop(),
+                onConfirm: submit,
+              ),
             );
           },
         );
@@ -397,20 +357,26 @@ class ProfileSecurityDialogs {
     showDialog(
       context: context,
       builder: (dialogContext) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(22),
+        return _buildDialogShell(
+          context: dialogContext,
+          title: title,
+          icon: Icons.info_outline_rounded,
+          body: Text(
+            message,
+            style: TextStyle(
+              fontSize: 14,
+              height: 1.45,
+              color: dialogContext.appTextPrimaryColor,
+            ),
           ),
-          title: MyText(
-            text: title,
-            variant: MyTextVariant.title,
-            customColor: AppColors.headerBottom,
-          ),
-          content: MyText(text: message, variant: MyTextVariant.body),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Aceptar'),
+            SizedBox(
+              width: double.infinity,
+              child: MyButton(
+                text: 'Aceptar',
+                onTap: () => Navigator.of(dialogContext).pop(),
+                margin: EdgeInsets.zero,
+              ),
             ),
           ],
         );
@@ -426,20 +392,26 @@ class ProfileSecurityDialogs {
     await showDialog(
       context: context,
       builder: (dialogContext) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(22),
+        return _buildDialogShell(
+          context: dialogContext,
+          title: title,
+          icon: Icons.mark_email_read_outlined,
+          body: Text(
+            message,
+            style: TextStyle(
+              fontSize: 14,
+              height: 1.45,
+              color: dialogContext.appTextPrimaryColor,
+            ),
           ),
-          title: MyText(
-            text: title,
-            variant: MyTextVariant.title,
-            customColor: AppColors.headerBottom,
-          ),
-          content: MyText(text: message, variant: MyTextVariant.body),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Aceptar'),
+            SizedBox(
+              width: double.infinity,
+              child: MyButton(
+                text: 'Aceptar',
+                onTap: () => Navigator.of(dialogContext).pop(),
+                margin: EdgeInsets.zero,
+              ),
             ),
           ],
         );
@@ -471,5 +443,110 @@ class ProfileSecurityDialogs {
       default:
         return e.message ?? 'Ocurrió un error inesperado.';
     }
+  }
+
+  static Widget _buildDialogShell({
+    required BuildContext context,
+    required String title,
+    required IconData icon,
+    required Widget body,
+    required List<Widget> actions,
+  }) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Container(
+        decoration: BoxDecoration(
+          color: context.appCardBackground,
+          borderRadius: BorderRadius.circular(28),
+          border: Border.all(color: context.appBorderColor),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(
+                alpha: context.isDarkMode ? 0.28 : 0.12,
+              ),
+              blurRadius: 26,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: context.appIconCircleColor,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: context.appBrandIconColor, size: 24),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: context.appTextPrimaryColor,
+                  letterSpacing: -0.3,
+                ),
+              ),
+              const SizedBox(height: 14),
+              body,
+              const SizedBox(height: 18),
+              ...actions,
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  static List<Widget> _buildDialogActions({
+    required BuildContext context,
+    required bool isLoading,
+    required VoidCallback onCancel,
+    required VoidCallback onConfirm,
+  }) {
+    return [
+      Row(
+        children: [
+          Expanded(
+            child: SizedBox(
+              height: 48,
+              child: OutlinedButton(
+                onPressed: isLoading ? null : onCancel,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: context.appTextSecondaryColor,
+                  backgroundColor: context.appCardBackgroundSoft,
+                  side: BorderSide(color: context.appBorderColor),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                child: const Text(
+                  'Cancelar',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: MyButton(
+              text: isLoading ? 'Guardando...' : 'Guardar',
+              loading: isLoading,
+              onTap: isLoading ? null : onConfirm,
+              margin: EdgeInsets.zero,
+              height: 48,
+            ),
+          ),
+        ],
+      ),
+    ];
   }
 }

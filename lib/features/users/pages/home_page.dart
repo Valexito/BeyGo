@@ -362,7 +362,7 @@ class _Tile extends StatelessWidget {
                 color: context.appIconCircleColor,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(icon, size: 18, color: AppColors.headerBottom),
+              child: Icon(icon, size: 18, color: context.appBrandIconColor),
             ),
             const SizedBox(width: 12),
             Expanded(

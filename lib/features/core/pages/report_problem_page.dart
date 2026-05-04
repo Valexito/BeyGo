@@ -302,9 +302,9 @@ class _ReportProblemPageState extends ConsumerState<ReportProblemPage> {
                                                 context.appTextSecondaryColor,
                                             fontSize: 13,
                                           ),
-                                          prefixIcon: const Icon(
+                                          prefixIcon: Icon(
                                             Icons.category_outlined,
-                                            color: AppColors.headerBottom,
+                                            color: context.appBrandIconColor,
                                           ),
                                           filled: true,
                                           fillColor: context.appInputBackground,

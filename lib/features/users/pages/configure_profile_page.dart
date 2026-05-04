@@ -10,32 +10,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:beygo/common/common.dart';
 import 'package:beygo/features/users/users.dart';
 
-// ─── Country code model ────────────────────────────────────────────────────────
-class _CountryCode {
-  final String flag;
-  final String name;
-  final String code;
-  const _CountryCode(this.flag, this.name, this.code);
-}
-
-const _kCountryCodes = [
-  _CountryCode('🇬🇹', 'Guatemala', '+502'),
-  _CountryCode('🇲🇽', 'México', '+52'),
-  _CountryCode('🇺🇸', 'Estados Unidos', '+1'),
-  _CountryCode('🇸🇻', 'El Salvador', '+503'),
-  _CountryCode('🇭🇳', 'Honduras', '+504'),
-  _CountryCode('🇳🇮', 'Nicaragua', '+505'),
-  _CountryCode('🇨🇷', 'Costa Rica', '+506'),
-  _CountryCode('🇵🇦', 'Panamá', '+507'),
-  _CountryCode('🇨🇴', 'Colombia', '+57'),
-  _CountryCode('🇪🇸', 'España', '+34'),
-  _CountryCode('🇦🇷', 'Argentina', '+54'),
-  _CountryCode('🇨🇱', 'Chile', '+56'),
-  _CountryCode('🇵🇪', 'Perú', '+51'),
-  _CountryCode('🇻🇪', 'Venezuela', '+58'),
-  _CountryCode('🇧🇷', 'Brasil', '+55'),
-];
-
 // ─── Vehicle edit entry ────────────────────────────────────────────────────────
 class _VehicleEditEntry {
   final String? firestoreId;
@@ -88,7 +62,7 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage>
 
   final _formKey = GlobalKey<FormState>();
 
-  _CountryCode _selectedCountry = _kCountryCodes.first; // GT default
+  AppCountryCode _selectedCountry = AppCountryCodes.defaultCode; // GT default
   String _gender = 'male';
   bool _saving = false;
   bool _loadingProfile = true;
@@ -125,19 +99,12 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage>
   }
 
   void _applyPhoneValue(String rawPhone) {
-    _CountryCode matched = _kCountryCodes.first;
-    String numberPart = rawPhone.trim();
-
-    for (final c in _kCountryCodes) {
-      if (numberPart.startsWith(c.code)) {
-        matched = c;
-        numberPart = numberPart.substring(c.code.length).trim();
-        break;
-      }
-    }
-
-    _selectedCountry = matched;
-    _phoneNumberCtrl.text = numberPart;
+    final parsed = AppCountryCode.parse(
+      rawPhone,
+      fallback: AppCountryCodes.defaultCode,
+    );
+    _selectedCountry = parsed.country;
+    _phoneNumberCtrl.text = parsed.number;
   }
 
   _VehicleEditEntry? _resolvePrimaryVehicleEntry() {
@@ -263,150 +230,13 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage>
     return ref.getDownloadURL();
   }
 
-  void _showCountryPicker() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (ctx) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.55,
-          minChildSize: 0.4,
-          maxChildSize: 0.75,
-          expand: false,
-          builder: (_, scrollCtrl) {
-            return Container(
-              decoration: BoxDecoration(
-                color: context.appCardBackground,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(28),
-                ),
-              ),
-              child: Column(
-                children: [
-                  // Handle + title — fixed
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-                    child: Column(
-                      children: [
-                        Center(
-                          child: Container(
-                            width: 40,
-                            height: 4,
-                            decoration: BoxDecoration(
-                              color: context.appBorderColor,
-                              borderRadius: BorderRadius.circular(99),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            'Código de país',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: context.appTextPrimaryColor,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Divider(color: context.appBorderColor, height: 1),
-                      ],
-                    ),
-                  ),
-                  // Scrollable list
-                  Expanded(
-                    child: ListView.builder(
-                      controller: scrollCtrl,
-                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-                      itemCount: _kCountryCodes.length,
-                      itemBuilder: (_, i) {
-                        final c = _kCountryCodes[i];
-                        final selected = c.code == _selectedCountry.code;
-                        return InkWell(
-                          onTap: () {
-                            setState(() => _selectedCountry = c);
-                            Navigator.pop(ctx);
-                          },
-                          borderRadius: BorderRadius.circular(12),
-                          child: Container(
-                            margin: const EdgeInsets.only(bottom: 4),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 12,
-                            ),
-                            decoration: BoxDecoration(
-                              color:
-                                  selected
-                                      ? AppColors.headerBottom.withValues(
-                                        alpha: 0.07,
-                                      )
-                                      : Colors.transparent,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color:
-                                    selected
-                                        ? AppColors.headerBottom.withValues(
-                                          alpha: 0.25,
-                                        )
-                                        : Colors.transparent,
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Text(
-                                  c.flag,
-                                  style: const TextStyle(fontSize: 22),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    c.name,
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                      color:
-                                          selected
-                                              ? AppColors.headerBottom
-                                              : context.appTextPrimaryColor,
-                                    ),
-                                  ),
-                                ),
-                                Text(
-                                  c.code,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w700,
-                                    color:
-                                        selected
-                                            ? AppColors.headerBottom
-                                            : context.appTextSecondaryColor,
-                                  ),
-                                ),
-                                if (selected) ...[
-                                  const SizedBox(width: 8),
-                                  Icon(
-                                    Icons.check_rounded,
-                                    color: AppColors.headerBottom,
-                                    size: 18,
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
+  Future<void> _showCountryPicker() async {
+    final picked = await AppCountryPicker.show(
+      context,
+      selected: _selectedCountry,
     );
+    if (picked == null || !mounted) return;
+    setState(() => _selectedCountry = picked);
   }
 
   Future<void> _save() async {
@@ -765,8 +595,8 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage>
                                           'Incluye tu código de país y número',
                                     ),
                                     const SizedBox(height: 6),
-                                    _PhoneField(
-                                      numberCtrl: _phoneNumberCtrl,
+                                    AppPhoneField(
+                                      numberController: _phoneNumberCtrl,
                                       selectedCountry: _selectedCountry,
                                       onPickCountry: _showCountryPicker,
                                     ),
@@ -1451,92 +1281,6 @@ class _ReadonlyField extends StatelessWidget {
   }
 }
 
-class _PhoneField extends StatelessWidget {
-  final TextEditingController numberCtrl;
-  final _CountryCode selectedCountry;
-  final VoidCallback onPickCountry;
-
-  const _PhoneField({
-    required this.numberCtrl,
-    required this.selectedCountry,
-    required this.onPickCountry,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: context.appInputBackgroundActive,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: context.appBorderColor),
-      ),
-      child: Row(
-        children: [
-          // Country code button
-          GestureDetector(
-            onTap: onPickCountry,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-              decoration: BoxDecoration(
-                border: Border(right: BorderSide(color: context.appBorderColor)),
-              ),
-              child: Row(
-                children: [
-                  Text(
-                    selectedCountry.flag,
-                    style: const TextStyle(fontSize: 20),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    selectedCountry.code,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.headerBottom,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Icon(
-                    Icons.keyboard_arrow_down_rounded,
-                    size: 16,
-                    color: AppColors.headerBottom.withValues(alpha: 0.6),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          // Number input
-          Expanded(
-            child: TextField(
-              controller: numberCtrl,
-              keyboardType: TextInputType.phone,
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'[0-9\s\-]')),
-              ],
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: context.appTextPrimaryColor,
-              ),
-              decoration: InputDecoration(
-                hintText: '5555 1234',
-                hintStyle: TextStyle(
-                  fontSize: 13,
-                  color: context.appTextSecondaryColor,
-                ),
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 14,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class _SectionHeader extends StatelessWidget {
   final IconData icon;

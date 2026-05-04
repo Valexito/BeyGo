@@ -188,7 +188,7 @@ class _EditVehiclesPageState extends State<EditVehiclesPage> {
                                     'Cancelar',
                                     style: TextStyle(
                                       fontWeight: FontWeight.w700,
-                                      color: AppColors.headerBottom,
+                                      color: context.appBrandTextColor,
                                       fontSize: 13,
                                     ),
                                   ),
@@ -465,7 +465,10 @@ class _EditVehiclesPageState extends State<EditVehiclesPage> {
                                         vertical: 13,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: context.appCardBackground,
+                                        color:
+                                            context.isDarkMode
+                                                ? context.appCardBackgroundSoft
+                                                : context.appCardBackground,
                                         borderRadius: BorderRadius.circular(16),
                                         border: Border.all(
                                           color: AppColors.headerBottom
@@ -488,7 +491,7 @@ class _EditVehiclesPageState extends State<EditVehiclesPage> {
                                             child: Icon(
                                               Icons.add_rounded,
                                               size: 17,
-                                              color: AppColors.headerBottom,
+                                              color: context.appBrandIconColor,
                                             ),
                                           ),
                                           const SizedBox(width: 8),
@@ -497,7 +500,7 @@ class _EditVehiclesPageState extends State<EditVehiclesPage> {
                                             style: TextStyle(
                                               fontSize: 14,
                                               fontWeight: FontWeight.w700,
-                                              color: AppColors.headerBottom,
+                                              color: context.appBrandTextColor,
                                             ),
                                           ),
                                         ],
@@ -527,7 +530,7 @@ class _EditVehiclesPageState extends State<EditVehiclesPage> {
                                           Icon(
                                             Icons.directions_car_outlined,
                                             size: 48,
-                                            color: AppColors.headerBottom
+                                            color: context.appBrandIconColor
                                                 .withValues(alpha: 0.3),
                                           ),
                                           const SizedBox(height: 12),
@@ -552,13 +555,17 @@ class _EditVehiclesPageState extends State<EditVehiclesPage> {
                           // ── Save button ──
                           Container(
                             padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                            color: context.appSectionBackground,
+                            color: context.appPageBackground,
                             child: MyButton(
                               text:
                                   _saving ? 'Guardando...' : 'Guardar cambios',
                               loading: _saving,
                               onTap: _saving ? null : _save,
                               margin: EdgeInsets.zero,
+                              color:
+                                  context.isDarkMode
+                                      ? AppColors.headerBottom
+                                      : null,
                             ),
                           ),
                         ],
@@ -708,7 +715,7 @@ class _VehicleCardState extends State<_VehicleCard> {
                     fontWeight: FontWeight.w700,
                     color:
                         widget.isPrimary
-                            ? AppColors.headerBottom
+                            ? context.appBrandTextColor
                             : context.appTextPrimaryColor,
                   ),
                 ),
@@ -728,7 +735,7 @@ class _VehicleCardState extends State<_VehicleCard> {
                       style: TextStyle(
                         fontSize: 9,
                         fontWeight: FontWeight.w800,
-                        color: AppColors.headerBottom,
+                        color: context.appBrandTextColor,
                       ),
                     ),
                   ),
@@ -904,14 +911,16 @@ class _VehicleCardState extends State<_VehicleCard> {
                       Icon(
                         Icons.credit_card_rounded,
                         size: 14,
-                        color: AppColors.headerBottom.withValues(alpha: 0.5),
+                        color: context.appBrandIconColor.withValues(alpha: 0.7),
                       ),
                       const SizedBox(width: 8),
                       Text(
                         'Placa: ',
                         style: TextStyle(
                           fontSize: 12,
-                          color: AppColors.headerBottom.withValues(alpha: 0.6),
+                          color: context.appBrandTextColor.withValues(
+                            alpha: 0.78,
+                          ),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -920,7 +929,7 @@ class _VehicleCardState extends State<_VehicleCard> {
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w900,
-                          color: AppColors.headerBottom,
+                          color: context.appBrandTextColor,
                           letterSpacing: 2,
                         ),
                       ),

@@ -8,28 +8,6 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:beygo/common/common.dart';
 import 'package:beygo/features/owner/owner.dart';
 import 'package:beygo/features/core/core.dart';
-// ─── Country code (same as configure_profile_page) ───────────────────────────
-class _CountryCode {
-  final String flag;
-  final String name;
-  final String code;
-  const _CountryCode(this.flag, this.name, this.code);
-}
-
-const _kCountryCodes = [
-  _CountryCode('🇬🇹', 'Guatemala', '+502'),
-  _CountryCode('🇲🇽', 'México', '+52'),
-  _CountryCode('🇺🇸', 'Estados Unidos', '+1'),
-  _CountryCode('🇸🇻', 'El Salvador', '+503'),
-  _CountryCode('🇭🇳', 'Honduras', '+504'),
-  _CountryCode('🇳🇮', 'Nicaragua', '+505'),
-  _CountryCode('🇨🇷', 'Costa Rica', '+506'),
-  _CountryCode('🇵🇦', 'Panamá', '+507'),
-  _CountryCode('🇨🇴', 'Colombia', '+57'),
-  _CountryCode('🇪🇸', 'España', '+34'),
-  _CountryCode('🇦🇷', 'Argentina', '+54'),
-];
-
 class BecomeOwnerPage extends ConsumerStatefulWidget {
   final VoidCallback? onBack;
   const BecomeOwnerPage({super.key, this.onBack});
@@ -67,7 +45,7 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
   TimeOfDay _closingHour = const TimeOfDay(hour: 18, minute: 0);
   int _cancellationMinutes = 5;
 
-  _CountryCode _selectedCountry = _kCountryCodes.first;
+  AppCountryCode _selectedCountry = AppCountryCodes.defaultCode;
 
   late final AnimationController _slideCtrl;
   late final Animation<Offset> _slideAnim;
@@ -109,148 +87,13 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
   }
 
   // ── Country picker ──────────────────────────────────────────────────────────
-  void _showCountryPicker() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder:
-          (ctx) => DraggableScrollableSheet(
-            initialChildSize: 0.55,
-            minChildSize: 0.4,
-            maxChildSize: 0.75,
-            expand: false,
-            builder:
-                (_, scrollCtrl) => Container(
-                  decoration: BoxDecoration(
-                    color: context.appCardBackground,
-                    borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(28),
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-                        child: Column(
-                          children: [
-                            Center(
-                              child: Container(
-                                width: 40,
-                                height: 4,
-                                decoration: BoxDecoration(
-                                  color: context.appBorderColor,
-                                  borderRadius: BorderRadius.circular(99),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 14),
-                            Align(
-                              alignment: Alignment.centerLeft,
-                              child: Text(
-                                'Código de país',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  color: context.appTextPrimaryColor,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            Divider(color: context.appBorderColor, height: 1),
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        child: ListView.builder(
-                          controller: scrollCtrl,
-                          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-                          itemCount: _kCountryCodes.length,
-                          itemBuilder: (_, i) {
-                            final c = _kCountryCodes[i];
-                            final selected = c.code == _selectedCountry.code;
-                            return InkWell(
-                              onTap: () {
-                                setState(() => _selectedCountry = c);
-                                Navigator.pop(ctx);
-                              },
-                              borderRadius: BorderRadius.circular(12),
-                              child: Container(
-                                margin: const EdgeInsets.only(bottom: 4),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 14,
-                                  vertical: 12,
-                                ),
-                                decoration: BoxDecoration(
-                                  color:
-                                      selected
-                                          ? AppColors.headerBottom.withValues(
-                                            alpha: 0.08,
-                                          )
-                                          : Colors.transparent,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color:
-                                        selected
-                                            ? AppColors.headerBottom
-                                                .withValues(alpha: 0.25)
-                                            : context.appBorderColor
-                                                .withValues(alpha: 0.18),
-                                  ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Text(
-                                      c.flag,
-                                      style: const TextStyle(fontSize: 22),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Text(
-                                        c.name,
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600,
-                                          color:
-                                              selected
-                                                  ? AppColors.headerBottom
-                                                  : context
-                                                      .appTextPrimaryColor,
-                                        ),
-                                      ),
-                                    ),
-                                    Text(
-                                      c.code,
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w700,
-                                        color:
-                                            selected
-                                                ? AppColors.headerBottom
-                                                : context
-                                                    .appTextSecondaryColor,
-                                      ),
-                                    ),
-                                    if (selected) ...[
-                                      const SizedBox(width: 8),
-                                      Icon(
-                                        Icons.check_rounded,
-                                        color: AppColors.headerBottom,
-                                        size: 18,
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-          ),
+  Future<void> _showCountryPicker() async {
+    final picked = await AppCountryPicker.show(
+      context,
+      selected: _selectedCountry,
     );
+    if (picked == null || !mounted) return;
+    setState(() => _selectedCountry = picked);
   }
 
   // ── Image pickers ───────────────────────────────────────────────────────────
@@ -555,12 +398,12 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            const Text(
+                            Text(
                               'Solicitud de proveedor',
                               style: TextStyle(
                                 fontSize: 22,
                                 fontWeight: FontWeight.w800,
-                                color: AppColors.headerBottom,
+                                color: context.appBrandTextColor,
                                 letterSpacing: -0.5,
                               ),
                             ),
@@ -653,8 +496,8 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
                               hint: 'Número con código de país',
                             ),
                             const SizedBox(height: 6),
-                            _PhoneField(
-                              numberCtrl: _phoneNumber,
+                            AppPhoneField(
+                              numberController: _phoneNumber,
                               selectedCountry: _selectedCountry,
                               onPickCountry: _showCountryPicker,
                             ),
@@ -770,12 +613,12 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
                                   fontSize: 13,
                                   color: context.appTextSecondaryColor,
                                 ),
-                                prefixIcon: const Padding(
-                                  padding: EdgeInsets.only(bottom: 40),
+                                prefixIcon: Padding(
+                                  padding: const EdgeInsets.only(bottom: 40),
                                   child: Icon(
                                     Icons.notes_outlined,
                                     size: 18,
-                                    color: AppColors.headerBottom,
+                                    color: context.appBrandIconColor,
                                   ),
                                 ),
                                 filled: true,
@@ -1098,7 +941,7 @@ class _SectionHeader extends StatelessWidget {
             color: AppColors.headerBottom.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(9),
           ),
-          child: Icon(icon, size: 16, color: AppColors.headerBottom),
+          child: Icon(icon, size: 16, color: context.appBrandIconColor),
         ),
         const SizedBox(width: 9),
         Text(
@@ -1203,92 +1046,6 @@ class _FormField extends StatelessWidget {
   }
 }
 
-class _PhoneField extends StatelessWidget {
-  final TextEditingController numberCtrl;
-  final _CountryCode selectedCountry;
-  final VoidCallback onPickCountry;
-
-  const _PhoneField({
-    required this.numberCtrl,
-    required this.selectedCountry,
-    required this.onPickCountry,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: context.appInputBackgroundActive,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: context.appBorderColor),
-      ),
-      child: Row(
-        children: [
-          GestureDetector(
-            onTap: onPickCountry,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-              decoration: BoxDecoration(
-                border: Border(
-                  right: BorderSide(color: context.appBorderColor),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Text(
-                    selectedCountry.flag,
-                    style: const TextStyle(fontSize: 20),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    selectedCountry.code,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.headerBottom,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Icon(
-                    Icons.keyboard_arrow_down_rounded,
-                    size: 16,
-                    color: AppColors.headerBottom.withValues(alpha: 0.6),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Expanded(
-            child: TextField(
-              controller: numberCtrl,
-              keyboardType: TextInputType.phone,
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'[0-9\s\-]')),
-              ],
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: context.appTextPrimaryColor,
-              ),
-              decoration: InputDecoration(
-                hintText: '5555 1234',
-                hintStyle: TextStyle(
-                  fontSize: 13,
-                  color: context.appTextSecondaryColor,
-                ),
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 14,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class _TimeButton extends StatelessWidget {
   final String label;
@@ -1317,7 +1074,7 @@ class _TimeButton extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(icon, size: 18, color: AppColors.headerBottom),
+            Icon(icon, size: 18, color: context.appBrandIconColor),
             const SizedBox(width: 8),
             Expanded(
               child: Column(
@@ -1344,7 +1101,7 @@ class _TimeButton extends StatelessWidget {
             Icon(
               Icons.edit_outlined,
               size: 14,
-              color: AppColors.headerBottom.withValues(alpha: 0.5),
+              color: context.appBrandIconColor.withValues(alpha: 0.7),
             ),
           ],
         ),
@@ -1436,10 +1193,10 @@ class _MapPickButton extends StatelessWidget {
                 color: AppColors.headerBottom.withValues(alpha: 0.10),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.map_outlined,
                 size: 18,
-                color: AppColors.headerBottom,
+                color: context.appBrandIconColor,
               ),
             ),
             const SizedBox(width: 10),
@@ -1448,7 +1205,7 @@ class _MapPickButton extends StatelessWidget {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
-                color: AppColors.headerBottom,
+                color: context.appBrandTextColor,
               ),
             ),
           ],
@@ -1489,10 +1246,10 @@ class _MapPickedCard extends StatelessWidget {
               color: AppColors.headerBottom.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.place_rounded,
               size: 18,
-              color: AppColors.headerBottom,
+              color: context.appBrandIconColor,
             ),
           ),
           const SizedBox(width: 12),
@@ -1500,12 +1257,12 @@ class _MapPickedCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Ubicación seleccionada',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.headerBottom,
+                    color: context.appBrandTextColor,
                   ),
                 ),
                 Text(
@@ -1519,10 +1276,10 @@ class _MapPickedCard extends StatelessWidget {
             ),
           ),
           IconButton(
-            icon: const Icon(
+            icon: Icon(
               Icons.edit_outlined,
               size: 18,
-              color: AppColors.headerBottom,
+              color: context.appBrandIconColor,
             ),
             onPressed: onEdit,
           ),
@@ -1601,7 +1358,7 @@ class _ParkingImagesGrid extends StatelessWidget {
                 children: [
                   Icon(
                     Icons.add_a_photo_outlined,
-                    color: AppColors.headerBottom,
+                    color: context.appBrandIconColor,
                     size: 22,
                   ),
                   const SizedBox(height: 4),
@@ -1609,7 +1366,7 @@ class _ParkingImagesGrid extends StatelessWidget {
                     '${images.length}/3',
                     style: TextStyle(
                       fontSize: 10,
-                      color: AppColors.headerBottom.withValues(alpha: 0.7),
+                      color: context.appBrandTextColor.withValues(alpha: 0.78),
                       fontWeight: FontWeight.w600,
                     ),
                   ),

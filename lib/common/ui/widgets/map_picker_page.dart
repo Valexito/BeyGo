@@ -290,10 +290,10 @@ class _MapPickerPageState extends State<MapPickerPage> {
                                               borderRadius:
                                                   BorderRadius.circular(9),
                                             ),
-                                            child: const Icon(
+                                            child: Icon(
                                               Icons.place_outlined,
                                               size: 16,
-                                              color: AppColors.headerBottom,
+                                              color: context.appTextSecondaryColor,
                                             ),
                                           ),
                                           const SizedBox(width: 10),
@@ -465,9 +465,9 @@ class _SearchBar extends StatelessWidget {
             fontSize: 13,
             color: context.appTextSecondaryColor,
           ),
-          prefixIcon: const Icon(
+          prefixIcon: Icon(
             Icons.search_rounded,
-            color: AppColors.headerBottom,
+            color: context.appTextSecondaryColor,
             size: 20,
           ),
           suffixIcon:

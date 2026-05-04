@@ -136,9 +136,9 @@ class _CountryPickerSheetState extends State<_CountryPickerSheet> {
       expand: false,
       builder:
           (_, scrollCtrl) => Container(
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+            decoration: BoxDecoration(
+              color: context.appCardBackground,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
             ),
             child: Column(
               children: [
@@ -153,41 +153,41 @@ class _CountryPickerSheetState extends State<_CountryPickerSheet> {
                           width: 40,
                           height: 4,
                           decoration: BoxDecoration(
-                            color: Colors.grey.shade300,
+                            color: context.appBorderColor,
                             borderRadius: BorderRadius.circular(99),
                           ),
                         ),
                       ),
                       const SizedBox(height: 14),
-                      const Text(
+                      Text(
                         'Código de país',
                         style: TextStyle(
                           fontSize: 17,
                           fontWeight: FontWeight.w800,
-                          color: Color(0xFF1E293B),
+                          color: context.appTextPrimaryColor,
                         ),
                       ),
                       const SizedBox(height: 10),
                       // Search
                       TextField(
                         controller: _searchCtrl,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
-                          color: Color(0xFF1E293B),
+                          color: context.appTextPrimaryColor,
                         ),
                         decoration: InputDecoration(
                           hintText: 'Buscar país...',
-                          hintStyle: const TextStyle(
+                          hintStyle: TextStyle(
                             fontSize: 13,
-                            color: Color(0xFF8A94A6),
+                            color: context.appTextSecondaryColor,
                           ),
-                          prefixIcon: const Icon(
+                          prefixIcon: Icon(
                             Icons.search_rounded,
                             size: 18,
-                            color: AppColors.headerBottom,
+                            color: context.appBrandIconColor,
                           ),
                           filled: true,
-                          fillColor: const Color(0xFFF1F5F9),
+                          fillColor: context.appInputBackground,
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 14,
                             vertical: 10,
@@ -199,7 +199,7 @@ class _CountryPickerSheetState extends State<_CountryPickerSheet> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      Divider(color: Colors.grey.shade100, height: 1),
+                      Divider(color: context.appBorderColor, height: 1),
                     ],
                   ),
                 ),
@@ -208,12 +208,12 @@ class _CountryPickerSheetState extends State<_CountryPickerSheet> {
                 Expanded(
                   child:
                       _filtered.isEmpty
-                          ? const Center(
+                          ? Center(
                             child: Text(
                               'Sin resultados',
                               style: TextStyle(
                                 fontSize: 13,
-                                color: Color(0xFF8A94A6),
+                                color: context.appTextSecondaryColor,
                               ),
                             ),
                           )
@@ -265,8 +265,8 @@ class _CountryPickerSheetState extends State<_CountryPickerSheet> {
                                             fontWeight: FontWeight.w600,
                                             color:
                                                 isSelected
-                                                    ? AppColors.headerBottom
-                                                    : const Color(0xFF3D4554),
+                                                    ? context.appBrandTextColor
+                                                    : context.appTextPrimaryColor,
                                           ),
                                         ),
                                       ),
@@ -275,20 +275,20 @@ class _CountryPickerSheetState extends State<_CountryPickerSheet> {
                                         style: TextStyle(
                                           fontSize: 14,
                                           fontWeight: FontWeight.w700,
-                                          color:
-                                              isSelected
-                                                  ? AppColors.headerBottom
-                                                  : const Color(0xFF6B7280),
-                                        ),
+                                        color:
+                                            isSelected
+                                                ? context.appBrandTextColor
+                                                : context.appTextSecondaryColor,
                                       ),
-                                      if (isSelected) ...[
-                                        const SizedBox(width: 8),
-                                        const Icon(
-                                          Icons.check_rounded,
-                                          color: AppColors.headerBottom,
-                                          size: 18,
-                                        ),
-                                      ],
+                                    ),
+                                    if (isSelected) ...[
+                                      const SizedBox(width: 8),
+                                      Icon(
+                                        Icons.check_rounded,
+                                        color: context.appBrandIconColor,
+                                        size: 18,
+                                      ),
+                                    ],
                                     ],
                                   ),
                                 ),
@@ -355,7 +355,7 @@ class AppPhoneField extends StatelessWidget {
                       color:
                           readOnly
                               ? context.appTextSecondaryColor
-                              : AppColors.headerBottom,
+                              : context.appBrandTextColor,
                     ),
                   ),
                   if (!readOnly) ...[
@@ -363,7 +363,7 @@ class AppPhoneField extends StatelessWidget {
                     Icon(
                       Icons.keyboard_arrow_down_rounded,
                       size: 16,
-                      color: AppColors.headerBottom.withValues(alpha: 0.6),
+                      color: context.appBrandIconColor.withValues(alpha: 0.7),
                     ),
                   ],
                 ],

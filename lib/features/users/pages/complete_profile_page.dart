@@ -1,4 +1,3 @@
-// lib/features/users/pages/complete_profile_page.dart
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -8,32 +7,6 @@ import 'package:beygo/common/common.dart';
 import 'package:beygo/features/users/users.dart';
 import 'package:beygo/features/auth/providers/auth_providers.dart'
     show signOutAndNavigateToAuth;
-
-// ─── Country code model ────────────────────────────────────────────────────────
-class _CountryCode {
-  final String flag;
-  final String name;
-  final String code;
-  const _CountryCode(this.flag, this.name, this.code);
-}
-
-const _kCountryCodes = [
-  _CountryCode('🇬🇹', 'Guatemala', '+502'),
-  _CountryCode('🇲🇽', 'México', '+52'),
-  _CountryCode('🇺🇸', 'Estados Unidos', '+1'),
-  _CountryCode('🇸🇻', 'El Salvador', '+503'),
-  _CountryCode('🇭🇳', 'Honduras', '+504'),
-  _CountryCode('🇳🇮', 'Nicaragua', '+505'),
-  _CountryCode('🇨🇷', 'Costa Rica', '+506'),
-  _CountryCode('🇵🇦', 'Panamá', '+507'),
-  _CountryCode('🇨🇴', 'Colombia', '+57'),
-  _CountryCode('🇪🇸', 'España', '+34'),
-  _CountryCode('🇦🇷', 'Argentina', '+54'),
-  _CountryCode('🇨🇱', 'Chile', '+56'),
-  _CountryCode('🇵🇪', 'Perú', '+51'),
-  _CountryCode('🇻🇪', 'Venezuela', '+58'),
-  _CountryCode('🇧🇷', 'Brasil', '+55'),
-];
 
 class CompleteProfilePage extends ConsumerStatefulWidget {
   final User user;
@@ -62,7 +35,7 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
   final List<_VehicleEntry> _vehicles = [];
   String _existingPhotoUrl = '';
 
-  _CountryCode _selectedCountry = _kCountryCodes.first;
+  AppCountryCode _selectedCountry = AppCountryCodes.defaultCode;
 
   late final AnimationController _slideController;
   late final Animation<Offset> _slideAnim;
@@ -163,19 +136,12 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
   void _applyPhoneValue(String rawPhone) {
     if (rawPhone.isEmpty) return;
 
-    _CountryCode matched = _kCountryCodes.first;
-    String numberPart = rawPhone.trim();
-
-    for (final c in _kCountryCodes) {
-      if (numberPart.startsWith(c.code)) {
-        matched = c;
-        numberPart = numberPart.substring(c.code.length).trim();
-        break;
-      }
-    }
-
-    _selectedCountry = matched;
-    _phoneNumberCtrl.text = numberPart;
+    final parsed = AppCountryCode.parse(
+      rawPhone,
+      fallback: AppCountryCodes.defaultCode,
+    );
+    _selectedCountry = parsed.country;
+    _phoneNumberCtrl.text = parsed.number;
   }
 
   Future<void> _goBack() async {
@@ -192,144 +158,13 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
     }
   }
 
-  void _showCountryPicker() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (ctx) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.55,
-          minChildSize: 0.4,
-          maxChildSize: 0.75,
-          expand: false,
-          builder: (_, scrollCtrl) {
-            return Container(
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-              ),
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-                    child: Column(
-                      children: [
-                        Center(
-                          child: Container(
-                            width: 40,
-                            height: 4,
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade300,
-                              borderRadius: BorderRadius.circular(99),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        const Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            'Código de país',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF1E293B),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Divider(color: Colors.grey.shade100, height: 1),
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    child: ListView.builder(
-                      controller: scrollCtrl,
-                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-                      itemCount: _kCountryCodes.length,
-                      itemBuilder: (_, i) {
-                        final c = _kCountryCodes[i];
-                        final selected = c.code == _selectedCountry.code;
-                        return InkWell(
-                          onTap: () {
-                            setState(() => _selectedCountry = c);
-                            Navigator.pop(ctx);
-                          },
-                          borderRadius: BorderRadius.circular(12),
-                          child: Container(
-                            margin: const EdgeInsets.only(bottom: 4),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 12,
-                            ),
-                            decoration: BoxDecoration(
-                              color:
-                                  selected
-                                      ? AppColors.headerBottom.withValues(alpha: 0.07)
-                                      : Colors.transparent,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color:
-                                    selected
-                                        ? AppColors.headerBottom.withValues(
-                                          alpha: 0.25,
-                                        )
-                                        : Colors.transparent,
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Text(
-                                  c.flag,
-                                  style: const TextStyle(fontSize: 22),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    c.name,
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                      color:
-                                          selected
-                                              ? AppColors.headerBottom
-                                              : const Color(0xFF3D4554),
-                                    ),
-                                  ),
-                                ),
-                                Text(
-                                  c.code,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w700,
-                                    color:
-                                        selected
-                                            ? AppColors.headerBottom
-                                            : const Color(0xFF6B7280),
-                                  ),
-                                ),
-                                if (selected) ...[
-                                  const SizedBox(width: 8),
-                                  Icon(
-                                    Icons.check_rounded,
-                                    color: AppColors.headerBottom,
-                                    size: 18,
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
+  Future<void> _showCountryPicker() async {
+    final picked = await AppCountryPicker.show(
+      context,
+      selected: _selectedCountry,
     );
+    if (picked == null || !mounted) return;
+    setState(() => _selectedCountry = picked);
   }
 
   Future<void> _save() async {
@@ -589,12 +424,12 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            const Text(
+                            Text(
                               'Completa tu perfil',
                               style: TextStyle(
                                 fontSize: 22,
                                 fontWeight: FontWeight.w800,
-                                color: AppColors.headerBottom,
+                                color: context.appBrandTextColor,
                                 letterSpacing: -0.5,
                               ),
                             ),
@@ -632,88 +467,10 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
                             const _FieldLabel('Teléfono'),
                             const SizedBox(height: 6),
                             // Phone field with country code picker
-                            Container(
-                              decoration: BoxDecoration(
-                                color: context.appInputBackgroundActive,
-                                borderRadius: BorderRadius.circular(14),
-                                border: Border.all(color: context.appBorderColor),
-                              ),
-                              child: Row(
-                                children: [
-                                  // Country code button
-                                  GestureDetector(
-                                    onTap: _showCountryPicker,
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 12,
-                                        vertical: 14,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        border: Border(
-                                          right: BorderSide(
-                                            color: context.appBorderColor,
-                                          ),
-                                        ),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          Text(
-                                            _selectedCountry.flag,
-                                            style: const TextStyle(
-                                              fontSize: 20,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 6),
-                                          Text(
-                                            _selectedCountry.code,
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w700,
-                                              color: AppColors.headerBottom,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Icon(
-                                            Icons.keyboard_arrow_down_rounded,
-                                            size: 16,
-                                            color: AppColors.headerBottom
-                                                .withValues(alpha: 0.6),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                  // Number input
-                                  Expanded(
-                                    child: TextField(
-                                      controller: _phoneNumberCtrl,
-                                      keyboardType: TextInputType.phone,
-                                      inputFormatters: [
-                                        FilteringTextInputFormatter.allow(
-                                          RegExp(r'[0-9\s\-]'),
-                                        ),
-                                      ],
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                        color: context.appTextPrimaryColor,
-                                      ),
-                                      decoration: InputDecoration(
-                                        hintText: '5555 1234',
-                                        hintStyle: TextStyle(
-                                          fontSize: 13,
-                                          color: context.appTextSecondaryColor,
-                                        ),
-                                        border: InputBorder.none,
-                                        contentPadding: const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 14,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
+                            AppPhoneField(
+                              selectedCountry: _selectedCountry,
+                              numberController: _phoneNumberCtrl,
+                              onPickCountry: _showCountryPicker,
                             ),
                             const SizedBox(height: 28),
 
@@ -745,7 +502,7 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
                                           Icon(
                                             Icons.add_rounded,
                                             size: 15,
-                                            color: AppColors.headerBottom,
+                                            color: context.appBrandIconColor,
                                           ),
                                           const SizedBox(width: 4),
                                           Text(
@@ -753,7 +510,7 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
                                             style: TextStyle(
                                               fontSize: 12,
                                               fontWeight: FontWeight.w700,
-                                              color: AppColors.headerBottom,
+                                              color: context.appBrandTextColor,
                                             ),
                                           ),
                                         ],
@@ -1039,7 +796,7 @@ class _VehicleCardState extends State<_VehicleCard> {
                     fontWeight: FontWeight.w700,
                     color:
                         widget.isPrimary
-                            ? AppColors.headerBottom
+                            ? context.appBrandTextColor
                             : context.appTextPrimaryColor,
                   ),
                 ),
@@ -1059,7 +816,7 @@ class _VehicleCardState extends State<_VehicleCard> {
                       style: TextStyle(
                         fontSize: 9,
                         fontWeight: FontWeight.w800,
-                        color: AppColors.headerBottom,
+                        color: context.appBrandTextColor,
                       ),
                     ),
                   ),
@@ -1233,14 +990,16 @@ class _VehicleCardState extends State<_VehicleCard> {
                       Icon(
                         Icons.credit_card_rounded,
                         size: 15,
-                        color: AppColors.headerBottom.withValues(alpha: 0.6),
+                        color: context.appBrandIconColor.withValues(alpha: 0.7),
                       ),
                       const SizedBox(width: 8),
                       Text(
                         'Placa: ',
                         style: TextStyle(
                           fontSize: 12,
-                          color: AppColors.headerBottom.withValues(alpha: 0.6),
+                          color: context.appBrandTextColor.withValues(
+                            alpha: 0.78,
+                          ),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -1249,7 +1008,7 @@ class _VehicleCardState extends State<_VehicleCard> {
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w900,
-                          color: AppColors.headerBottom,
+                          color: context.appBrandTextColor,
                           letterSpacing: 2,
                         ),
                       ),

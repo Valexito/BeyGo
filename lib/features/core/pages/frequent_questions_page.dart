@@ -197,9 +197,9 @@ class FrequentQuestionsPage extends StatelessWidget {
                                                 borderRadius:
                                                     BorderRadius.circular(18),
                                               ),
-                                          iconColor: AppColors.headerBottom,
+                                          iconColor: context.appBrandIconColor,
                                           collapsedIconColor:
-                                              AppColors.headerBottom,
+                                              context.appBrandIconColor,
                                           title: Row(
                                             crossAxisAlignment:
                                                 CrossAxisAlignment.start,
@@ -212,10 +212,10 @@ class FrequentQuestionsPage extends StatelessWidget {
                                                   shape: BoxShape.circle,
                                                 ),
                                                 alignment: Alignment.center,
-                                                child: const Icon(
+                                                child: Icon(
                                                   Icons.help_outline_rounded,
                                                   size: 18,
-                                                  color: AppColors.headerBottom,
+                                                  color: context.appBrandIconColor,
                                                 ),
                                               ),
                                               const SizedBox(width: 12),

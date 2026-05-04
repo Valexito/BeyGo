@@ -639,9 +639,9 @@ class _OwnerSettingsPageState extends ConsumerState<OwnerSettingsPage> {
                   ),
                   trailing:
                       selected
-                          ? const Icon(
+                          ? Icon(
                             Icons.check_rounded,
-                            color: AppColors.headerBottom,
+                            color: context.appBrandIconColor,
                           )
                           : null,
                   onTap: () async {
@@ -1301,7 +1301,7 @@ class _ThemeActionItem extends StatelessWidget {
                   shape: BoxShape.circle,
                 ),
                 alignment: Alignment.center,
-                child: Icon(icon, size: 20, color: iconColor),
+                child: Icon(icon, size: 20, color: context.appBrandIconColor),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -1835,9 +1835,9 @@ class _RevenueOtpDialogState extends State<_RevenueOtpDialog> {
                             color: AppColors.headerBottom.withValues(alpha: 0.10),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.alternate_email_rounded,
-                            color: AppColors.headerBottom,
+                            color: context.appBrandIconColor,
                             size: 18,
                           ),
                         ),
