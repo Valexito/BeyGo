@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:beygo/common/common.dart';
 import 'package:beygo/features/auth/providers/auth_providers.dart'
     show signOutAndNavigateToAuth;
-import 'package:beygo/features/users/users.dart';
 
 class VerifyEmailPage extends StatefulWidget {
   final User user;
@@ -54,13 +53,7 @@ class _VerifyEmailPageState extends State<VerifyEmailPage>
       if (!mounted) return;
 
       if (current != null && current.emailVerified) {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(
-            builder: (_) => CompleteProfilePage(user: current, isNewUser: true),
-          ),
-          (_) => false,
-        );
+        Navigator.of(context).pushNamedAndRemoveUntil('/auth', (_) => false);
         return;
       }
 
