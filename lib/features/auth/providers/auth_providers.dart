@@ -10,7 +10,7 @@ import 'package:beygo/features/users/users.dart';
 
 final authUserStreamProvider = StreamProvider<User?>((ref) {
   final auth = ref.watch(firebaseAuthProvider);
-  return auth.authStateChanges();
+  return auth.userChanges();
 });
 
 final googleSignInInstanceProvider = Provider<GoogleSignIn>((_) {

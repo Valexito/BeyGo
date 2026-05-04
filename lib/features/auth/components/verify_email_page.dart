@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:beygo/common/common.dart';
@@ -18,6 +20,7 @@ class _VerifyEmailPageState extends State<VerifyEmailPage>
   bool _resending = false;
   bool _resent = false;
   String? _errorMsg;
+  Timer? _pollTimer;
 
   late final AnimationController _slideCtrl;
   late final Animation<Offset> _slideAnim;
@@ -34,39 +37,59 @@ class _VerifyEmailPageState extends State<VerifyEmailPage>
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _slideCtrl, curve: Curves.easeOut));
     _slideCtrl.forward();
+    _startVerificationPolling();
   }
 
   @override
   void dispose() {
+    _pollTimer?.cancel();
     _slideCtrl.dispose();
     super.dispose();
   }
 
-  Future<void> _checkVerification() async {
-    setState(() {
-      _checking = true;
-      _errorMsg = null;
+  void _startVerificationPolling() {
+    _pollTimer?.cancel();
+    _pollTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (!mounted || _checking) return;
+      _checkVerification(showLoading: false);
     });
+  }
+
+  Future<void> _checkVerification({bool showLoading = true}) async {
+    if (showLoading) {
+      setState(() {
+        _checking = true;
+        _errorMsg = null;
+      });
+    }
     try {
-      await widget.user.reload();
-      final current = FirebaseAuth.instance.currentUser;
+      final auth = FirebaseAuth.instance;
+      await auth.currentUser?.reload();
+      final current = auth.currentUser;
       if (!mounted) return;
 
       if (current != null && current.emailVerified) {
+        _pollTimer?.cancel();
         Navigator.of(context).pushNamedAndRemoveUntil('/auth', (_) => false);
         return;
       }
 
-      setState(() {
-        _errorMsg =
-            'Tu correo aún no está verificado. Revisa tu bandeja de entrada o spam.';
-      });
+      if (showLoading) {
+        setState(() {
+          _errorMsg =
+              'Tu correo aún no está verificado. Revisa tu bandeja de entrada o spam.';
+        });
+      }
     } catch (_) {
-      setState(
-        () => _errorMsg = 'No se pudo verificar el estado. Intenta de nuevo.',
-      );
+      if (showLoading) {
+        setState(
+          () => _errorMsg = 'No se pudo verificar el estado. Intenta de nuevo.',
+        );
+      }
     } finally {
-      if (mounted) setState(() => _checking = false);
+      if (showLoading && mounted) {
+        setState(() => _checking = false);
+      }
     }
   }
 

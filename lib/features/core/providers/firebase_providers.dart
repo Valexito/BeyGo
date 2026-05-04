@@ -12,7 +12,7 @@ final firestoreProvider = Provider<FirebaseFirestore>((ref) {
 });
 
 final authStateChangesProvider = StreamProvider<User?>((ref) {
-  return ref.watch(firebaseAuthProvider).authStateChanges();
+  return ref.watch(firebaseAuthProvider).userChanges();
 });
 
 final currentUserProvider = Provider<User?>((ref) {
