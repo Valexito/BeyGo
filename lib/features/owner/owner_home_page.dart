@@ -41,6 +41,8 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
             context.isDarkMode
                 ? Colors.white.withValues(alpha: 0.88)
                 : context.appTextSecondaryColor;
+        final selectedNavColor =
+            context.isDarkMode ? Colors.white : const Color(0xFF1B3A57);
 
         return Scaffold(
           backgroundColor: context.appPageBackground,
@@ -69,7 +71,7 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
                 backgroundColor: context.appCardBackground,
                 indicatorColor:
                     context.isDarkMode
-                        ? AppColors.headerBottom.withValues(alpha: 0.22)
+                        ? context.appCardBackgroundSoft
                         : AppColors.primarySoft.withValues(alpha: 0.25),
                 labelTextStyle: WidgetStateProperty.resolveWith<TextStyle>((
                   states,
@@ -77,11 +79,8 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
                   final isSelected = states.contains(WidgetState.selected);
                   return TextStyle(
                     fontSize: 11,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                    color:
-                        isSelected
-                            ? AppColors.headerBottom
-                            : unselectedNavColor,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
+                    color: isSelected ? selectedNavColor : unselectedNavColor,
                   );
                 }),
                 destinations:
@@ -90,7 +89,7 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
                         icon: Icon(t.icon, color: unselectedNavColor),
                         selectedIcon: Icon(
                           t.icon,
-                          color: AppColors.headerBottom,
+                          color: selectedNavColor,
                         ),
                         label: t.label,
                       );
@@ -257,7 +256,10 @@ class _OwnerDashboardView extends ConsumerWidget {
                         ),
                         _StatCard(
                           icon: Icons.local_parking_rounded,
-                          iconColor: AppColors.headerBottom,
+                          iconColor:
+                              context.isDarkMode
+                                  ? context.appBrandIconColor
+                                  : AppColors.headerBottom,
                           label: 'Activas ahora',
                           value: '${stats.activeReservations}',
                         ),
@@ -1102,7 +1104,10 @@ class _OccupancyCard extends StatelessWidget {
                   const SizedBox(height: 6),
                   _SpaceBadge(
                     label: '${stats.totalSpaces} total',
-                    color: AppColors.headerBottom,
+                    color:
+                        context.isDarkMode
+                            ? context.appBrandTextColor
+                            : AppColors.headerBottom,
                   ),
                 ],
               ),
@@ -1234,8 +1239,8 @@ class _SectionTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      children: [
-        Icon(icon, size: 16, color: AppColors.headerBottom),
+        children: [
+        Icon(icon, size: 16, color: context.appBrandIconColor),
         const SizedBox(width: 7),
         Text(
           title,
@@ -1352,7 +1357,7 @@ class _ActivityTile extends StatelessWidget {
       case 'cancellation_requested':
         return const Color(0xFFF59E0B);
       default:
-        return AppColors.headerBottom;
+        return const Color(0xFF60A5FA);
     }
   }
 

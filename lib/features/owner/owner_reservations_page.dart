@@ -55,11 +55,11 @@ class _OwnerReservationsPageState extends ConsumerState<OwnerReservationsPage>
                 showBack: true,
               ),
               Transform.translate(
-                offset: const Offset(0, -24),
+                offset: const Offset(0, -8),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Material(
-                    elevation: 12,
+                    elevation: isDark ? 0 : 12,
                     color: context.appCardBackground,
                     borderRadius: BorderRadius.circular(24),
                     shadowColor: Colors.black.withValues(
@@ -78,17 +78,13 @@ class _OwnerReservationsPageState extends ConsumerState<OwnerReservationsPage>
                         indicator: BoxDecoration(
                           color:
                               isDark
-                                  ? AppColors.headerBottom.withValues(
-                                    alpha: 0.22,
-                                  )
+                                  ? context.appCardBackgroundSoft
                                   : const Color(0xFFEAF0F7),
                           borderRadius: BorderRadius.circular(18),
                         ),
-                        labelColor: AppColors.headerBottom,
-                        unselectedLabelColor:
-                            isDark
-                                ? Colors.white.withValues(alpha: 0.88)
-                                : Colors.black54,
+                        labelColor:
+                            isDark ? Colors.white : const Color(0xFF1B3A57),
+                        unselectedLabelColor: context.appTextSecondaryColor,
                         labelStyle: const TextStyle(
                           fontWeight: FontWeight.w700,
                           fontSize: 14,
@@ -816,7 +812,11 @@ class _EmptyState extends StatelessWidget {
     child: Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(icon, size: 40, color: AppColors.headerBottom),
+        Icon(
+          icon,
+          size: 40,
+          color: context.isDarkMode ? Colors.white : AppColors.headerBottom,
+        ),
         const SizedBox(height: 12),
         MyText(text: title, variant: MyTextVariant.bodyBold),
         const SizedBox(height: 6),

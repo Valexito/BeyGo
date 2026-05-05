@@ -467,12 +467,15 @@ class _LocationCard extends StatelessWidget {
               width: 42,
               height: 42,
               decoration: BoxDecoration(
-                color: AppColors.headerBottom.withValues(alpha: 0.12),
+                color:
+                    context.isDarkMode
+                        ? context.appCardBackgroundSoft
+                        : AppColors.headerBottom.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.map_outlined,
-                color: AppColors.headerBottom,
+                color: context.appBrandIconColor,
                 size: 20,
               ),
             ),
@@ -616,7 +619,11 @@ class _InputField extends StatelessWidget {
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: TextStyle(color: context.appTextSecondaryColor),
-            prefixIcon: Icon(icon, color: AppColors.headerBottom, size: 18),
+            prefixIcon: Icon(
+              icon,
+              color: context.appBrandIconColor,
+              size: 18,
+            ),
             filled: true,
             fillColor: context.appInputBackgroundActive,
             contentPadding: const EdgeInsets.symmetric(
@@ -667,9 +674,9 @@ class _TimeButton extends StatelessWidget {
         ),
         child: Row(
           children: [
-            const Icon(
+            Icon(
               Icons.schedule_rounded,
-              color: AppColors.headerBottom,
+              color: context.appBrandIconColor,
               size: 18,
             ),
             const SizedBox(width: 10),
@@ -727,7 +734,10 @@ class _AddImageChip extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.add_photo_alternate_outlined),
+            Icon(
+              Icons.add_photo_alternate_outlined,
+              color: context.appBrandIconColor,
+            ),
             const SizedBox(height: 6),
             Text(
               'Agregar',
@@ -781,7 +791,10 @@ class _LocalImageChip extends StatelessWidget {
             (_, __, ___) => Container(
               color: context.appInputBackground,
               alignment: Alignment.center,
-              child: const Icon(Icons.image_outlined),
+              child: Icon(
+                Icons.image_outlined,
+                color: context.appBrandIconColor,
+              ),
             ),
       ),
     );

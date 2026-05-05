@@ -120,14 +120,17 @@ class AppHeader extends StatelessWidget {
               child: TextButton.icon(
                 onPressed:
                     onBack ??
-                    () {
-                      Navigator.pushAndRemoveUntil(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const OwnerHomePage(),
-                        ),
-                        (route) => false,
-                      );
+                    () async {
+                      final popped = await Navigator.maybePop(context);
+                      if (!popped && context.mounted) {
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const OwnerHomePage(),
+                          ),
+                          (route) => false,
+                        );
+                      }
                     },
                 style: TextButton.styleFrom(
                   foregroundColor: Colors.white,

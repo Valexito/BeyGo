@@ -406,14 +406,19 @@ class _OwnerHistoryPageState extends ConsumerState<OwnerHistoryPage> {
                                         fontSize: 14,
                                         customColor:
                                             selected
-                                                ? f.color
+                                                ? (ctx.isDarkMode
+                                                    ? Colors.white
+                                                    : f.color)
                                                 : ctx.appTextPrimaryColor,
                                       ),
                                     ),
                                     if (selected)
                                       Icon(
                                         Icons.check_rounded,
-                                        color: f.color,
+                                        color:
+                                            ctx.isDarkMode
+                                                ? Colors.white
+                                                : f.color,
                                         size: 18,
                                       ),
                                   ],
@@ -484,16 +489,21 @@ class _OwnerHistoryPageState extends ConsumerState<OwnerHistoryPage> {
                     style: TextStyle(
                       color:
                           selected
-                              ? AppColors.headerBottom
+                              ? (ctx.isDarkMode
+                                  ? Colors.white
+                                  : AppColors.headerBottom)
                               : ctx.appTextPrimaryColor,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                   trailing:
                       selected
-                          ? const Icon(
+                          ? Icon(
                             Icons.check_rounded,
-                            color: AppColors.headerBottom,
+                            color:
+                                ctx.isDarkMode
+                                    ? Colors.white
+                                    : AppColors.headerBottom,
                           )
                           : null,
                 );
@@ -567,16 +577,21 @@ class _OwnerHistoryPageState extends ConsumerState<OwnerHistoryPage> {
                     style: TextStyle(
                       color:
                           selected
-                              ? AppColors.headerBottom
+                              ? (ctx.isDarkMode
+                                  ? Colors.white
+                                  : AppColors.headerBottom)
                               : ctx.appTextPrimaryColor,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                   trailing:
                       selected
-                          ? const Icon(
+                          ? Icon(
                             Icons.check_rounded,
-                            color: AppColors.headerBottom,
+                            color:
+                                ctx.isDarkMode
+                                    ? Colors.white
+                                    : AppColors.headerBottom,
                           )
                           : null,
                 );
@@ -612,7 +627,7 @@ class _OwnerHistoryPageState extends ConsumerState<OwnerHistoryPage> {
 
             // ── Search + Filter bar ──
             Transform.translate(
-              offset: const Offset(0, -20),
+              offset: const Offset(0, -8),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Column(
@@ -648,8 +663,8 @@ class _OwnerHistoryPageState extends ConsumerState<OwnerHistoryPage> {
                           ),
                           prefixIcon: Icon(
                             Icons.search_rounded,
-                            color: AppColors.headerBottom.withValues(
-                              alpha: 0.6,
+                            color: context.appBrandIconColor.withValues(
+                              alpha: 0.85,
                             ),
                             size: 20,
                           ),
@@ -936,7 +951,10 @@ class _FilterChip extends StatelessWidget {
             Icon(
               icon,
               size: 14,
-              color: active ? activeColor : context.appTextSecondaryColor,
+              color:
+                  active
+                      ? (context.isDarkMode ? Colors.white : activeColor)
+                      : context.appTextSecondaryColor,
             ),
             const SizedBox(width: 6),
             ConstrainedBox(
@@ -947,7 +965,10 @@ class _FilterChip extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: active ? activeColor : context.appTextPrimaryColor,
+                  color:
+                      active
+                          ? (context.isDarkMode ? Colors.white : activeColor)
+                          : context.appTextPrimaryColor,
                 ),
               ),
             ),
@@ -1323,7 +1344,12 @@ class _OwnerEmptyState extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Icon(icon, size: 32, color: AppColors.headerBottom),
+              child: Icon(
+                icon,
+                size: 32,
+                color:
+                    context.isDarkMode ? Colors.white : AppColors.headerBottom,
+              ),
             ),
             const SizedBox(height: 16),
             MyText(

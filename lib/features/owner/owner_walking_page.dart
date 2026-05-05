@@ -1136,15 +1136,15 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
                               Icon(
                                 Icons.grid_view_rounded,
                                 size: 13,
-                                color: AppColors.headerBottom,
+                                color: context.appBrandIconColor,
                               ),
                               const SizedBox(width: 6),
                               Text(
                                 'ESPACIOS'.toUpperCase(),
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w800,
-                                  color: AppColors.headerBottom,
+                                  color: context.appBrandTextColor,
                                   letterSpacing: 0.8,
                                 ),
                               ),
@@ -1272,12 +1272,18 @@ class _QuickAssignCard extends StatelessWidget {
                 width: 34,
                 height: 34,
                 decoration: BoxDecoration(
-                  color: AppColors.headerBottom.withValues(alpha: 0.10),
+                  color:
+                      context.isDarkMode
+                          ? context.appCardBackgroundSoft
+                          : AppColors.headerBottom.withValues(alpha: 0.10),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.flash_on_rounded,
-                  color: AppColors.headerBottom,
+                  color:
+                      context.isDarkMode
+                          ? context.appBrandIconColor
+                          : AppColors.headerBottom,
                   size: 18,
                 ),
               ),
@@ -1327,10 +1333,13 @@ class _QuickAssignCard extends StatelessWidget {
                     final number = (space['spaceNumber'] as num?)?.toInt() ?? 0;
                     return ActionChip(
                       onPressed: () => onAssign(space),
-                      avatar: const Icon(
+                      avatar: Icon(
                         Icons.directions_car_rounded,
                         size: 16,
-                        color: AppColors.headerBottom,
+                        color:
+                            context.isDarkMode
+                                ? context.appBrandIconColor
+                                : AppColors.headerBottom,
                       ),
                       label: Text(
                         'Espacio $number',
@@ -1340,7 +1349,10 @@ class _QuickAssignCard extends StatelessWidget {
                         ),
                       ),
                       side: BorderSide(
-                        color: AppColors.headerBottom.withValues(alpha: 0.16),
+                        color:
+                            context.isDarkMode
+                                ? context.appBorderColor
+                                : AppColors.headerBottom.withValues(alpha: 0.16),
                       ),
                       backgroundColor: context.appCardBackgroundSoft,
                     );
@@ -1465,7 +1477,10 @@ class _StatsBanner extends StatelessWidget {
             child: _BannerStat(
               label: 'Manuales',
               value: '${walkIns.length}',
-              color: AppColors.headerBottom,
+              color:
+                  context.isDarkMode
+                      ? context.appBrandTextColor
+                      : AppColors.headerBottom,
               icon: Icons.directions_car_filled_rounded,
             ),
           ),
@@ -1573,10 +1588,16 @@ class _SpaceTile extends StatelessWidget {
             ? BoxDecoration(
               color:
                   context.isDarkMode
-                      ? AppColors.headerBottom.withValues(alpha: 0.18)
+                      ? context.appCardBackgroundSoft
                       : AppColors.headerBottom.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.headerBottom, width: 1.3),
+              border: Border.all(
+                color:
+                    context.isDarkMode
+                        ? context.appBrandIconColor.withValues(alpha: 0.75)
+                        : AppColors.headerBottom,
+                width: 1.3,
+              ),
             )
             : BoxDecoration(
               color:
@@ -1591,7 +1612,9 @@ class _SpaceTile extends StatelessWidget {
         status == 'occupied' && !isWalkIn
             ? const Color(0xFFDC2626)
             : isWalkIn
-            ? AppColors.headerBottom
+            ? (context.isDarkMode
+                ? context.appBrandTextColor
+                : AppColors.headerBottom)
             : const Color(0xFF16A34A);
 
     final Color labelColor = iconColor;

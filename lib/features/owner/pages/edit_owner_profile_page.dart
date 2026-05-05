@@ -276,7 +276,7 @@ class _OwnerAvatar extends StatelessWidget {
                 image == null
                     ? const Icon(
                       Icons.person_rounded,
-                      color: AppColors.headerBottom,
+                      color: Colors.white,
                       size: 42,
                     )
                     : null,
@@ -406,7 +406,11 @@ class _InputField extends StatelessWidget {
               color: context.appTextSecondaryColor,
               fontSize: 13,
             ),
-            prefixIcon: Icon(icon, color: AppColors.headerBottom, size: 18),
+            prefixIcon: Icon(
+              icon,
+              color: context.appBrandIconColor,
+              size: 18,
+            ),
             filled: true,
             fillColor:
                 readOnly
