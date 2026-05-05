@@ -6,6 +6,15 @@ import 'package:uuid/uuid.dart';
 
 import 'package:beygo/features/core/providers/firebase_providers.dart';
 
+class ProviderRequestSubmitException implements Exception {
+  final String userMessage;
+
+  const ProviderRequestSubmitException(this.userMessage);
+
+  @override
+  String toString() => userMessage;
+}
+
 final submitProviderRequestProvider = Provider<
   Future<String> Function({
     required String uid,
@@ -43,7 +52,32 @@ final submitProviderRequestProvider = Provider<
 
     print('📤 Uploading to: $path');
     print('📦 Bytes size: ${file.length}');
-    await refSt.putData(file, metadata);
+    try {
+      await refSt.putData(file, metadata);
+    } on FirebaseException catch (e) {
+      final details =
+          '${e.code} ${(e.message ?? '').toLowerCase()} ${e.toString().toLowerCase()}';
+
+      if (details.contains('billing account') ||
+          details.contains('delinquent') ||
+          details.contains('httpresult: 402') ||
+          details.contains('code: 402') ||
+          details.contains('terminated the upload session')) {
+        throw const ProviderRequestSubmitException(
+          'No se pudo subir la documentación porque Firebase Storage del proyecto tiene la facturación deshabilitada. Esto no es un problema de tus datos ni del formulario; hay que reactivar la cuenta de billing del proyecto en Firebase/Google Cloud.',
+        );
+      }
+
+      if (e.code == 'unauthorized' || details.contains('permission')) {
+        throw const ProviderRequestSubmitException(
+          'No se pudo subir la documentación por permisos de Firebase Storage. Revisa las reglas o la autenticación del usuario.',
+        );
+      }
+
+      throw const ProviderRequestSubmitException(
+        'No se pudo subir la documentación del parqueo en este momento. Intenta de nuevo en unos minutos.',
+      );
+    }
     print('✅ Uploaded: $path');
 
     return refSt.getDownloadURL();
@@ -138,6 +172,16 @@ final submitProviderRequestProvider = Provider<
       }, SetOptions(merge: true));
       print('✅ SUCCESS submitProviderRequest');
       return requestNumber;
+    } on ProviderRequestSubmitException {
+      rethrow;
+    } on FirebaseException catch (e, st) {
+      print('❌ ERROR submitProviderRequest: $e');
+      print(st);
+      throw ProviderRequestSubmitException(
+        e.message?.trim().isNotEmpty == true
+            ? e.message!.trim()
+            : 'No se pudo enviar la solicitud del parqueo en este momento.',
+      );
     } catch (e, st) {
       print('❌ ERROR submitProviderRequest: $e');
       print(st);

@@ -1,4 +1,5 @@
 // lib/features/core/pages/userv/become_owner_page.dart
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -64,11 +65,7 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _slideCtrl, curve: Curves.easeOut));
     _slideCtrl.forward();
-
-    final user = _auth.currentUser;
-    if (user != null) {
-      _email.text = user.email ?? '';
-    }
+    _loadExistingContactData();
   }
 
   @override
@@ -94,6 +91,41 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
     );
     if (picked == null || !mounted) return;
     setState(() => _selectedCountry = picked);
+  }
+
+  Future<void> _loadExistingContactData() async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) return;
+
+      _email.text = user.email ?? '';
+
+      await user.reload();
+      final refreshedUser = _auth.currentUser ?? user;
+      final doc =
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(refreshedUser.uid)
+              .get();
+      final data = doc.data() ?? {};
+      final firestorePhone = (data['phone'] as String? ?? '').trim();
+      final authPhone =
+          (refreshedUser.phoneNumber ?? user.phoneNumber ?? '').trim();
+      final resolvedPhone =
+          firestorePhone.isNotEmpty ? firestorePhone : authPhone;
+
+      if (!mounted || resolvedPhone.isEmpty) return;
+
+      final parsed = AppCountryCode.parse(
+        resolvedPhone,
+        fallback: AppCountryCodes.defaultCode,
+      );
+
+      setState(() {
+        _selectedCountry = parsed.country;
+        _phoneNumber.text = parsed.number;
+      });
+    } catch (_) {}
   }
 
   // ── Image pickers ───────────────────────────────────────────────────────────
@@ -219,6 +251,9 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
 
       if (!mounted) return;
       Navigator.pop(context);
+    } on ProviderRequestSubmitException catch (e) {
+      if (!mounted) return;
+      _showSnack(e.userMessage);
     } catch (e) {
       if (!mounted) return;
       final msg = e.toString().toLowerCase();
