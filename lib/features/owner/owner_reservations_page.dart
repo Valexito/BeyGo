@@ -9,6 +9,7 @@ import 'package:beygo/common/common.dart';
 import 'package:beygo/features/owner/owner.dart';
 import 'package:beygo/features/core/core.dart';
 import 'package:beygo/features/reservations/reservations.dart';
+
 enum OwnerReservationsTab { active, pending }
 
 class OwnerReservationsPage extends ConsumerStatefulWidget {
@@ -217,10 +218,7 @@ class _ActiveCard extends ConsumerWidget {
   final Reservation reservation;
   final bool highlighted;
 
-  const _ActiveCard({
-    required this.reservation,
-    this.highlighted = false,
-  });
+  const _ActiveCard({required this.reservation, this.highlighted = false});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -328,18 +326,16 @@ class _ActiveCard extends ConsumerWidget {
                             contentPadding: const EdgeInsets.all(12),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(14),
-                              borderSide: BorderSide(
-                                color: ctx.appBorderColor,
-                              ),
+                              borderSide: BorderSide(color: ctx.appBorderColor),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(14),
-                              borderSide: BorderSide(
-                                color: ctx.appBorderColor,
-                              ),
+                              borderSide: BorderSide(color: ctx.appBorderColor),
                             ),
                             focusedBorder: const OutlineInputBorder(
-                              borderRadius: BorderRadius.all(Radius.circular(14)),
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(14),
+                              ),
                               borderSide: BorderSide(
                                 color: AppColors.headerBottom,
                                 width: 1.4,
@@ -358,7 +354,7 @@ class _ActiveCard extends ConsumerWidget {
                                   onPressed: () => Navigator.pop(ctx, false),
                                   style: OutlinedButton.styleFrom(
                                     side: BorderSide(
-                                      color: AppColors.headerBottom.withValues(
+                                      color: ctx.appBrandIconColor.withValues(
                                         alpha: .35,
                                       ),
                                     ),
@@ -367,10 +363,13 @@ class _ActiveCard extends ConsumerWidget {
                                     ),
                                     backgroundColor: ctx.appCardBackground,
                                   ),
-                                  child: const MyText(
+                                  child: MyText(
                                     text: 'Cancelar',
                                     variant: MyTextVariant.normalBold,
-                                    customColor: AppColors.headerBottom,
+                                    customColor:
+                                        ctx.isDarkMode
+                                            ? ctx.appBrandTextColor
+                                            : AppColors.headerBottom,
                                     fontSize: 14,
                                   ),
                                 ),
@@ -408,10 +407,7 @@ class _ApproveCard extends ConsumerStatefulWidget {
   final Reservation reservation;
   final bool highlighted;
 
-  const _ApproveCard({
-    required this.reservation,
-    this.highlighted = false,
-  });
+  const _ApproveCard({required this.reservation, this.highlighted = false});
 
   @override
   ConsumerState<_ApproveCard> createState() => _ApproveCardState();
@@ -601,7 +597,7 @@ class _ApproveCardState extends ConsumerState<_ApproveCard> {
                                   onPressed: () => Navigator.pop(ctx, false),
                                   style: OutlinedButton.styleFrom(
                                     side: BorderSide(
-                                      color: AppColors.headerBottom.withValues(
+                                      color: ctx.appBrandIconColor.withValues(
                                         alpha: .35,
                                       ),
                                       width: 1.2,
@@ -611,10 +607,13 @@ class _ApproveCardState extends ConsumerState<_ApproveCard> {
                                     ),
                                     backgroundColor: ctx.appCardBackground,
                                   ),
-                                  child: const MyText(
+                                  child: MyText(
                                     text: 'Cancelar',
                                     variant: MyTextVariant.normalBold,
-                                    customColor: AppColors.headerBottom,
+                                    customColor:
+                                        ctx.isDarkMode
+                                            ? ctx.appBrandTextColor
+                                            : AppColors.headerBottom,
                                     fontSize: 14,
                                   ),
                                 ),
@@ -777,7 +776,7 @@ class _Row extends StatelessWidget {
           color: context.appIconCircleColor,
           shape: BoxShape.circle,
         ),
-        child: Icon(icon, size: 16, color: AppColors.headerBottom),
+        child: Icon(icon, size: 16, color: context.appBrandIconColor),
       ),
       const SizedBox(width: 10),
       Expanded(
@@ -785,7 +784,10 @@ class _Row extends StatelessWidget {
           text: label,
           variant: MyTextVariant.bodyMuted,
           fontSize: 12,
-          customColor: AppColors.headerBottom,
+          customColor:
+              context.isDarkMode
+                  ? context.appBrandTextColor
+                  : AppColors.headerBottom,
         ),
       ),
       MyText(

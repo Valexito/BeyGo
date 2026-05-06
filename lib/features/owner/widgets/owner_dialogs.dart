@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:beygo/common/common.dart';
+
 class OwnerDialogs {
   static Future<bool?> showConfirmationDialog(
     BuildContext context, {
@@ -101,7 +102,9 @@ class OwnerDialogs {
                             onPressed: () => Navigator.pop(ctx, false),
                             style: OutlinedButton.styleFrom(
                               side: BorderSide(
-                                color: AppColors.headerBottom.withValues(alpha: 0.35),
+                                color: ctx.appBrandIconColor.withValues(
+                                  alpha: 0.35,
+                                ),
                                 width: 1.2,
                               ),
                               shape: RoundedRectangleBorder(
@@ -111,10 +114,13 @@ class OwnerDialogs {
                               ),
                               backgroundColor: ctx.appCardBackground,
                             ),
-                            child: const MyText(
+                            child: MyText(
                               text: 'Cancelar',
                               variant: MyTextVariant.normalBold,
-                              customColor: AppColors.headerBottom,
+                              customColor:
+                                  ctx.isDarkMode
+                                      ? ctx.appBrandTextColor
+                                      : AppColors.headerBottom,
                               fontSize: 14,
                             ),
                           ),

@@ -130,8 +130,7 @@ class _OwnerRequestsPageState extends ConsumerState<OwnerRequestsPage>
                         dividerColor: Colors.transparent,
                         labelColor:
                             isDark ? Colors.white : const Color(0xFF1B3A57),
-                        unselectedLabelColor:
-                            context.appTextSecondaryColor,
+                        unselectedLabelColor: context.appTextSecondaryColor,
                         labelStyle: const TextStyle(
                           fontWeight: FontWeight.w700,
                           fontSize: 14,
@@ -486,7 +485,7 @@ class _InfoRow extends StatelessWidget {
             color: context.appIconCircleColor,
             shape: BoxShape.circle,
           ),
-          child: Icon(icon, size: 16, color: AppColors.headerBottom),
+          child: Icon(icon, size: 16, color: context.appBrandIconColor),
         ),
         const SizedBox(width: 10),
         Expanded(
@@ -494,7 +493,10 @@ class _InfoRow extends StatelessWidget {
             text: label,
             variant: MyTextVariant.bodyMuted,
             fontSize: 12,
-            customColor: AppColors.headerBottom,
+            customColor:
+                context.isDarkMode
+                    ? context.appBrandTextColor
+                    : AppColors.headerBottom,
           ),
         ),
         MyText(

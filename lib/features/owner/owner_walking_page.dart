@@ -1578,7 +1578,13 @@ class _SpaceTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final decoration =
-        status == 'occupied' && !isWalkIn
+        status == 'requested'
+            ? BoxDecoration(
+              color: context.appCardBackground,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFF59E0B), width: 1.4),
+            )
+            : status == 'occupied' && !isWalkIn
             ? BoxDecoration(
               color:
                   context.isDarkMode
@@ -1612,7 +1618,9 @@ class _SpaceTile extends StatelessWidget {
             );
 
     final Color iconColor =
-        status == 'occupied' && !isWalkIn
+        status == 'requested'
+            ? const Color(0xFFF59E0B)
+            : status == 'occupied' && !isWalkIn
             ? const Color(0xFFDC2626)
             : isWalkIn
             ? (context.isDarkMode
@@ -1626,7 +1634,9 @@ class _SpaceTile extends StatelessWidget {
         isWalkIn && elapsedLabel != null ? elapsedLabel! : 'Espacio $number';
 
     final String subtitle =
-        status == 'occupied' && !isWalkIn
+        status == 'requested'
+            ? 'Solicitado'
+            : status == 'occupied' && !isWalkIn
             ? 'Ocupado'
             : isWalkIn
             ? (walkIn?.plate ?? 'Manual')
@@ -1640,7 +1650,10 @@ class _SpaceTile extends StatelessWidget {
             : null;
 
     return Opacity(
-      opacity: status == 'occupied' && !isWalkIn ? 0.92 : 1,
+      opacity:
+          (status == 'occupied' || status == 'requested') && !isWalkIn
+              ? 0.96
+              : 1,
       child: Material(
         color: Colors.transparent,
         child: InkWell(
