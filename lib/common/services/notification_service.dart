@@ -236,50 +236,48 @@ class NotificationService {
     final type = (data['type'] as String? ?? '').trim();
 
     if (route == 'reservations') {
-      nav.push(
-        MaterialPageRoute(
-          builder:
-              (_) => ReservationsPage(
-                initialReservationId:
-                    reservationId.isEmpty ? null : reservationId,
-              ),
+      nav.push(_notificationRoute(
+        ReservationsPage(
+          initialReservationId: reservationId.isEmpty ? null : reservationId,
         ),
-      );
+      ));
       return;
     }
 
     if (route == 'ownerRequests') {
-      nav.push(
-        MaterialPageRoute(
-          builder:
-              (_) => OwnerRequestsPage(
-                initialReservationId:
-                    reservationId.isEmpty ? null : reservationId,
-                initialTab:
-                    type == 'cancel_requested'
-                        ? OwnerRequestTab.cancellations
-                        : OwnerRequestTab.exits,
-              ),
+      nav.push(_notificationRoute(
+        OwnerRequestsPage(
+          initialReservationId: reservationId.isEmpty ? null : reservationId,
+          initialTab:
+              type == 'cancel_requested'
+                  ? OwnerRequestTab.cancellations
+                  : OwnerRequestTab.exits,
         ),
-      );
+      ));
       return;
     }
 
     if (route == 'ownerReservations') {
-      nav.push(
-        MaterialPageRoute(
-          builder:
-              (_) => OwnerReservationsPage(
-                initialReservationId:
-                    reservationId.isEmpty ? null : reservationId,
-                initialTab:
-                    type == 'new_reservation'
-                        ? OwnerReservationsTab.pending
-                        : OwnerReservationsTab.active,
-              ),
+      nav.push(_notificationRoute(
+        OwnerReservationsPage(
+          initialReservationId: reservationId.isEmpty ? null : reservationId,
+          initialTab:
+              type == 'new_reservation'
+                  ? OwnerReservationsTab.pending
+                  : OwnerReservationsTab.active,
         ),
-      );
+      ));
     }
+  }
+
+  Route<void> _notificationRoute(Widget child) {
+    return MaterialPageRoute<void>(
+      builder:
+          (context) => Scaffold(
+            backgroundColor: context.appPageBackground,
+            body: child,
+          ),
+    );
   }
 
   bool _shouldDisplayMessage(

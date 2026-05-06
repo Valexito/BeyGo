@@ -86,71 +86,73 @@ class _OwnerRequestsPageState extends ConsumerState<OwnerRequestsPage>
 
     return OwnerOnly(
       builder: (_) {
-        return MediaQuery.removePadding(
-          context: context,
-          removeTop: true,
-          child: Column(
-            children: [
-              const AppHeader(
-                title: 'Solicitudes',
-                subtitle: 'Gestiona salidas y cancelaciones',
-                showBack: true,
-              ),
+        return Scaffold(
+          backgroundColor: context.appPageBackground,
+          body: MediaQuery.removePadding(
+            context: context,
+            removeTop: true,
+            child: Column(
+              children: [
+                const AppHeader(
+                  title: 'Solicitudes',
+                  subtitle: 'Gestiona salidas y cancelaciones',
+                  showBack: true,
+                ),
 
-              Transform.translate(
-                offset: const Offset(0, -8),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 18),
-                  child: Material(
-                    elevation: isDark ? 0 : 12,
-                    color: context.appCardBackground,
-                    borderRadius: BorderRadius.circular(24),
-                    shadowColor: Colors.black.withValues(
-                      alpha: isDark ? 0.24 : 0.10,
-                    ),
-                    child: Container(
-                      height: 56,
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: context.appCardBackground,
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(color: context.appBorderColor),
+                Transform.translate(
+                  offset: const Offset(0, -8),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 18),
+                    child: Material(
+                      elevation: isDark ? 0 : 12,
+                      color: context.appCardBackground,
+                      borderRadius: BorderRadius.circular(24),
+                      shadowColor: Colors.black.withValues(
+                        alpha: isDark ? 0.24 : 0.10,
                       ),
-                      child: TabBar(
-                        controller: _tabController,
-                        labelPadding: EdgeInsets.zero,
-                        indicator: BoxDecoration(
-                          color:
-                              isDark
-                                  ? context.appCardBackgroundSoft
-                                  : const Color(0xFFEAF0F7),
-                          borderRadius: BorderRadius.circular(18),
+                      child: Container(
+                        height: 56,
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: context.appCardBackground,
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(color: context.appBorderColor),
                         ),
-                        indicatorSize: TabBarIndicatorSize.tab,
-                        dividerColor: Colors.transparent,
-                        labelColor:
-                            isDark ? Colors.white : const Color(0xFF1B3A57),
-                        unselectedLabelColor: context.appTextSecondaryColor,
-                        labelStyle: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 14,
+                        child: TabBar(
+                          controller: _tabController,
+                          labelPadding: EdgeInsets.zero,
+                          indicator: BoxDecoration(
+                            color:
+                                isDark
+                                    ? context.appCardBackgroundSoft
+                                    : const Color(0xFFEAF0F7),
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                          indicatorSize: TabBarIndicatorSize.tab,
+                          dividerColor: Colors.transparent,
+                          labelColor:
+                              isDark ? Colors.white : const Color(0xFF1B3A57),
+                          unselectedLabelColor: context.appTextSecondaryColor,
+                          labelStyle: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                          ),
+                          tabs: const [
+                            Tab(text: 'Salidas'),
+                            Tab(text: 'Cancelaciones'),
+                          ],
                         ),
-                        tabs: const [
-                          Tab(text: 'Salidas'),
-                          Tab(text: 'Cancelaciones'),
-                        ],
                       ),
                     ),
                   ),
                 ),
-              ),
 
-              /// CONTENT
-              Expanded(
-                child: ClipRect(
-                  child: TabBarView(
-                    controller: _tabController,
-                    children: [
+                /// CONTENT
+                Expanded(
+                  child: ClipRect(
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: [
                       /// EXIT
                       exitAsync.when(
                         loading:
@@ -244,11 +246,12 @@ class _OwnerRequestsPageState extends ConsumerState<OwnerRequestsPage>
                           );
                         },
                       ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },

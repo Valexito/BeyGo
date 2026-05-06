@@ -48,63 +48,65 @@ class _OwnerReservationsPageState extends ConsumerState<OwnerReservationsPage>
 
     return OwnerOnly(
       builder:
-          (_) => Column(
-            children: [
-              const AppHeader(
-                title: 'Reservaciones',
-                subtitle: 'Gestiona tus reservas y solicitudes',
-                showBack: true,
-              ),
-              Transform.translate(
-                offset: const Offset(0, -8),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Material(
-                    elevation: isDark ? 0 : 12,
-                    color: context.appCardBackground,
-                    borderRadius: BorderRadius.circular(24),
-                    shadowColor: Colors.black.withValues(
-                      alpha: isDark ? 0.24 : 0.10,
-                    ),
-                    child: Container(
-                      height: 54,
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: context.appCardBackground,
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(color: context.appBorderColor),
+          (_) => Scaffold(
+            backgroundColor: context.appPageBackground,
+            body: Column(
+              children: [
+                const AppHeader(
+                  title: 'Reservaciones',
+                  subtitle: 'Gestiona tus reservas y solicitudes',
+                  showBack: true,
+                ),
+                Transform.translate(
+                  offset: const Offset(0, -8),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Material(
+                      elevation: isDark ? 0 : 12,
+                      color: context.appCardBackground,
+                      borderRadius: BorderRadius.circular(24),
+                      shadowColor: Colors.black.withValues(
+                        alpha: isDark ? 0.24 : 0.10,
                       ),
-                      child: TabBar(
-                        controller: _tab,
-                        indicator: BoxDecoration(
-                          color:
-                              isDark
-                                  ? context.appCardBackgroundSoft
-                                  : const Color(0xFFEAF0F7),
-                          borderRadius: BorderRadius.circular(18),
+                      child: Container(
+                        height: 54,
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: context.appCardBackground,
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(color: context.appBorderColor),
                         ),
-                        labelColor:
-                            isDark ? Colors.white : const Color(0xFF1B3A57),
-                        unselectedLabelColor: context.appTextSecondaryColor,
-                        labelStyle: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 14,
+                        child: TabBar(
+                          controller: _tab,
+                          indicator: BoxDecoration(
+                            color:
+                                isDark
+                                    ? context.appCardBackgroundSoft
+                                    : const Color(0xFFEAF0F7),
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                          labelColor:
+                              isDark ? Colors.white : const Color(0xFF1B3A57),
+                          unselectedLabelColor: context.appTextSecondaryColor,
+                          labelStyle: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                          ),
+                          dividerColor: Colors.transparent,
+                          tabs: const [
+                            Tab(text: 'Activas'),
+                            Tab(text: 'Solicitadas'),
+                          ],
                         ),
-                        dividerColor: Colors.transparent,
-                        tabs: const [
-                          Tab(text: 'Activas'),
-                          Tab(text: 'Solicitadas'),
-                        ],
                       ),
                     ),
                   ),
                 ),
-              ),
-              Expanded(
-                child: ClipRect(
-                  child: TabBarView(
-                    controller: _tab,
-                    children: [
+                Expanded(
+                  child: ClipRect(
+                    child: TabBarView(
+                      controller: _tab,
+                      children: [
                       // Active
                       allAsync.when(
                         loading:
@@ -203,11 +205,12 @@ class _OwnerReservationsPageState extends ConsumerState<OwnerReservationsPage>
                           );
                         },
                       ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
     );
   }
