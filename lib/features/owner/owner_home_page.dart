@@ -5,6 +5,28 @@ import 'package:beygo/features/core/core.dart';
 import 'package:beygo/features/owner/owner.dart';
 import 'package:beygo/features/reservations/reservations.dart';
 
+class OwnerShellScope extends InheritedWidget {
+  final int currentIndex;
+  final ValueChanged<int> selectTab;
+
+  const OwnerShellScope({
+    super.key,
+    required this.currentIndex,
+    required this.selectTab,
+    required super.child,
+  });
+
+  static OwnerShellScope? maybeOf(BuildContext context) {
+    return context.dependOnInheritedWidgetOfExactType<OwnerShellScope>();
+  }
+
+  @override
+  bool updateShouldNotify(OwnerShellScope oldWidget) {
+    return currentIndex != oldWidget.currentIndex ||
+        selectTab != oldWidget.selectTab;
+  }
+}
+
 class OwnerHomePage extends StatefulWidget {
   const OwnerHomePage({super.key});
 
@@ -23,6 +45,11 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
     _TabItem('Historial', Icons.history_rounded),
     _TabItem('Ajustes', Icons.settings_outlined),
   ];
+
+  void _selectTab(int index) {
+    if (_index == index) return;
+    setState(() => _index = index);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,56 +71,70 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
         final selectedNavColor =
             context.isDarkMode ? Colors.white : const Color(0xFF1B3A57);
 
-        return Scaffold(
-          backgroundColor: context.appPageBackground,
-          body: pages[_index],
-          bottomNavigationBar: Container(
-            margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(
-                    alpha: context.isDarkMode ? 0.22 : 0.06,
-                  ),
-                  blurRadius: context.isDarkMode ? 18 : 12,
-                  offset: const Offset(0, 4),
+        return OwnerShellScope(
+          currentIndex: _index,
+          selectTab: _selectTab,
+          child: PopScope(
+            canPop: _index == 0,
+            onPopInvokedWithResult: (didPop, _) {
+              if (!didPop && _index != 0) {
+                _selectTab(0);
+              }
+            },
+            child: Scaffold(
+              backgroundColor: context.appPageBackground,
+              body: pages[_index],
+              bottomNavigationBar: Container(
+                margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(
+                        alpha: context.isDarkMode ? 0.22 : 0.06,
+                      ),
+                      blurRadius: context.isDarkMode ? 18 : 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                  border: Border.all(color: context.appBorderColor),
                 ),
-              ],
-              border: Border.all(color: context.appBorderColor),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(24),
-              child: NavigationBar(
-                selectedIndex: _index,
-                onDestinationSelected: (i) => setState(() => _index = i),
-                height: 76,
-                backgroundColor: context.appCardBackground,
-                indicatorColor:
-                    context.isDarkMode
-                        ? context.appCardBackgroundSoft
-                        : AppColors.primarySoft.withValues(alpha: 0.25),
-                labelTextStyle: WidgetStateProperty.resolveWith<TextStyle>((
-                  states,
-                ) {
-                  final isSelected = states.contains(WidgetState.selected);
-                  return TextStyle(
-                    fontSize: 11,
-                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
-                    color: isSelected ? selectedNavColor : unselectedNavColor,
-                  );
-                }),
-                destinations:
-                    _tabs.map((t) {
-                      return NavigationDestination(
-                        icon: Icon(t.icon, color: unselectedNavColor),
-                        selectedIcon: Icon(
-                          t.icon,
-                          color: selectedNavColor,
-                        ),
-                        label: t.label,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(24),
+                  child: NavigationBar(
+                    selectedIndex: _index,
+                    onDestinationSelected: _selectTab,
+                    height: 76,
+                    backgroundColor: context.appCardBackground,
+                    indicatorColor:
+                        context.isDarkMode
+                            ? context.appCardBackgroundSoft
+                            : AppColors.primarySoft.withValues(alpha: 0.25),
+                    labelTextStyle: WidgetStateProperty.resolveWith<TextStyle>((
+                      states,
+                    ) {
+                      final isSelected = states.contains(WidgetState.selected);
+                      return TextStyle(
+                        fontSize: 11,
+                        fontWeight:
+                            isSelected ? FontWeight.w700 : FontWeight.w400,
+                        color:
+                            isSelected ? selectedNavColor : unselectedNavColor,
                       );
-                    }).toList(),
+                    }),
+                    destinations:
+                        _tabs.map((t) {
+                          return NavigationDestination(
+                            icon: Icon(t.icon, color: unselectedNavColor),
+                            selectedIcon: Icon(
+                              t.icon,
+                              color: selectedNavColor,
+                            ),
+                            label: t.label,
+                          );
+                        }).toList(),
+                  ),
+                ),
               ),
             ),
           ),

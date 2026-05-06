@@ -96,9 +96,9 @@ class _ReserveSpaceContentState extends ConsumerState<ReserveSpaceContent> {
           ),
 
           DraggableScrollableSheet(
-            initialChildSize: 0.75,
-            minChildSize: 0.75,
-            maxChildSize: 0.95,
+            initialChildSize: 0.84,
+            minChildSize: 0.84,
+            maxChildSize: 0.86,
             builder: (context, scrollController) {
               return Container(
                 decoration: BoxDecoration(
@@ -118,7 +118,7 @@ class _ReserveSpaceContentState extends ConsumerState<ReserveSpaceContent> {
                             Padding(
                               padding: const EdgeInsets.fromLTRB(
                                 20,
-                                22,
+                                18,
                                 20,
                                 10,
                               ),
@@ -375,7 +375,7 @@ class _ReserveSpaceContentState extends ConsumerState<ReserveSpaceContent> {
                                   Icon(
                                     Icons.directions_car_rounded,
                                     size: 18,
-                                    color: AppColors.headerBottom,
+                                    color: context.appBrandIconColor,
                                   ),
                                   const SizedBox(width: 6),
                                   MyText(
@@ -648,7 +648,11 @@ class _VehicleSelectorCard extends StatelessWidget {
                   color: context.appIconCircleColor,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icon, color: AppColors.headerBottom, size: 20),
+                child: Icon(
+                  icon,
+                  color: context.appBrandIconColor,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -1114,7 +1118,12 @@ class _LegendDot extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 6),
-        MyText(text: label, variant: MyTextVariant.body, fontSize: 12),
+        MyText(
+          text: label,
+          variant: MyTextVariant.body,
+          fontSize: 12,
+          customColor: context.appTextPrimaryColor,
+        ),
       ],
     );
   }

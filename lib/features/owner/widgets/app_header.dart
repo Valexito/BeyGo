@@ -121,6 +121,12 @@ class AppHeader extends StatelessWidget {
                 onPressed:
                     onBack ??
                     () async {
+                      final ownerShell = OwnerShellScope.maybeOf(context);
+                      if (ownerShell != null && ownerShell.currentIndex != 0) {
+                        ownerShell.selectTab(0);
+                        return;
+                      }
+
                       final popped = await Navigator.maybePop(context);
                       if (!popped && context.mounted) {
                         Navigator.pushAndRemoveUntil(

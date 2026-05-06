@@ -1132,30 +1132,59 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
                       SliverToBoxAdapter(
                         child: Padding(
                           padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
-                          child: Row(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(
-                                Icons.grid_view_rounded,
-                                size: 13,
-                                color: context.appBrandIconColor,
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.grid_view_rounded,
+                                    size: 13,
+                                    color: context.appBrandIconColor,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'ESPACIOS'.toUpperCase(),
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w800,
+                                      color: context.appBrandTextColor,
+                                      letterSpacing: 0.8,
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  Text(
+                                    '${_spaces.length} total',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: context.appTextSecondaryColor,
+                                    ),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(width: 6),
-                              Text(
-                                'ESPACIOS'.toUpperCase(),
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w800,
-                                  color: context.appBrandTextColor,
-                                  letterSpacing: 0.8,
-                                ),
-                              ),
-                              const Spacer(),
-                              Text(
-                                '${_spaces.length} total',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: context.appTextSecondaryColor,
-                                ),
+                              const SizedBox(height: 12),
+                              Wrap(
+                                spacing: 14,
+                                runSpacing: 10,
+                                children: const [
+                                  _SpaceLegendDot(
+                                    color: Color(0xFF16A34A),
+                                    label: 'Libre',
+                                  ),
+                                  _SpaceLegendDot(
+                                    color: Color(0xFFEF4444),
+                                    label: 'Ocupado',
+                                  ),
+                                  _SpaceLegendDot(
+                                    color: AppColors.headerBottom,
+                                    label: 'Manual',
+                                    filled: true,
+                                  ),
+                                  _SpaceLegendDot(
+                                    color: Color(0xFFF59E0B),
+                                    label: 'Solicitado',
+                                  ),
+                                ],
                               ),
                             ],
                           ),
@@ -1554,6 +1583,45 @@ class _VertDivider extends StatelessWidget {
     color: context.appBorderColor,
     margin: const EdgeInsets.symmetric(horizontal: 8),
   );
+}
+
+class _SpaceLegendDot extends StatelessWidget {
+  final Color color;
+  final String label;
+  final bool filled;
+
+  const _SpaceLegendDot({
+    required this.color,
+    required this.label,
+    this.filled = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 14,
+          height: 14,
+          decoration: BoxDecoration(
+            color: filled ? color : Colors.transparent,
+            border: Border.all(color: color, width: 2),
+            borderRadius: BorderRadius.circular(999),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: context.appTextPrimaryColor,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 // ─── Space tile ────────────────────────────────────────────────────────────────

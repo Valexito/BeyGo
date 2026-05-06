@@ -170,9 +170,7 @@ class _ReserveSpacePageState extends ConsumerState<ReserveSpacePage> {
                   ),
                   tileColor:
                       selected
-                          ? AppColors.headerBottom.withValues(
-                            alpha: sheetContext.isDarkMode ? 0.16 : 0.08,
-                          )
+                          ? sheetContext.appCardBackgroundSoft
                           : Colors.transparent,
                   leading: Icon(
                     switch (vehicle.type) {
@@ -182,12 +180,15 @@ class _ReserveSpacePageState extends ConsumerState<ReserveSpacePage> {
                     },
                     color:
                         selected
-                            ? AppColors.headerBottom
+                            ? sheetContext.appBrandIconColor
                             : sheetContext.appTextPrimaryColor,
                   ),
                   title: Text(
                     vehicle.plate,
-                    style: TextStyle(color: sheetContext.appTextPrimaryColor),
+                    style: TextStyle(
+                      color: sheetContext.appTextPrimaryColor,
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                    ),
                   ),
                   subtitle: Text(
                     vehicle.type.label,
@@ -197,9 +198,9 @@ class _ReserveSpacePageState extends ConsumerState<ReserveSpacePage> {
                   ),
                   trailing:
                       selected
-                          ? const Icon(
+                          ? Icon(
                             Icons.check_rounded,
-                            color: AppColors.headerBottom,
+                            color: sheetContext.appBrandIconColor,
                           )
                           : vehicle.isPrimary
                           ? Text(
@@ -207,7 +208,7 @@ class _ReserveSpacePageState extends ConsumerState<ReserveSpacePage> {
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
-                              color: sheetContext.appTextSecondaryColor,
+                              color: sheetContext.appTextPrimaryColor,
                             ),
                           )
                           : null,

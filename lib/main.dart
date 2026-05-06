@@ -20,12 +20,15 @@ Future<void> main() async {
     );
   }
 
-  await FirebaseAppCheck.instance.activate(
-    androidProvider:
-        kDebugMode ? AndroidProvider.debug : AndroidProvider.playIntegrity,
-    appleProvider: AppleProvider.appAttest,
-  );
-  await FirebaseAppCheck.instance.setTokenAutoRefreshEnabled(true);
+  // In debug/emulator we skip App Check so auth/profile validation flows
+  // don't get blocked by local attestation noise during development.
+  if (!kDebugMode) {
+    await FirebaseAppCheck.instance.activate(
+      androidProvider: AndroidProvider.playIntegrity,
+      appleProvider: AppleProvider.appAttest,
+    );
+    await FirebaseAppCheck.instance.setTokenAutoRefreshEnabled(true);
+  }
 
   await AppPreferencesService.instance.init();
 

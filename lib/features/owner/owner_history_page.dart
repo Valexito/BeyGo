@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:beygo/common/common.dart';
 import 'package:beygo/features/owner/owner.dart';
@@ -351,6 +352,7 @@ class _OwnerHistoryPageState extends ConsumerState<OwnerHistoryPage> {
     if (_sendingReport) return;
 
     setState(() => _sendingReport = true);
+    _showPreparingReportDialog();
 
     try {
       final payload = <String, dynamic>{'periodType': periodType};
@@ -370,6 +372,7 @@ class _OwnerHistoryPageState extends ConsumerState<OwnerHistoryPage> {
       final periodLabel = '${data['periodLabel'] ?? 'el período'}';
 
       if (!mounted) return;
+      Navigator.of(context, rootNavigator: true).pop();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -379,6 +382,7 @@ class _OwnerHistoryPageState extends ConsumerState<OwnerHistoryPage> {
       );
     } on FirebaseFunctionsException catch (e) {
       if (!mounted) return;
+      Navigator.of(context, rootNavigator: true).pop();
       final message =
           e.message?.trim().isNotEmpty == true
               ? e.message!.trim()
@@ -388,12 +392,83 @@ class _OwnerHistoryPageState extends ConsumerState<OwnerHistoryPage> {
       ).showSnackBar(SnackBar(content: Text(message)));
     } catch (e) {
       if (!mounted) return;
+      Navigator.of(context, rootNavigator: true).pop();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('No se pudo enviar el resumen: $e')),
       );
     } finally {
       if (mounted) setState(() => _sendingReport = false);
     }
+  }
+
+  void _showPreparingReportDialog() {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return PopScope(
+          canPop: false,
+          child: Dialog(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            child: Container(
+              decoration: BoxDecoration(
+                color: dialogContext.appCardBackground,
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(color: dialogContext.appBorderColor),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.18),
+                    blurRadius: 24,
+                    offset: const Offset(0, 12),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.fromLTRB(24, 22, 24, 22),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: dialogContext.appIconCircleColor,
+                      shape: BoxShape.circle,
+                    ),
+                    alignment: Alignment.center,
+                    child: SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.6,
+                        color: dialogContext.appBrandIconColor,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  MyText(
+                    text: 'Estamos preparando tu reporte',
+                    variant: MyTextVariant.bodyBold,
+                    fontSize: 17,
+                    customColor: dialogContext.appTextPrimaryColor,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  MyText(
+                    text:
+                        'Generando resumen y PDF para enviarlo a tu correo...',
+                    variant: MyTextVariant.bodyMuted,
+                    fontSize: 13,
+                    customColor: dialogContext.appTextSecondaryColor,
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _showReportSheet() async {
@@ -472,6 +547,39 @@ class _OwnerHistoryPageState extends ConsumerState<OwnerHistoryPage> {
           ),
         );
       },
+    );
+  }
+
+  Future<void> _handleReportAction() async {
+    if (_sendingReport) return;
+
+    final preferences = ref.read(appPreferencesProvider);
+    final expectedPin = preferences.ownerRevenuePin?.trim();
+
+    if (expectedPin == null || expectedPin.length != 4) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Configura primero tu PIN de ingresos en Ajustes para enviar reportes.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    final valid = await _showRevenuePinVerifyDialog(expectedPin: expectedPin);
+    if (valid != true || !mounted) return;
+    await _showReportSheet();
+  }
+
+  Future<bool?> _showRevenuePinVerifyDialog({
+    required String expectedPin,
+  }) async {
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => _HistoryRevenuePinDialog(expectedPin: expectedPin),
     );
   }
 
@@ -936,7 +1044,7 @@ class _OwnerHistoryPageState extends ConsumerState<OwnerHistoryPage> {
                     Align(
                       alignment: Alignment.centerRight,
                       child: OutlinedButton.icon(
-                        onPressed: _sendingReport ? null : _showReportSheet,
+                        onPressed: _sendingReport ? null : _handleReportAction,
                         style: OutlinedButton.styleFrom(
                           side: BorderSide(
                             color: context.appBrandIconColor.withValues(
@@ -1159,6 +1267,220 @@ class _ReportOptionTile extends StatelessWidget {
               size: 20,
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HistoryRevenuePinDialog extends StatefulWidget {
+  const _HistoryRevenuePinDialog({required this.expectedPin});
+
+  final String expectedPin;
+
+  @override
+  State<_HistoryRevenuePinDialog> createState() =>
+      _HistoryRevenuePinDialogState();
+}
+
+class _HistoryRevenuePinDialogState extends State<_HistoryRevenuePinDialog> {
+  final _pinCtrl = TextEditingController();
+  String? _error;
+
+  @override
+  void dispose() {
+    _pinCtrl.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final pin = _pinCtrl.text.trim();
+    if (pin.length != 4 || int.tryParse(pin) == null) {
+      setState(() => _error = 'Ingresa tu PIN numérico de 4 dígitos.');
+      return;
+    }
+    if (pin != widget.expectedPin) {
+      setState(() => _error = 'PIN incorrecto.');
+      return;
+    }
+    Navigator.pop(context, true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 22, vertical: 24),
+      alignment: Alignment.center,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: screenHeight * 0.8),
+        child: SingleChildScrollView(
+          child: Container(
+            decoration: BoxDecoration(
+              color: context.appCardBackground,
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(color: context.appBorderColor),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(
+                    alpha: context.isDarkMode ? 0.28 : 0.10,
+                  ),
+                  blurRadius: 28,
+                  offset: const Offset(0, 14),
+                ),
+              ],
+            ),
+            padding: const EdgeInsets.fromLTRB(22, 20, 22, 18),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: AppColors.headerBottom.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: AppColors.headerBottom.withValues(alpha: 0.18),
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.lock_outline_rounded,
+                      color: context.appBrandIconColor,
+                      size: 27,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Verificar PIN de ingresos',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: context.appTextPrimaryColor,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Ingresa tu PIN para poder solicitar el reporte por correo.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: context.appTextSecondaryColor,
+                    fontSize: 13,
+                    height: 1.35,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                TextField(
+                  controller: _pinCtrl,
+                  keyboardType: TextInputType.number,
+                  textInputAction: TextInputAction.done,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  obscureText: true,
+                  maxLength: 4,
+                  style: TextStyle(color: context.appTextPrimaryColor),
+                  decoration: InputDecoration(
+                    counterText: '',
+                    hintText: 'PIN de 4 dígitos',
+                    hintStyle: TextStyle(color: context.appTextSecondaryColor),
+                    prefixIcon: Icon(
+                      Icons.pin_outlined,
+                      size: 18,
+                      color: context.appTextSecondaryColor,
+                    ),
+                    filled: true,
+                    fillColor: context.appInputBackground,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 18,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(18),
+                      borderSide: BorderSide(color: context.appBorderColor),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(18),
+                      borderSide: BorderSide(color: context.appBorderColor),
+                    ),
+                    focusedBorder: const OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(18)),
+                      borderSide: BorderSide(
+                        color: AppColors.headerBottom,
+                        width: 1.5,
+                      ),
+                    ),
+                  ),
+                  onSubmitted: (_) => _submit(),
+                ),
+                if (_error != null) ...[
+                  const SizedBox(height: 6),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDC2626).withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: const Color(0xFFDC2626).withValues(alpha: 0.18),
+                      ),
+                    ),
+                    child: Text(
+                      _error!,
+                      style: const TextStyle(
+                        color: Color(0xFFDC2626),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 18),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size.fromHeight(48),
+                          side: BorderSide(color: context.appBorderColor),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                        ),
+                        child: Text(
+                          'Cancelar',
+                          style: TextStyle(color: context.appTextPrimaryColor),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: _submit,
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: const Size.fromHeight(48),
+                          backgroundColor: AppColors.headerBottom,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                        ),
+                        child: const Text('Continuar'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
