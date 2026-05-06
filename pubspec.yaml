@@ -96,12 +96,12 @@ flutter_launcher_icons:
 # Corre:  dart run flutter_native_splash:create
 # ──────────────────────────────────────────────────────────────────────────────
 flutter_native_splash:
-  # Splash alineado con el nuevo branding azul marino.
-  color: "#213F73"
-  image: "assets/branding/ic_launcher_foreground_432.png"
+  # Splash alineado con login: mismo navy, mismo icono maestro y marca BeyGo.
+  color: "#2E4E86"
+  image: "assets/branding/splash_brand_1536.png"
   android_12:
-    image: "assets/branding/ic_launcher_foreground_432.png"
-    icon_background_color: "#213F73"
+    image: "assets/branding/splash_brand_1536.png"
+    icon_background_color: "#2E4E86"
   android: true
   ios: true
   web: false
