@@ -28,6 +28,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   GoogleMapController? _mapController;
   LatLng? _userLocation;
   bool _locatingUser = false;
+  int _panelCollapseSignal = 0;
 
   // Must match HomeBottomPanel.initialChildSize/minChildSize so the floating
   // controls render in the correct position from the very first frame.
@@ -62,7 +63,9 @@ class _HomePageState extends ConsumerState<HomePage> {
         curve: Curves.easeOut,
       );
     }
+    FocusManager.instance.primaryFocus?.unfocus();
     FocusScope.of(context).unfocus();
+    setState(() => _panelCollapseSignal++);
   }
 
   Future<void> _centerOnUser() async {
@@ -119,7 +122,11 @@ class _HomePageState extends ConsumerState<HomePage> {
               icon: Icons.menu_rounded,
               onTap: () {
                 _minimizePanel();
-                _scaffoldKey.currentState?.openDrawer();
+                Future.delayed(const Duration(milliseconds: 40), () {
+                  if (mounted) {
+                    _scaffoldKey.currentState?.openDrawer();
+                  }
+                });
               },
             ),
           ),
@@ -132,14 +139,18 @@ class _HomePageState extends ConsumerState<HomePage> {
               icon: Icons.settings_outlined,
               onTap: () {
                 _minimizePanel();
-                showModalBottomSheet(
-                  context: context,
-                  backgroundColor: Colors.transparent,
-                  builder:
-                      (_) => _SettingsSheet(
-                        themePreference: preferences.themePreference,
-                      ),
-                );
+                Future.delayed(const Duration(milliseconds: 40), () {
+                  if (mounted) {
+                    showModalBottomSheet(
+                      context: context,
+                      backgroundColor: Colors.transparent,
+                      builder:
+                          (_) => _SettingsSheet(
+                            themePreference: preferences.themePreference,
+                          ),
+                    );
+                  }
+                });
               },
             ),
           ),
@@ -181,6 +192,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             controller: _bottomCtrl,
             onPlaceSelected: _onPlaceSelected,
             userLocation: _userLocation,
+            collapseSignal: _panelCollapseSignal,
           ),
         ],
       ),

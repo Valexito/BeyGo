@@ -10,11 +10,13 @@ class HomeBottomPanel extends StatefulWidget {
     required this.controller,
     required this.onPlaceSelected,
     this.userLocation,
+    this.collapseSignal = 0,
   });
 
   final DraggableScrollableController controller;
   final ValueChanged<LatLng> onPlaceSelected;
   final LatLng? userLocation;
+  final int collapseSignal;
 
   @override
   State<HomeBottomPanel> createState() => _HomeBottomPanelState();
@@ -80,6 +82,24 @@ class _HomeBottomPanelState extends State<HomeBottomPanel> {
     );
   }
 
+  void _clearSearchState() {
+    _debounce?.cancel();
+    _searchController.clear();
+    _focus.unfocus();
+    _focus.canRequestFocus = false;
+    setState(() {
+      _hasFocus = false;
+      _suggestions = [];
+      _activeCategory = null;
+      _searching = false;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _focus.canRequestFocus = true;
+      }
+    });
+  }
+
   void _onSearchChanged(String value) {
     _debounce?.cancel();
     if (_activeCategory != null) setState(() => _activeCategory = null);
@@ -140,6 +160,9 @@ class _HomeBottomPanelState extends State<HomeBottomPanel> {
   @override
   void didUpdateWidget(covariant HomeBottomPanel oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.collapseSignal != widget.collapseSignal) {
+      _clearSearchState();
+    }
     final oldLoc = oldWidget.userLocation;
     final newLoc = widget.userLocation;
     if (oldLoc?.latitude != newLoc?.latitude ||
@@ -389,6 +412,7 @@ class _HomeBottomPanelState extends State<HomeBottomPanel> {
                                 child: TextField(
                                   controller: _searchController,
                                   focusNode: _focus,
+                                  onTap: () => _animateTo(_focusSize),
                                   onChanged: _onSearchChanged,
                                   textInputAction: TextInputAction.search,
                                   style: TextStyle(

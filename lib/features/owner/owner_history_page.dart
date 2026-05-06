@@ -5,6 +5,7 @@ import 'package:beygo/common/common.dart';
 import 'package:beygo/features/owner/owner.dart';
 import 'package:beygo/features/core/core.dart';
 import 'package:beygo/features/reservations/reservations.dart';
+
 // ─── Filter options ───────────────────────────────────────────────────────────
 enum _StateFilter {
   all,
@@ -636,15 +637,15 @@ class _OwnerHistoryPageState extends ConsumerState<OwnerHistoryPage> {
                     Container(
                       decoration: BoxDecoration(
                         color: context.appCardBackground,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(18),
                         border: Border.all(color: context.appBorderColor),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withValues(
-                              alpha: isDark ? 0.18 : 0.10,
+                              alpha: isDark ? 0.16 : 0.03,
                             ),
-                            blurRadius: 16,
-                            offset: const Offset(0, 4),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
                           ),
                         ],
                       ),
@@ -682,16 +683,17 @@ class _OwnerHistoryPageState extends ConsumerState<OwnerHistoryPage> {
                                     },
                                   )
                                   : null,
-                          filled: true,
-                          fillColor: context.appCardBackground,
+                          filled: false,
                           contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
+                            horizontal: 6,
                             vertical: 14,
                           ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide.none,
-                          ),
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          disabledBorder: InputBorder.none,
+                          errorBorder: InputBorder.none,
+                          focusedErrorBorder: InputBorder.none,
                         ),
                       ),
                     ),
@@ -1275,7 +1277,7 @@ class _MiniInfo extends StatelessWidget {
             color: context.appIconCircleColor,
             shape: BoxShape.circle,
           ),
-          child: Icon(icon, size: 14, color: AppColors.headerBottom),
+          child: Icon(icon, size: 14, color: context.appBrandIconColor),
         ),
         const SizedBox(width: 8),
         Expanded(
@@ -1296,7 +1298,11 @@ class _MiniInfo extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
-                  color: valueColor ?? context.appTextPrimaryColor,
+                  color:
+                      valueColor ??
+                      (context.isDarkMode
+                          ? const Color(0xFFF8FAFC)
+                          : context.appTextPrimaryColor),
                 ),
               ),
             ],

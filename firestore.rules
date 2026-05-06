@@ -258,6 +258,7 @@ service cloud.firestore {
           && request.resource.data.keys().hasOnly([
             'spaceId',
             'spaceNumber',
+            'reservationNumber',
             'customerName',
             'plate',
             'enteredAt',
@@ -268,6 +269,7 @@ service cloud.firestore {
           ])
           && request.resource.data.spaceId is string
           && request.resource.data.spaceNumber is int
+          && request.resource.data.reservationNumber is string
           && request.resource.data.customerName is string
           && request.resource.data.plate is string
           && request.resource.data.enteredAt is timestamp

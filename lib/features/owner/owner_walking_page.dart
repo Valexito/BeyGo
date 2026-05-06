@@ -47,9 +47,8 @@ class _WalkIn {
 
 String _generateManualReservationNumber() {
   final now = DateTime.now();
-  final ts = now.millisecondsSinceEpoch.toString().substring(8);
-  final random = (1000 + (now.microsecondsSinceEpoch % 9000)).toString();
-  return 'MAN-$ts$random';
+  final shortCode = 100 + (now.microsecondsSinceEpoch % 900);
+  return 'MAN-$shortCode';
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -404,243 +403,239 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
     return showDialog<_WalkInFormData>(
       context: context,
       barrierDismissible: false,
-      builder:
-          (ctx) => Dialog(
-            backgroundColor: Colors.transparent,
-            insetPadding: const EdgeInsets.symmetric(horizontal: 28),
-            child: Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(28),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.headerBottom.withValues(alpha: 0.18),
-                    blurRadius: 32,
-                    offset: const Offset(0, 12),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Header
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [AppColors.headerTop, AppColors.headerBottom],
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                      ),
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(28),
-                        topRight: Radius.circular(28),
-                      ),
+      builder: (ctx) {
+        final dialogBg = ctx.appCardBackground;
+        final fieldBg = ctx.appInputBackground;
+        final primaryText = ctx.appTextPrimaryColor;
+        final secondaryText = ctx.appTextSecondaryColor;
+        final brand = ctx.appBrandIconColor;
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 28),
+          child: Container(
+            decoration: BoxDecoration(
+              color: dialogBg,
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(color: ctx.appBorderColor),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.headerBottom.withValues(alpha: 0.18),
+                  blurRadius: 32,
+                  offset: const Offset(0, 12),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [AppColors.headerTop, AppColors.headerBottom],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
                     ),
-                    child: Column(
-                      children: [
-                        Container(
-                          width: 52,
-                          height: 52,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.18),
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.25),
-                              width: 1.2,
-                            ),
-                          ),
-                          child: const Icon(
-                            Icons.directions_car_rounded,
-                            color: Colors.white,
-                            size: 26,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          'Registrar entrada',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 17,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Espacio No. $spaceNumber',
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.75),
-                            fontSize: 13,
-                          ),
-                        ),
-                      ],
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(28),
+                      topRight: Radius.circular(28),
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Nombre del cliente',
-                          style: TextStyle(
-                            fontSize: 13,
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 52,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.18),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.25),
+                            width: 1.2,
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.directions_car_rounded,
+                          color: Colors.white,
+                          size: 26,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      const Text(
+                        'Registrar entrada',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Espacio No. $spaceNumber',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.75),
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Nombre del cliente',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: primaryText,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: nameCtrl,
+                        autofocus: true,
+                        textCapitalization: TextCapitalization.words,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: primaryText,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: 'Ej: Juan Pérez',
+                          hintStyle: TextStyle(
+                            fontSize: 14,
+                            color: secondaryText,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          filled: true,
+                          fillColor: fieldBg,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide(color: brand, width: 2),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      Text(
+                        'Placa del vehículo',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: primaryText,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: plateCtrl,
+                        textCapitalization: TextCapitalization.characters,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(
+                            RegExp(r'[a-zA-Z0-9]'),
+                          ),
+                          LengthLimitingTextInputFormatter(8),
+                        ],
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 3,
+                          color: primaryText,
+                        ),
+                        textAlign: TextAlign.center,
+                        decoration: InputDecoration(
+                          hintText: 'P123ABC',
+                          hintStyle: TextStyle(
+                            fontSize: 20,
+                            letterSpacing: 2,
+                            color: secondaryText.withValues(alpha: 0.5),
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF1E293B),
+                          ),
+                          filled: true,
+                          fillColor: fieldBg,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 16,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide(color: brand, width: 2),
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        TextField(
-                          controller: nameCtrl,
-                          autofocus: true,
-                          textCapitalization: TextCapitalization.words,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF0F172A),
-                          ),
-                          decoration: InputDecoration(
-                            hintText: 'Ej: Juan Pérez',
-                            hintStyle: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey.shade400,
-                              fontWeight: FontWeight.w600,
-                            ),
-                            filled: true,
-                            fillColor: const Color(0xFFF1F5F9),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 14,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide.none,
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(
-                                color: AppColors.headerBottom,
-                                width: 2,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        const Text(
-                          'Placa del vehículo',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF1E293B),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        TextField(
-                          controller: plateCtrl,
-                          textCapitalization: TextCapitalization.characters,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.allow(
-                              RegExp(r'[a-zA-Z0-9]'),
-                            ),
-                            LengthLimitingTextInputFormatter(8),
-                          ],
-                          style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 3,
-                            color: Color(0xFF0F172A),
-                          ),
-                          textAlign: TextAlign.center,
-                          decoration: InputDecoration(
-                            hintText: 'P123ABC',
-                            hintStyle: TextStyle(
-                              fontSize: 20,
-                              letterSpacing: 2,
-                              color: Colors.grey.shade300,
-                              fontWeight: FontWeight.w700,
-                            ),
-                            filled: true,
-                            fillColor: const Color(0xFFF1F5F9),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 16,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide.none,
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(
-                                color: AppColors.headerBottom,
-                                width: 2,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Solo letras y números, sin guiones',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey.shade400,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: SizedBox(
-                                height: 46,
-                                child: OutlinedButton(
-                                  onPressed: () => Navigator.pop(ctx),
-                                  style: OutlinedButton.styleFrom(
-                                    side: BorderSide(
-                                      color: AppColors.headerBottom.withValues(
-                                        alpha: 0.35,
-                                      ),
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(14),
-                                    ),
-                                    backgroundColor: Colors.white,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Solo letras y números, sin guiones',
+                        style: TextStyle(fontSize: 11, color: secondaryText),
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: SizedBox(
+                              height: 46,
+                              child: OutlinedButton(
+                                onPressed: () => Navigator.pop(ctx),
+                                style: OutlinedButton.styleFrom(
+                                  side: BorderSide(
+                                    color: brand.withValues(alpha: 0.35),
                                   ),
-                                  child: const Text(
-                                    'Cancelar',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                      color: AppColors.headerBottom,
-                                    ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  backgroundColor: ctx.appCardBackgroundSoft,
+                                ),
+                                child: Text(
+                                  'Cancelar',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    color: ctx.appBrandTextColor,
                                   ),
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: MyButton(
-                                text: 'Asignar',
-                                height: 46,
-                                margin: EdgeInsets.zero,
-                                onTap:
-                                    () => Navigator.pop(
-                                      ctx,
-                                      _WalkInFormData(
-                                        name: nameCtrl.text,
-                                        plate: plateCtrl.text,
-                                      ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: MyButton(
+                              text: 'Asignar',
+                              height: 46,
+                              margin: EdgeInsets.zero,
+                              onTap:
+                                  () => Navigator.pop(
+                                    ctx,
+                                    _WalkInFormData(
+                                      name: nameCtrl.text,
+                                      plate: plateCtrl.text,
                                     ),
-                              ),
+                                  ),
                             ),
-                          ],
-                        ),
-                      ],
-                    ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
+        );
+      },
     );
   }
 
@@ -654,336 +649,342 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
     return showDialog<bool>(
       context: context,
       barrierDismissible: false,
-      builder:
-          (ctx) => Dialog(
-            backgroundColor: Colors.transparent,
-            insetPadding: const EdgeInsets.symmetric(horizontal: 28),
-            child: Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(28),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.headerBottom.withValues(alpha: 0.18),
-                    blurRadius: 32,
-                    offset: const Offset(0, 12),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Color(0xFF16A34A), Color(0xFF15803D)],
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                      ),
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(28),
-                        topRight: Radius.circular(28),
-                      ),
+      builder: (ctx) {
+        final dialogBg = ctx.appCardBackground;
+        final cardBg = ctx.appCardBackgroundSoft;
+        final primaryText = ctx.appTextPrimaryColor;
+        final brand = ctx.appBrandIconColor;
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 28),
+          child: Container(
+            decoration: BoxDecoration(
+              color: dialogBg,
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(color: ctx.appBorderColor),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.headerBottom.withValues(alpha: 0.18),
+                  blurRadius: 32,
+                  offset: const Offset(0, 12),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [AppColors.headerTop, AppColors.headerBottom],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
                     ),
-                    child: Column(
-                      children: [
-                        Container(
-                          width: 52,
-                          height: 52,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.18),
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.25),
-                              width: 1.2,
-                            ),
-                          ),
-                          child: const Icon(
-                            Icons.logout_rounded,
-                            color: Colors.white,
-                            size: 26,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        const Text(
-                          'Registrar salida',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 17,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Espacio No. ${walkIn.spaceNumber}',
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.75),
-                            fontSize: 13,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'No. ${walkIn.reservationNumber}',
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.82),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(28),
+                      topRight: Radius.circular(28),
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      children: [
-                        // Summary card
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: AppColors.borderSoft),
-                          ),
-                          child: Column(
-                            children: [
-                              _SummaryRow(
-                                icon: Icons.receipt_long_rounded,
-                                label: 'Reservación',
-                                value: walkIn.reservationNumber,
-                              ),
-                              const SizedBox(height: 10),
-                              _SummaryRow(
-                                icon: Icons.person_outline_rounded,
-                                label: 'Cliente',
-                                value: walkIn.customerName,
-                              ),
-                              const SizedBox(height: 10),
-                              _SummaryRow(
-                                icon: Icons.directions_car_rounded,
-                                label: 'Placa',
-                                value: walkIn.plate,
-                              ),
-                              const SizedBox(height: 10),
-                              _SummaryRow(
-                                icon: Icons.login_rounded,
-                                label: 'Entrada',
-                                value: _fmtTime(walkIn.enteredAt),
-                              ),
-                              const SizedBox(height: 10),
-                              _SummaryRow(
-                                icon: Icons.timelapse_rounded,
-                                label: 'Tiempo',
-                                value: h > 0 ? '${h}h ${m}m' : '${m}m',
-                              ),
-                              const Padding(
-                                padding: EdgeInsets.symmetric(vertical: 12),
-                                child: Divider(height: 1),
-                              ),
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  const Text(
-                                    'Total a cobrar',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w700,
-                                      color: Color(0xFF1E293B),
-                                    ),
-                                  ),
-                                  Text(
-                                    'Q ${amount.toStringAsFixed(2)}',
-                                    style: const TextStyle(
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.w900,
-                                      color: Color(0xFF16A34A),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 52,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.18),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.25),
+                            width: 1.2,
                           ),
                         ),
-                        const SizedBox(height: 20),
-                        Row(
+                        child: const Icon(
+                          Icons.logout_rounded,
+                          color: Colors.white,
+                          size: 26,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      const Text(
+                        'Registrar salida',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Espacio No. ${walkIn.spaceNumber}',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.75),
+                          fontSize: 13,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'No. ${walkIn.reservationNumber}',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.82),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      // Summary card
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: cardBg,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: ctx.appBorderColor),
+                        ),
+                        child: Column(
                           children: [
-                            Expanded(
-                              child: SizedBox(
-                                height: 46,
-                                child: OutlinedButton(
-                                  onPressed: () => Navigator.pop(ctx, false),
-                                  style: OutlinedButton.styleFrom(
-                                    side: BorderSide(
-                                      color: AppColors.headerBottom.withValues(
-                                        alpha: 0.35,
-                                      ),
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(14),
-                                    ),
-                                    backgroundColor: Colors.white,
-                                  ),
-                                  child: const Text(
-                                    'Cancelar',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                      color: AppColors.headerBottom,
-                                    ),
-                                  ),
-                                ),
-                              ),
+                            _SummaryRow(
+                              icon: Icons.receipt_long_rounded,
+                              label: 'Reservación',
+                              value: walkIn.reservationNumber,
                             ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: SizedBox(
-                                height: 46,
-                                child: ElevatedButton(
-                                  onPressed: () => Navigator.pop(ctx, true),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF16A34A),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(14),
-                                    ),
-                                  ),
-                                  child: const Text(
-                                    'Confirmar cobro',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 13,
-                                    ),
+                            const SizedBox(height: 10),
+                            _SummaryRow(
+                              icon: Icons.person_outline_rounded,
+                              label: 'Cliente',
+                              value: walkIn.customerName,
+                            ),
+                            const SizedBox(height: 10),
+                            _SummaryRow(
+                              icon: Icons.directions_car_rounded,
+                              label: 'Placa',
+                              value: walkIn.plate,
+                            ),
+                            const SizedBox(height: 10),
+                            _SummaryRow(
+                              icon: Icons.login_rounded,
+                              label: 'Entrada',
+                              value: _fmtTime(walkIn.enteredAt),
+                            ),
+                            const SizedBox(height: 10),
+                            _SummaryRow(
+                              icon: Icons.timelapse_rounded,
+                              label: 'Tiempo',
+                              value: h > 0 ? '${h}h ${m}m' : '${m}m',
+                            ),
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 12),
+                              child: Divider(height: 1),
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Total a cobrar',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: primaryText,
                                   ),
                                 ),
-                              ),
+                                Text(
+                                  'Q ${amount.toStringAsFixed(2)}',
+                                  style: const TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w900,
+                                    color: Color(0xFF16A34A),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: SizedBox(
+                              height: 46,
+                              child: OutlinedButton(
+                                onPressed: () => Navigator.pop(ctx, false),
+                                style: OutlinedButton.styleFrom(
+                                  side: BorderSide(
+                                    color: brand.withValues(alpha: 0.35),
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  backgroundColor: ctx.appCardBackgroundSoft,
+                                ),
+                                child: Text(
+                                  'Cancelar',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    color: ctx.appBrandTextColor,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: SizedBox(
+                              height: 46,
+                              child: ElevatedButton(
+                                onPressed: () => Navigator.pop(ctx, true),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.headerBottom,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                ),
+                                child: const Text(
+                                  'Confirmar cobro',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
+        );
+      },
     );
   }
 
   void _showCheckoutSummary(_WalkIn walkIn, Duration elapsed, double amount) {
     showDialog(
       context: context,
-      builder:
-          (ctx) => Dialog(
-            backgroundColor: Colors.transparent,
-            insetPadding: const EdgeInsets.symmetric(horizontal: 28),
-            child: Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(28),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 28),
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Color(0xFF16A34A), Color(0xFF15803D)],
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                      ),
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(28),
-                        topRight: Radius.circular(28),
-                      ),
+      builder: (ctx) {
+        final dialogBg = ctx.appCardBackground;
+        final cardBg =
+            ctx.isDarkMode ? const Color(0xFF162033) : const Color(0xFFF4F8FD);
+        final borderColor = ctx.appBorderColor;
+        final secondaryText = ctx.appTextSecondaryColor;
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 28),
+          child: Container(
+            decoration: BoxDecoration(
+              color: dialogBg,
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(color: borderColor),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 28),
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [AppColors.headerTop, AppColors.headerBottom],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
                     ),
-                    child: Column(
-                      children: [
-                        const Icon(
-                          Icons.check_circle_rounded,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(28),
+                      topRight: Radius.circular(28),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      const Icon(
+                        Icons.check_circle_rounded,
+                        color: Colors.white,
+                        size: 52,
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        '¡Salida registrada!',
+                        style: TextStyle(
                           color: Colors.white,
-                          size: 52,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
                         ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          '¡Salida registrada!',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 17,
-                            fontWeight: FontWeight.w700,
-                          ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'No. ${walkIn.reservationNumber}',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.82),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'No. ${walkIn.reservationNumber}',
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.82),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                  Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      children: [
-                        // Big amount
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 20),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF0FDF4),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: const Color(
-                                0xFF16A34A,
-                              ).withValues(alpha: 0.2),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      // Big amount
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 20),
+                        decoration: BoxDecoration(
+                          color: cardBg,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: borderColor),
+                        ),
+                        child: Column(
+                          children: [
+                            Text(
+                              'Q ${amount.toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                fontSize: 40,
+                                fontWeight: FontWeight.w900,
+                                color: AppColors.headerBottom,
+                                height: 1,
+                              ),
                             ),
-                          ),
-                          child: Column(
-                            children: [
-                              Text(
-                                'Q ${amount.toStringAsFixed(2)}',
-                                style: const TextStyle(
-                                  fontSize: 40,
-                                  fontWeight: FontWeight.w900,
-                                  color: Color(0xFF16A34A),
-                                  height: 1,
-                                ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '${walkIn.customerName}  •  ${walkIn.plate}',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: secondaryText,
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                '${walkIn.customerName}  •  ${walkIn.plate}',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.grey.shade500,
-                                ),
-                              ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 16),
-                        SizedBox(
-                          width: double.infinity,
-                          child: MyButton(
-                            text: 'Listo',
-                            onTap: () => Navigator.pop(ctx),
-                            margin: EdgeInsets.zero,
-                          ),
+                      ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        child: MyButton(
+                          text: 'Listo',
+                          onTap: () => Navigator.pop(ctx),
+                          margin: EdgeInsets.zero,
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
+        );
+      },
     );
   }
 
@@ -1352,7 +1353,9 @@ class _QuickAssignCard extends StatelessWidget {
                         color:
                             context.isDarkMode
                                 ? context.appBorderColor
-                                : AppColors.headerBottom.withValues(alpha: 0.16),
+                                : AppColors.headerBottom.withValues(
+                                  alpha: 0.16,
+                                ),
                       ),
                       backgroundColor: context.appCardBackgroundSoft,
                     );
@@ -1908,29 +1911,29 @@ class _SummaryRow extends StatelessWidget {
         Container(
           width: 30,
           height: 30,
-          decoration: const BoxDecoration(
-            color: AppColors.iconCircle,
+          decoration: BoxDecoration(
+            color: context.appIconCircleColor,
             shape: BoxShape.circle,
           ),
-          child: Icon(icon, size: 15, color: AppColors.headerBottom),
+          child: Icon(icon, size: 15, color: context.appBrandIconColor),
         ),
         const SizedBox(width: 10),
         Expanded(
           child: Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
-              color: Color(0xFF8A94A6),
+              color: context.appTextSecondaryColor,
               fontWeight: FontWeight.w500,
             ),
           ),
         ),
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF1E293B),
+            color: context.appTextPrimaryColor,
           ),
         ),
       ],
