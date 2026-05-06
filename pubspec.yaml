@@ -92,15 +92,13 @@ flutter_launcher_icons:
 
 # ──────────────────────────────────────────────────────────────────────────────
 # flutter_native_splash
-# Usa el foreground del logo para evitar el círculo oscuro del icono maestro
+# Mantiene solo el color base; el hero visual real vive en LaunchSplashPage
+# para verse nítido, grande y consistente con LoginPage.
 # Corre:  dart run flutter_native_splash:create
 # ──────────────────────────────────────────────────────────────────────────────
 flutter_native_splash:
-  # Splash alineado con login: mismo navy, mismo icono maestro y marca BeyGo.
   color: "#2E4E86"
-  image: "assets/branding/splash_brand_1536.png"
   android_12:
-    image: "assets/branding/splash_brand_1536.png"
     icon_background_color: "#2E4E86"
   android: true
   ios: true

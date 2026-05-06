@@ -51,7 +51,7 @@ class MyApp extends ConsumerWidget {
       darkTheme: AppTheme.buildDark(),
       themeMode: preferences.themeMode,
       builder: (context, child) => SafeArea(child: child!),
-      home: const AuthGate(),
+      home: const LaunchSplashPage(),
       routes: {
         '/auth': (_) => const AuthGate(),
         '/home': (_) => const HomeSwitch(),

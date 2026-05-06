@@ -282,7 +282,7 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
                                 'Cancelar',
                                 style: TextStyle(
                                   fontWeight: FontWeight.w700,
-                                  color: AppColors.headerBottom,
+                                  color: context.appBrandTextColor,
                                   fontSize: 14,
                                 ),
                               ),

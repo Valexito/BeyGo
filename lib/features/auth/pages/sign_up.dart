@@ -137,8 +137,10 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
     final text = (v ?? '').trim();
     if (text.isEmpty) return 'Ingresa tu contraseña.';
     if (text.length < 8) return 'Mínimo 8 caracteres.';
-    if (!RegExp(r'[A-Z]').hasMatch(text)) return 'Agrega al menos una mayúscula.';
-    if (!RegExp(r'[a-z]').hasMatch(text)) return 'Agrega al menos una minúscula.';
+    if (!RegExp(r'[A-Z]').hasMatch(text))
+      return 'Agrega al menos una mayúscula.';
+    if (!RegExp(r'[a-z]').hasMatch(text))
+      return 'Agrega al menos una minúscula.';
     if (!RegExp(r'\d').hasMatch(text)) return 'Agrega al menos un número.';
     if (!RegExp(r'[^A-Za-z0-9]').hasMatch(text)) {
       return 'Agrega al menos un símbolo.';
@@ -155,10 +157,10 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
   @override
   Widget build(BuildContext context) {
     final screen = MediaQuery.of(context).size;
-    final headerGradient =
-        context.isDarkMode
-            ? const [Color(0xFF111827), Color(0xFF0F172A), Color(0xFF0B1220)]
-            : const [AppColors.headerTop, AppColors.headerBottom];
+    final heroTop =
+        screen.height < 760 ? screen.height * 0.06 : screen.height * 0.10;
+    final sheetTop =
+        screen.height < 760 ? screen.height * 0.26 : screen.height * 0.24;
 
     return Scaffold(
       backgroundColor: context.appPageBackground,
@@ -168,19 +170,8 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
           height: screen.height,
           child: Stack(
             children: [
-              Container(
-                height: screen.height * 0.38,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: headerGradient,
-                  ),
-                ),
-              ),
-              Positioned(top: 40, left: -20, child: _blob(90, 0.12)),
-              Positioned(top: -10, right: -10, child: _blob(120, 0.10)),
+              AuthHeaderBackground(height: screen.height * 0.38),
+              const AuthHeaderBlobs(),
 
               Positioned(
                 top: 15,
@@ -205,7 +196,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
               ),
 
               Positioned(
-                top: screen.height * 0.10,
+                top: heroTop,
                 left: 28,
                 right: 28,
                 child: Center(
@@ -213,12 +204,19 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
                     width: 80,
                     height: 80,
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.16),
+                      color: Colors.white.withValues(alpha: 0.12),
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.22),
-                        width: 1.4,
+                        color: Colors.white.withValues(alpha: 0.18),
+                        width: 1.1,
                       ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.16),
+                          blurRadius: 18,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
                     ),
                     child: const Icon(
                       Icons.person_add_alt_1_rounded,
@@ -230,7 +228,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
               ),
 
               Positioned(
-                top: screen.height * 0.24,
+                top: sheetTop,
                 left: 0,
                 right: 0,
                 bottom: 0,
@@ -251,12 +249,12 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            const Text(
+                            Text(
                               'Crear cuenta',
                               style: TextStyle(
                                 fontSize: 22,
                                 fontWeight: FontWeight.w800,
-                                color: AppColors.headerBottom,
+                                color: context.appBrandTextColor,
                                 letterSpacing: -0.5,
                               ),
                             ),
@@ -347,7 +345,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
                               child: GestureDetector(
                                 onTap: _loading ? null : widget.onBackToLogin,
                                 child: RichText(
-                                text: TextSpan(
+                                  text: TextSpan(
                                     style: TextStyle(
                                       fontSize: 13,
                                       color: context.appTextSecondaryColor,
@@ -359,7 +357,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
                                       TextSpan(
                                         text: 'Iniciar sesión',
                                         style: TextStyle(
-                                          color: AppColors.headerBottom,
+                                          color: context.appBrandTextColor,
                                           fontWeight: FontWeight.w700,
                                         ),
                                       ),
@@ -381,15 +379,6 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
       ),
     );
   }
-
-  Widget _blob(double size, double opacity) => Container(
-    width: size,
-    height: size,
-    decoration: BoxDecoration(
-      color: Colors.white.withValues(alpha: opacity),
-      shape: BoxShape.circle,
-    ),
-  );
 }
 
 class _SectionHeader extends StatelessWidget {
@@ -404,10 +393,10 @@ class _SectionHeader extends StatelessWidget {
         width: 30,
         height: 30,
         decoration: BoxDecoration(
-          color: AppColors.headerBottom.withValues(alpha: 0.08),
+          color: context.appIconCircleColor,
           borderRadius: BorderRadius.circular(9),
         ),
-        child: Icon(icon, size: 16, color: AppColors.headerBottom),
+        child: Icon(icon, size: 16, color: context.appBrandIconColor),
       ),
       const SizedBox(width: 9),
       Text(
@@ -474,7 +463,7 @@ class _Field extends StatelessWidget {
           fontSize: 13,
           color: context.appTextSecondaryColor,
         ),
-        prefixIcon: Icon(icon, size: 18, color: AppColors.headerBottom),
+        prefixIcon: Icon(icon, size: 18, color: context.appBrandIconColor),
         suffixIcon: suffix,
         filled: true,
         fillColor: context.appInputBackgroundActive,
@@ -492,7 +481,7 @@ class _Field extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: AppColors.headerBottom, width: 1.5),
+          borderSide: BorderSide(color: context.appBrandIconColor, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
@@ -517,7 +506,7 @@ class _EyeBtn extends StatelessWidget {
     icon: Icon(
       visible ? Icons.visibility_outlined : Icons.visibility_off_outlined,
       size: 18,
-      color: AppColors.headerBottom,
+      color: context.appBrandIconColor,
     ),
     onPressed: onToggle,
   );

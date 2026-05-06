@@ -208,10 +208,10 @@ class _LoginPageState extends ConsumerState<LoginPage>
   Widget build(BuildContext context) {
     final screen = MediaQuery.of(context).size;
     final anyLoading = _loading || _googleLoading;
-    final headerGradient =
-        context.isDarkMode
-            ? const [Color(0xFF111827), Color(0xFF0F172A), Color(0xFF0B1220)]
-            : const [AppColors.headerTop, AppColors.headerBottom];
+    final heroTop =
+        screen.height < 760 ? screen.height * 0.016 : screen.height * 0.04;
+    final sheetTop =
+        screen.height < 760 ? screen.height * 0.268 : screen.height * 0.23;
 
     return Scaffold(
       backgroundColor: context.appPageBackground,
@@ -221,98 +221,20 @@ class _LoginPageState extends ConsumerState<LoginPage>
           height: screen.height,
           child: Stack(
             children: [
-              Container(
-                height: screen.height * 0.42,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: headerGradient,
-                  ),
-                ),
-              ),
-              Positioned(
-                top: 40,
-                left: -20,
-                child: _Blob(size: 90, opacity: 0.12),
-              ),
-              Positioned(
-                top: -10,
-                right: -10,
-                child: _Blob(size: 120, opacity: 0.10),
-              ),
+              AuthHeaderBackground(height: screen.height * 0.42),
+              const AuthHeaderBlobs(),
 
               // Hero section
               Positioned(
-                top: screen.height * 0.04,
+                top: heroTop,
                 left: 28,
                 right: 28,
-                child: Column(
-                  children: [
-                    Container(
-                      width: 88,
-                      height: 88,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.12),
-                          width: 0.8,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.18),
-                            blurRadius: 18,
-                            offset: const Offset(0, 10),
-                          ),
-                        ],
-                      ),
-                      padding: const EdgeInsets.all(8),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(18),
-                        child: Image.asset(
-                          'assets/branding/BEYGO_icon_master_1024.png',
-                          fit: BoxFit.contain,
-                          errorBuilder:
-                              (_, __, ___) => Icon(
-                                Icons.local_parking_rounded,
-                                size: 42,
-                                color: Colors.white.withValues(alpha: 0.92),
-                              ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    const Text(
-                      'BeyGo',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
-                        letterSpacing: -0.8,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16),
-                      child: Text(
-                        'Encuentra y reserva tu espacio de parqueo fácil y rápido.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.white70,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                child: const AuthBrandHero(),
               ),
 
               // Content sheet
               Positioned(
-                top: screen.height * 0.23,
+                top: sheetTop,
                 left: 0,
                 right: 0,
                 bottom: 0,
@@ -331,12 +253,12 @@ class _LoginPageState extends ConsumerState<LoginPage>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          const Text(
+                          Text(
                             'Iniciar sesión',
                             style: TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.w800,
-                              color: AppColors.headerBottom,
+                              color: context.appBrandTextColor,
                               letterSpacing: -0.5,
                             ),
                           ),
@@ -386,7 +308,15 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                       (v) => setState(
                                         () => _rememberMe = v ?? false,
                                       ),
-                                  activeColor: AppColors.headerBottom,
+                                  activeColor: context.appBrandIconColor,
+                                  checkColor:
+                                      context.isDarkMode
+                                          ? const Color(0xFF0F172A)
+                                          : Colors.white,
+                                  side: BorderSide(
+                                    color: context.appTextSecondaryColor,
+                                    width: 1.2,
+                                  ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(5),
                                   ),
@@ -416,11 +346,11 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                     horizontal: 4,
                                   ),
                                 ),
-                                child: const Text(
+                                child: Text(
                                   '¿Olvidaste tu contraseña?',
                                   style: TextStyle(
                                     fontSize: 13,
-                                    color: AppColors.headerBottom,
+                                    color: context.appBrandTextColor,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -509,7 +439,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                     TextSpan(
                                       text: 'Registrarme',
                                       style: TextStyle(
-                                        color: AppColors.headerBottom,
+                                        color: context.appBrandTextColor,
                                         fontWeight: FontWeight.w700,
                                       ),
                                     ),
@@ -584,7 +514,7 @@ class _SocialButton extends StatelessWidget {
                         color:
                             isFacebook
                                 ? const Color(0xFF1877F2)
-                                : AppColors.headerBottom,
+                                : context.appBrandIconColor,
                       ),
                     ),
                   )
@@ -604,7 +534,7 @@ class _SocialButton extends StatelessWidget {
                               color:
                                   isFacebook
                                       ? const Color(0xFF1877F2)
-                                      : AppColors.headerBottom,
+                                      : context.appBrandIconColor,
                             ),
                       ),
                       const SizedBox(width: 8),
@@ -645,21 +575,5 @@ class _FieldLabel extends StatelessWidget {
       ),
       const SizedBox(height: 2),
     ],
-  );
-}
-
-class _Blob extends StatelessWidget {
-  final double size;
-  final double opacity;
-  const _Blob({required this.size, required this.opacity});
-
-  @override
-  Widget build(BuildContext context) => Container(
-    width: size,
-    height: size,
-    decoration: BoxDecoration(
-      color: Colors.white.withValues(alpha: opacity),
-      shape: BoxShape.circle,
-    ),
   );
 }

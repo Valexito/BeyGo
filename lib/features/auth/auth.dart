@@ -5,9 +5,11 @@
 library;
 
 export 'components/forgot_password_dialog.dart';
+export 'components/auth_brand_hero.dart';
 export 'components/verify_email_page.dart';
 export 'pages/auth_flow_page.dart';
 export 'pages/auth_gate.dart';
 export 'pages/login_page.dart';
+export 'pages/launch_splash_page.dart';
 export 'pages/sign_up.dart';
 export 'providers/auth_providers.dart';
