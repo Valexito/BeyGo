@@ -14,10 +14,12 @@
 //
 const { onDocumentWritten, onDocumentCreated } = require("firebase-functions/v2/firestore");
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { defineSecret } = require("firebase-functions/params");
 const admin = require("firebase-admin");
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
+const PDFDocument = require("pdfkit");
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -55,7 +57,7 @@ function generateResetToken() {
     return crypto.randomBytes(24).toString("hex");
 }
 
-async function sendMailSafe({ to, subject, text, html }) {
+async function sendMailSafe({ to, subject, text, html, attachments = [] }) {
     if (!to) return;
     const transport = getMailTransport();
     await transport.sendMail({
@@ -64,6 +66,7 @@ async function sendMailSafe({ to, subject, text, html }) {
         subject,
         text,
         html,
+        attachments,
     });
 }
 
@@ -82,7 +85,8 @@ async function assertOwnerUser(uid) {
     }
 
     const userSnap = await db.collection("users").doc(uid).get();
-    const email = userSnap.data()?.email;
+    const userData = userSnap.data() || {};
+    const email = userData.email;
 
     if (!email) {
         throw new HttpsError(
@@ -91,7 +95,600 @@ async function assertOwnerUser(uid) {
         );
     }
 
-    return { email };
+    const displayName = `${userData.displayName || userData.name || ""}`.trim();
+
+    return { email, displayName };
+}
+
+const REPORT_TIMEZONE = "America/Guatemala";
+const REPORT_MONTHS_ES = [
+    "enero",
+    "febrero",
+    "marzo",
+    "abril",
+    "mayo",
+    "junio",
+    "julio",
+    "agosto",
+    "septiembre",
+    "octubre",
+    "noviembre",
+    "diciembre",
+];
+
+function startOfDay(date) {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function addDays(date, days) {
+    return new Date(date.getTime() + days * 24 * 60 * 60 * 1000);
+}
+
+function startOfMonth(date) {
+    return new Date(date.getFullYear(), date.getMonth(), 1);
+}
+
+function startOfNextMonth(date) {
+    return new Date(date.getFullYear(), date.getMonth() + 1, 1);
+}
+
+function parseInputDate(value) {
+    if (!value) return null;
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return null;
+    return parsed;
+}
+
+function formatDateTimeGt(date) {
+    if (!date) return "—";
+    return new Intl.DateTimeFormat("es-GT", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+        timeZone: REPORT_TIMEZONE,
+    }).format(date).replace(",", "");
+}
+
+function formatShortDateGt(date) {
+    if (!date) return "—";
+    return new Intl.DateTimeFormat("es-GT", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        timeZone: REPORT_TIMEZONE,
+    }).format(date);
+}
+
+function formatCurrencyQ(value) {
+    if (value == null || Number.isNaN(Number(value))) return "—";
+    return `Q ${Number(value).toFixed(2)}`;
+}
+
+function escapeHtml(value) {
+    return `${value ?? ""}`
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
+function normalizeReportRange(periodType, rawStartDate, rawEndDate) {
+    const now = new Date();
+
+    if (periodType === "current_month") {
+        const start = startOfMonth(now);
+        const endExclusive = startOfNextMonth(now);
+        return {
+            start,
+            endExclusive,
+            periodLabel: `${REPORT_MONTHS_ES[start.getMonth()]} ${start.getFullYear()}`,
+            fileLabel: `${start.getFullYear()}-${`${start.getMonth() + 1}`.padStart(2, "0")}`,
+        };
+    }
+
+    if (periodType === "previous_month") {
+        const currentMonthStart = startOfMonth(now);
+        const start = new Date(
+            currentMonthStart.getFullYear(),
+            currentMonthStart.getMonth() - 1,
+            1
+        );
+        return {
+            start,
+            endExclusive: currentMonthStart,
+            periodLabel: `${REPORT_MONTHS_ES[start.getMonth()]} ${start.getFullYear()}`,
+            fileLabel: `${start.getFullYear()}-${`${start.getMonth() + 1}`.padStart(2, "0")}`,
+        };
+    }
+
+    if (periodType === "custom") {
+        const parsedStart = parseInputDate(rawStartDate);
+        const parsedEnd = parseInputDate(rawEndDate);
+
+        if (!parsedStart || !parsedEnd) {
+            throw new HttpsError(
+                "invalid-argument",
+                "Debes indicar un rango válido para el reporte."
+            );
+        }
+
+        const start = startOfDay(parsedStart);
+        const end = startOfDay(parsedEnd);
+
+        if (end.getTime() < start.getTime()) {
+            throw new HttpsError(
+                "invalid-argument",
+                "La fecha final no puede ser menor que la inicial."
+            );
+        }
+
+        return {
+            start,
+            endExclusive: addDays(end, 1),
+            periodLabel: `${formatShortDateGt(start)} - ${formatShortDateGt(end)}`,
+            fileLabel: `${start.getFullYear()}-${`${start.getMonth() + 1}`.padStart(2, "0")}-custom`,
+        };
+    }
+
+    throw new HttpsError("invalid-argument", "Periodo de reporte no válido.");
+}
+
+function getRecordStateLabel(record) {
+    if (record.type === "manual") return "Presencial";
+    if (record.state === "completed") return "Completada";
+    if (record.state === "cancelled" && record.cancellationPenaltyApplied) {
+        return "Cancelada con penalización";
+    }
+    if (record.state === "cancelled") return "Cancelada";
+    if (record.state === "cancellation_requested") return "Solicitud cancelación";
+    return `${record.state || "Sin estado"}`;
+}
+
+function buildHistorySummary(recordCount) {
+    if (recordCount === 0) {
+        return "No se registraron movimientos en el período.";
+    }
+    if (recordCount === 1) {
+        return "Se registró 1 movimiento en el período.";
+    }
+    return `Se registraron ${recordCount} movimientos en el período.`;
+}
+
+async function buildOwnerHistoryReportDataset({
+    uid,
+    start,
+    endExclusive,
+}) {
+    const { email, displayName } = await assertOwnerUser(uid);
+
+    const parkingSnap = await db
+        .collection("parkings")
+        .where("ownerID", "==", uid)
+        .get();
+
+    if (parkingSnap.empty) {
+        throw new HttpsError(
+            "failed-precondition",
+            "No se encontró un parqueo asociado a este owner."
+        );
+    }
+
+    const parkingDocs = parkingSnap.docs;
+    const parkingNames = parkingDocs
+        .map((doc) => `${doc.data()?.name || ""}`.trim())
+        .filter(Boolean);
+    const parkingLabel =
+        parkingNames.length <= 1
+            ? parkingNames[0] || "tu parqueo"
+            : `${parkingNames[0]} y ${parkingNames.length - 1} parqueo(s) más`;
+
+    const reservationsSnap = await db
+        .collection("reservations")
+        .where("ownerId", "==", uid)
+        .where("reservedAt", ">=", admin.firestore.Timestamp.fromDate(start))
+        .where("reservedAt", "<", admin.firestore.Timestamp.fromDate(endExclusive))
+        .orderBy("reservedAt", "desc")
+        .get();
+
+    const onlineRecords = reservationsSnap.docs
+        .map((doc) => {
+            const data = doc.data() || {};
+            const state = `${data.state || ""}`.trim();
+            const cancellationPenaltyApplied =
+                data.cancellationPenaltyApplied === true;
+
+            if (
+                state !== "completed" &&
+                state !== "cancelled" &&
+                state !== "cancellation_requested"
+            ) {
+                return null;
+            }
+
+            return {
+                id: doc.id,
+                type: "online",
+                reservationNumber: `${data.reservationNumber || "N/A"}`,
+                customerName: `${data.userName || "N/A"}`,
+                plate: `${data.plate || "N/A"}`,
+                spaceNumber: Number(data.spaceNumber || 0),
+                reservedAt: data.reservedAt?.toDate?.() || null,
+                endedAt:
+                    data.endedAt?.toDate?.() ||
+                    data.exitApprovedAt?.toDate?.() ||
+                    null,
+                state,
+                cancellationPenaltyApplied,
+                cancellationReason: `${data.cancellationReason || ""}`.trim(),
+                amount:
+                    data.amount != null
+                        ? Number(data.amount)
+                        : data.estimatedAmount != null
+                        ? Number(data.estimatedAmount)
+                        : null,
+                parkingName: `${data.parkingName || ""}`.trim(),
+            };
+        })
+        .filter(Boolean);
+
+    const walkInGroups = await Promise.all(
+        parkingDocs.map(async (parkingDoc) => {
+            const snap = await parkingDoc.ref
+                .collection("walk_ins")
+                .where("enteredAt", ">=", admin.firestore.Timestamp.fromDate(start))
+                .where("enteredAt", "<", admin.firestore.Timestamp.fromDate(endExclusive))
+                .orderBy("enteredAt", "desc")
+                .get();
+
+            return snap.docs
+                .map((doc) => {
+                    const data = doc.data() || {};
+                    if (`${data.status || ""}`.trim() !== "completed") {
+                        return null;
+                    }
+
+                    return {
+                        id: doc.id,
+                        type: "manual",
+                        reservationNumber: `${data.reservationNumber || "MAN-SIN-NUMERO"}`,
+                        customerName: `${data.customerName || "Cliente"}`,
+                        plate: `${data.plate || "N/A"}`,
+                        spaceNumber: Number(data.spaceNumber || 0),
+                        reservedAt: data.enteredAt?.toDate?.() || null,
+                        endedAt: data.exitAt?.toDate?.() || null,
+                        state: "manual_completed",
+                        cancellationPenaltyApplied: false,
+                        cancellationReason: "",
+                        amount:
+                            data.amount != null
+                                ? Number(data.amount)
+                                : null,
+                        parkingName: `${parkingDoc.data()?.name || ""}`.trim(),
+                    };
+                })
+                .filter(Boolean);
+        })
+    );
+
+    const records = [...onlineRecords, ...walkInGroups.flat()]
+        .filter((record) => record?.reservedAt)
+        .sort((a, b) => b.reservedAt.getTime() - a.reservedAt.getTime());
+
+    const kpis = {
+        totalMovements: records.length,
+        completed:
+            records.filter((record) => record.type === "online" && record.state === "completed")
+                .length,
+        cancelled:
+            records.filter((record) => record.state === "cancelled").length,
+        cancelledPenalty:
+            records.filter(
+                (record) =>
+                    record.state === "cancelled" &&
+                    record.cancellationPenaltyApplied
+            ).length,
+        manual:
+            records.filter((record) => record.type === "manual").length,
+        revenueTotal: records.reduce(
+            (sum, record) => sum + (Number(record.amount) || 0),
+            0
+        ),
+    };
+
+    return {
+        uid,
+        email,
+        ownerName: displayName || "Owner BeyGo",
+        parkingLabel,
+        parkingCount: parkingDocs.length,
+        records,
+        kpis,
+    };
+}
+
+function buildHistoryReportHtml({
+    ownerName,
+    parkingLabel,
+    periodLabel,
+    summaryText,
+    kpis,
+    records,
+}) {
+    const rowsHtml = records
+        .slice(0, 10)
+        .map((record) => {
+            return `
+              <tr>
+                <td style="padding:10px;border-bottom:1px solid #E5E7EB;">${escapeHtml(record.reservationNumber)}</td>
+                <td style="padding:10px;border-bottom:1px solid #E5E7EB;">${escapeHtml(record.type === "manual" ? "Presencial" : "En línea")}</td>
+                <td style="padding:10px;border-bottom:1px solid #E5E7EB;">${escapeHtml(getRecordStateLabel(record))}</td>
+                <td style="padding:10px;border-bottom:1px solid #E5E7EB;">${escapeHtml(record.customerName)}</td>
+                <td style="padding:10px;border-bottom:1px solid #E5E7EB;">${escapeHtml(record.plate)}</td>
+                <td style="padding:10px;border-bottom:1px solid #E5E7EB;">${formatCurrencyQ(record.amount)}</td>
+              </tr>
+            `;
+        })
+        .join("");
+
+    return `
+      <div style="font-family:Arial,sans-serif;background:#F8FAFC;padding:24px;color:#0F172A">
+        <div style="max-width:760px;margin:0 auto;background:white;border-radius:20px;overflow:hidden;border:1px solid #E5E7EB">
+          <div style="background:linear-gradient(180deg,#3B5F9A,#1E3A5F);padding:28px;color:white">
+            <div style="font-size:28px;font-weight:800;margin-bottom:8px;">Resumen mensual BeyGo</div>
+            <div style="font-size:15px;opacity:.92;">${escapeHtml(periodLabel)}</div>
+          </div>
+          <div style="padding:24px">
+            <p style="margin:0 0 10px;font-size:15px;">Hola <strong>${escapeHtml(ownerName)}</strong>,</p>
+            <p style="margin:0 0 12px;font-size:14px;color:#334155;">
+              Aquí tienes el resumen de historial de <strong>${escapeHtml(parkingLabel)}</strong>.
+            </p>
+            <p style="margin:0 0 18px;font-size:14px;color:#334155;">${escapeHtml(summaryText)}</p>
+
+            <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:20px;">
+              ${[
+        ["Movimientos", kpis.totalMovements],
+        ["Completadas", kpis.completed],
+        ["Canceladas", kpis.cancelled],
+        ["Canceladas c/ penalización", kpis.cancelledPenalty],
+        ["Presenciales", kpis.manual],
+        ["Ingresos", formatCurrencyQ(kpis.revenueTotal)],
+    ].map(([label, value]) => `
+                <div style="background:#F8FAFC;border:1px solid #E5E7EB;border-radius:14px;padding:14px;">
+                  <div style="font-size:12px;color:#64748B;margin-bottom:6px;">${escapeHtml(label)}</div>
+                  <div style="font-size:20px;font-weight:800;color:#1E3A5F;">${escapeHtml(value)}</div>
+                </div>
+              `).join("")}
+            </div>
+
+            <div style="font-size:13px;font-weight:700;color:#0F172A;margin-bottom:10px;">Últimos movimientos del período</div>
+            <table style="width:100%;border-collapse:collapse;font-size:13px;">
+              <thead>
+                <tr style="background:#F8FAFC;color:#475569;text-align:left;">
+                  <th style="padding:10px;">No.</th>
+                  <th style="padding:10px;">Tipo</th>
+                  <th style="padding:10px;">Estado</th>
+                  <th style="padding:10px;">Cliente</th>
+                  <th style="padding:10px;">Placa</th>
+                  <th style="padding:10px;">Monto</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rowsHtml || `
+                  <tr>
+                    <td colspan="6" style="padding:14px;color:#64748B;">No hubo movimientos para mostrar.</td>
+                  </tr>
+                `}
+              </tbody>
+            </table>
+
+            <p style="margin:18px 0 0;font-size:13px;color:#475569;">
+              Adjuntamos un PDF con el detalle completo del período.
+            </p>
+          </div>
+        </div>
+      </div>
+    `;
+}
+
+function generateHistoryReportPdf({
+    ownerName,
+    parkingLabel,
+    periodLabel,
+    generatedAt,
+    kpis,
+    records,
+}) {
+    return new Promise((resolve, reject) => {
+        const doc = new PDFDocument({
+            size: "A4",
+            layout: "landscape",
+            margin: 36,
+        });
+        const chunks = [];
+        doc.on("data", (chunk) => chunks.push(chunk));
+        doc.on("end", () => resolve(Buffer.concat(chunks)));
+        doc.on("error", reject);
+
+        const pageWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+        const left = doc.page.margins.left;
+
+        doc.fillColor("#1E3A5F").fontSize(24).font("Helvetica-Bold")
+            .text("BeyGo - Resumen de historial", left, 34, { width: pageWidth });
+        doc.moveDown(0.3);
+        doc.fillColor("#334155").fontSize(12).font("Helvetica")
+            .text(`Owner: ${ownerName}`, left, doc.y, { width: pageWidth });
+        doc.text(`Parqueo: ${parkingLabel}`, left, doc.y + 2, { width: pageWidth });
+        doc.text(`Período: ${periodLabel}`, left, doc.y + 2, { width: pageWidth });
+        doc.text(`Generado: ${formatDateTimeGt(generatedAt)}`, left, doc.y + 2, { width: pageWidth });
+
+        const metrics = [
+            ["Movimientos", `${kpis.totalMovements}`],
+            ["Completadas", `${kpis.completed}`],
+            ["Canceladas", `${kpis.cancelled}`],
+            ["Canceladas c/ penalización", `${kpis.cancelledPenalty}`],
+            ["Presenciales", `${kpis.manual}`],
+            ["Ingresos", formatCurrencyQ(kpis.revenueTotal)],
+        ];
+
+        let metricX = left;
+        const metricY = 128;
+        const metricW = (pageWidth - 20) / 3;
+        const metricH = 52;
+
+        metrics.forEach(([label, value], index) => {
+            const row = Math.floor(index / 3);
+            const col = index % 3;
+            const x = metricX + (metricW + 10) * col;
+            const y = metricY + (metricH + 10) * row;
+
+            doc.roundedRect(x, y, metricW, metricH, 12).fillAndStroke("#F8FAFC", "#E2E8F0");
+            doc.fillColor("#64748B").font("Helvetica").fontSize(10)
+                .text(label, x + 12, y + 10, { width: metricW - 24 });
+            doc.fillColor("#1E3A5F").font("Helvetica-Bold").fontSize(16)
+                .text(value, x + 12, y + 24, { width: metricW - 24 });
+        });
+
+        let y = metricY + metricH * 2 + 30;
+        const headers = [
+            { key: "reservationNumber", label: "No.", width: 82 },
+            { key: "type", label: "Tipo", width: 62 },
+            { key: "state", label: "Estado", width: 118 },
+            { key: "customerName", label: "Cliente", width: 120 },
+            { key: "plate", label: "Placa", width: 72 },
+            { key: "spaceNumber", label: "Esp.", width: 42 },
+            { key: "reservedAt", label: "Inicio", width: 96 },
+            { key: "endedAt", label: "Fin", width: 96 },
+            { key: "amount", label: "Monto", width: 70 },
+        ];
+
+        function drawTableHeader() {
+            doc.fillColor("#F8FAFC").rect(left, y, pageWidth, 24).fill();
+            let x = left + 8;
+            headers.forEach((header) => {
+                doc.fillColor("#334155").font("Helvetica-Bold").fontSize(9)
+                    .text(header.label, x, y + 7, { width: header.width - 6 });
+                x += header.width;
+            });
+            y += 28;
+        }
+
+        drawTableHeader();
+
+        records.forEach((record) => {
+            const rowHeight = record.cancellationReason ? 34 : 22;
+            if (y + rowHeight > doc.page.height - 44) {
+                doc.addPage();
+                y = 40;
+                drawTableHeader();
+            }
+
+            doc.strokeColor("#E2E8F0")
+                .moveTo(left, y - 4)
+                .lineTo(left + pageWidth, y - 4)
+                .stroke();
+
+            const values = {
+                reservationNumber: record.reservationNumber,
+                type: record.type === "manual" ? "Manual" : "En línea",
+                state: getRecordStateLabel(record),
+                customerName: record.customerName,
+                plate: record.plate,
+                spaceNumber: `${record.spaceNumber}`,
+                reservedAt: formatDateTimeGt(record.reservedAt),
+                endedAt: formatDateTimeGt(record.endedAt),
+                amount: formatCurrencyQ(record.amount),
+            };
+
+            let x = left + 8;
+            headers.forEach((header) => {
+                doc.fillColor("#0F172A").font("Helvetica").fontSize(8.5)
+                    .text(`${values[header.key] || "—"}`, x, y, {
+                        width: header.width - 6,
+                        ellipsis: true,
+                    });
+                x += header.width;
+            });
+
+            if (record.cancellationReason) {
+                doc.fillColor("#64748B").font("Helvetica-Oblique").fontSize(7.5)
+                    .text(
+                        `Motivo: ${record.cancellationReason}`,
+                        left + 8,
+                        y + 14,
+                        { width: pageWidth - 16, ellipsis: true }
+                    );
+            }
+
+            y += rowHeight;
+        });
+
+        doc.end();
+    });
+}
+
+async function sendOwnerHistorySummaryEmail({
+    to,
+    ownerName,
+    parkingLabel,
+    periodLabel,
+    fileLabel,
+    records,
+    kpis,
+    isAutomatic,
+}) {
+    const generatedAt = new Date();
+    const summaryText = buildHistorySummary(records.length);
+    const subject = isAutomatic
+        ? `BeyGo: resumen mensual de ${periodLabel}`
+        : `BeyGo: resumen de historial - ${periodLabel}`;
+
+    const html = buildHistoryReportHtml({
+        ownerName,
+        parkingLabel,
+        periodLabel,
+        summaryText,
+        kpis,
+        records,
+    });
+
+    const text =
+        `Hola ${ownerName},\n\n` +
+        `Adjuntamos tu resumen de historial de BeyGo.\n` +
+        `Período: ${periodLabel}\n` +
+        `Parqueo: ${parkingLabel}\n\n` +
+        `${summaryText}\n\n` +
+        `Movimientos: ${kpis.totalMovements}\n` +
+        `Completadas: ${kpis.completed}\n` +
+        `Canceladas: ${kpis.cancelled}\n` +
+        `Canceladas con penalización: ${kpis.cancelledPenalty}\n` +
+        `Presenciales: ${kpis.manual}\n` +
+        `Ingresos: ${formatCurrencyQ(kpis.revenueTotal)}\n\n` +
+        `Adjuntamos un PDF con el detalle completo del período.`;
+
+    const pdfBuffer = await generateHistoryReportPdf({
+        ownerName,
+        parkingLabel,
+        periodLabel,
+        generatedAt,
+        kpis,
+        records,
+    });
+
+    await sendMailSafe({
+        to,
+        subject,
+        text,
+        html,
+        attachments: [{
+            filename: `beygo-resumen-${fileLabel}.pdf`,
+            content: pdfBuffer,
+            contentType: "application/pdf",
+        }],
+    });
 }
 
 async function assertReservationOwnerAction(uid, reservationId) {
@@ -397,6 +994,107 @@ exports.ownerForceFinalizeReservation = onCall(async (request) => {
     });
 
     return { ok: true };
+});
+
+exports.sendOwnerHistoryReport = onCall({
+    secrets: [ownerSecurityEmail, ownerSecurityEmailPassword],
+}, async (request) => {
+    if (!request.auth?.uid) {
+        throw new HttpsError("unauthenticated", "Debes iniciar sesión.");
+    }
+
+    const uid = request.auth.uid;
+    const periodType = `${request.data?.periodType || ""}`.trim();
+    const startDate = request.data?.startDate;
+    const endDate = request.data?.endDate;
+
+    const { start, endExclusive, periodLabel, fileLabel } = normalizeReportRange(
+        periodType,
+        startDate,
+        endDate
+    );
+
+    const dataset = await buildOwnerHistoryReportDataset({
+        uid,
+        start,
+        endExclusive,
+    });
+
+    if (dataset.records.length === 0) {
+        throw new HttpsError(
+            "failed-precondition",
+            "No hay movimientos en ese período para generar el reporte."
+        );
+    }
+
+    await sendOwnerHistorySummaryEmail({
+        to: dataset.email,
+        ownerName: dataset.ownerName,
+        parkingLabel: dataset.parkingLabel,
+        periodLabel,
+        fileLabel,
+        records: dataset.records,
+        kpis: dataset.kpis,
+        isAutomatic: false,
+    });
+
+    return {
+        ok: true,
+        email: dataset.email,
+        recordCount: dataset.records.length,
+        periodLabel,
+    };
+});
+
+exports.sendOwnerMonthlyHistoryReports = onSchedule({
+    schedule: "0 7 1 * *",
+    timeZone: REPORT_TIMEZONE,
+    secrets: [ownerSecurityEmail, ownerSecurityEmailPassword],
+}, async () => {
+    const { start, endExclusive, periodLabel, fileLabel } = normalizeReportRange(
+        "previous_month"
+    );
+
+    const parkingsSnap = await db.collection("parkings").get();
+    const ownerIds = [...new Set(
+        parkingsSnap.docs
+            .map((doc) => `${doc.data()?.ownerID || ""}`.trim())
+            .filter(Boolean)
+    )];
+
+    for (const uid of ownerIds) {
+        try {
+            const dataset = await buildOwnerHistoryReportDataset({
+                uid,
+                start,
+                endExclusive,
+            });
+
+            if (dataset.records.length === 0) {
+                continue;
+            }
+
+            await sendOwnerHistorySummaryEmail({
+                to: dataset.email,
+                ownerName: dataset.ownerName,
+                parkingLabel: dataset.parkingLabel,
+                periodLabel,
+                fileLabel,
+                records: dataset.records,
+                kpis: dataset.kpis,
+                isAutomatic: true,
+            });
+
+            console.log(
+                `[owner-history-report] Sent monthly report to ${dataset.email} (${dataset.records.length} records)`
+            );
+        } catch (error) {
+            console.error(
+                `[owner-history-report] Failed for owner ${uid}:`,
+                error
+            );
+        }
+    }
 });
 
 exports.onSupportReportCreated = onDocumentCreated({

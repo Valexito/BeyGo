@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:beygo/common/common.dart';
@@ -187,6 +188,7 @@ class _OwnerHistoryPageState extends ConsumerState<OwnerHistoryPage> {
   _SourceFilter _sourceFilter = _SourceFilter.all;
   _PeriodFilter _periodFilter = _PeriodFilter.week;
   DateTimeRange? _dateRange;
+  bool _sendingReport = false;
 
   @override
   void dispose() {
@@ -315,6 +317,162 @@ class _OwnerHistoryPageState extends ConsumerState<OwnerHistoryPage> {
       },
     );
     if (picked != null) setState(() => _dateRange = picked);
+  }
+
+  Future<DateTimeRange?> _pickReportDateRange() async {
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2023),
+      lastDate: DateTime.now(),
+      builder: (ctx, child) {
+        final isDark = Theme.of(ctx).brightness == Brightness.dark;
+        return Theme(
+          data: Theme.of(ctx).copyWith(
+            colorScheme: (isDark
+                    ? const ColorScheme.dark()
+                    : const ColorScheme.light())
+                .copyWith(
+                  primary: AppColors.headerBottom,
+                  onPrimary: Colors.white,
+                  surface: isDark ? const Color(0xFF111827) : Colors.white,
+                ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    return picked;
+  }
+
+  Future<void> _sendHistoryReport({
+    required String periodType,
+    DateTimeRange? range,
+  }) async {
+    if (_sendingReport) return;
+
+    setState(() => _sendingReport = true);
+
+    try {
+      final payload = <String, dynamic>{'periodType': periodType};
+
+      if (periodType == 'custom' && range != null) {
+        payload['startDate'] = range.start.toIso8601String();
+        payload['endDate'] = range.end.toIso8601String();
+      }
+
+      final result = await FirebaseFunctions.instance
+          .httpsCallable('sendOwnerHistoryReport')
+          .call(payload);
+
+      final data = Map<String, dynamic>.from(result.data as Map);
+      final email = '${data['email'] ?? ''}'.trim();
+      final count = (data['recordCount'] as num?)?.toInt() ?? 0;
+      final periodLabel = '${data['periodLabel'] ?? 'el período'}';
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Resumen de $periodLabel enviado a $email ($count movimiento(s)).',
+          ),
+        ),
+      );
+    } on FirebaseFunctionsException catch (e) {
+      if (!mounted) return;
+      final message =
+          e.message?.trim().isNotEmpty == true
+              ? e.message!.trim()
+              : 'No se pudo enviar el resumen en este momento.';
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo enviar el resumen: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _sendingReport = false);
+    }
+  }
+
+  Future<void> _showReportSheet() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Container(
+          decoration: BoxDecoration(
+            color: ctx.appCardBackground,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: ctx.appBorderColor,
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              MyText(
+                text: 'Enviar resumen',
+                variant: MyTextVariant.bodyBold,
+                fontSize: 16,
+                customColor: ctx.appTextPrimaryColor,
+              ),
+              const SizedBox(height: 8),
+              MyText(
+                text:
+                    'Te enviaremos un correo con resumen ejecutivo y PDF adjunto.',
+                variant: MyTextVariant.bodyMuted,
+                fontSize: 12,
+                customColor: ctx.appTextSecondaryColor,
+              ),
+              const SizedBox(height: 14),
+              _ReportOptionTile(
+                icon: Icons.calendar_month_rounded,
+                title: 'Este mes',
+                subtitle: 'Movimientos desde el inicio del mes actual.',
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _sendHistoryReport(periodType: 'current_month');
+                },
+              ),
+              const SizedBox(height: 10),
+              _ReportOptionTile(
+                icon: Icons.history_toggle_off_rounded,
+                title: 'Mes anterior',
+                subtitle: 'Resumen completo del mes pasado.',
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _sendHistoryReport(periodType: 'previous_month');
+                },
+              ),
+              const SizedBox(height: 10),
+              _ReportOptionTile(
+                icon: Icons.date_range_rounded,
+                title: 'Rango personalizado',
+                subtitle: 'Elegir fechas manualmente.',
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  final range = await _pickReportDateRange();
+                  if (range == null || !mounted) return;
+                  await _sendHistoryReport(periodType: 'custom', range: range);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   void _showStateFilterSheet() {
@@ -774,6 +932,46 @@ class _OwnerHistoryPageState extends ConsumerState<OwnerHistoryPage> {
                         ],
                       ),
                     ),
+                    const SizedBox(height: 12),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: OutlinedButton.icon(
+                        onPressed: _sendingReport ? null : _showReportSheet,
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(
+                            color: context.appBrandIconColor.withValues(
+                              alpha: 0.35,
+                            ),
+                            width: 1.2,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                          backgroundColor: context.appCardBackground,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 12,
+                          ),
+                        ),
+                        icon: Icon(
+                          _sendingReport
+                              ? Icons.hourglass_top_rounded
+                              : Icons.outbox_rounded,
+                          size: 18,
+                          color: context.appBrandIconColor,
+                        ),
+                        label: Text(
+                          _sendingReport
+                              ? 'Enviando resumen...'
+                              : 'Enviar resumen',
+                          style: TextStyle(
+                            color: context.appBrandTextColor,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -896,6 +1094,75 @@ class _OwnerHistoryPageState extends ConsumerState<OwnerHistoryPage> {
 
   String _formatDate(DateTime d) =>
       '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}';
+}
+
+class _ReportOptionTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _ReportOptionTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Ink(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        decoration: BoxDecoration(
+          color: context.appCardBackgroundSoft,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: context.appBorderColor),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: context.appIconCircleColor,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: context.appBrandIconColor, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  MyText(
+                    text: title,
+                    variant: MyTextVariant.bodyBold,
+                    fontSize: 14,
+                    customColor: context.appTextPrimaryColor,
+                  ),
+                  const SizedBox(height: 3),
+                  MyText(
+                    text: subtitle,
+                    variant: MyTextVariant.bodyMuted,
+                    fontSize: 12,
+                    customColor: context.appTextSecondaryColor,
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: context.appTextSecondaryColor,
+              size: 20,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 // ─── Filter chip widget ────────────────────────────────────────────────────────
