@@ -11,7 +11,7 @@ class AuthBrandHero extends StatelessWidget {
     this.badgeRadius = 24,
     this.badgePadding = 8,
     this.premiumSplashDecor = false,
-    this.subtitle = 'Encuentra y reserva tu espacio de parqueo fácil y rápido.',
+    this.subtitle = '¡Tu destino te espera, tu espacio también!',
   });
 
   final double logoSize;

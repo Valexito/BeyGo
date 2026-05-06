@@ -65,10 +65,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
     }
 
     if (!mounted) return;
-
-    // Deja que AuthGate resuelva el destino final. Esto evita mandar por
-    // error a "Completar perfil" si Firestore/App Check todavía está
-    // estabilizándose justo después del login.
+    //check if user document exists, if not, route to onboarding, else to home
     Navigator.of(context).pushNamedAndRemoveUntil('/auth', (_) => false);
   }
 
@@ -98,30 +95,8 @@ class _LoginPageState extends ConsumerState<LoginPage>
     }
   }
 
-  // ── Facebook — placeholder ready to implement ──────────────────────────────
-  Future<void> _signInWithFacebook() async {
-    // ─────────────────────────────────────────────────────────────────────────
-    // TO IMPLEMENT:
-    // 1. flutter pub add flutter_facebook_auth
-    // 2. Add to android/app/src/main/res/values/strings.xml:
-    //      <string name="facebook_app_id">YOUR_APP_ID</string>
-    //      <string name="fb_login_protocol_scheme">fbYOUR_APP_ID</string>
-    //      <string name="facebook_client_token">YOUR_CLIENT_TOKEN</string>
-    // 3. Add to android/app/src/main/AndroidManifest.xml (inside <application>):
-    //      <meta-data android:name="com.facebook.sdk.ApplicationId" android:value="@string/facebook_app_id"/>
-    // 4. Enable Facebook provider in Firebase Console → Authentication
-    // 5. Replace this body with:
-    //
-    //    final result = await FacebookAuth.instance.login();
-    //    if (result.status == LoginStatus.success) {
-    //      final credential = FacebookAuthProvider.credential(result.accessToken!.tokenString);
-    //      final cred = await FirebaseAuth.instance.signInWithCredential(credential);
-    //      if (!mounted || cred.user == null) return;
-    //      await _routeAfterAuth(cred.user!);
-    //    }
-    // ─────────────────────────────────────────────────────────────────────────
-    _showError('Facebook login próximamente disponible.');
-  }
+  // ── Facebook — placeholder to be implemented next
+  Future<void> _signInWithFacebook() async {}
 
   // ── Email/Password ─────────────────────────────────────────────────────────
   Future<void> _signInEmailPassword() async {
@@ -208,10 +183,9 @@ class _LoginPageState extends ConsumerState<LoginPage>
   Widget build(BuildContext context) {
     final screen = MediaQuery.of(context).size;
     final anyLoading = _loading || _googleLoading;
-    final heroTop =
-        screen.height < 760 ? screen.height * 0.016 : screen.height * 0.04;
+    final heroTop = screen.height < 760 ? 8.0 : screen.height * 0.03;
     final sheetTop =
-        screen.height < 760 ? screen.height * 0.268 : screen.height * 0.23;
+        screen.height < 760 ? screen.height * 0.305 : screen.height * 0.245;
 
     return Scaffold(
       backgroundColor: context.appPageBackground,
@@ -263,13 +237,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
                             ),
                           ),
                           const SizedBox(height: 4),
-                          Text(
-                            'Accede a tu cuenta para continuar.',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: context.appTextSecondaryColor,
-                            ),
-                          ),
 
                           const SizedBox(height: 22),
 
@@ -277,7 +244,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                           const SizedBox(height: 6),
                           MyTextField(
                             controller: _emailCtrl,
-                            hintText: 'ejemplo@correo.com',
+                            hintText: '',
                             keyboardType: TextInputType.emailAddress,
                             textInputAction: TextInputAction.next,
                             prefixIcon: Icons.email_outlined,
@@ -290,7 +257,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                           const SizedBox(height: 6),
                           MyPasswordField(
                             controller: _passCtrl,
-                            hintText: 'Ingresa tu contraseña',
+                            hintText: '',
                             prefixIcon: Icons.lock_outline,
                             margin: EdgeInsets.zero,
                           ),

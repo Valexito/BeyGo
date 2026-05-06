@@ -33,7 +33,9 @@ class _HomeBottomPanelState extends State<HomeBottomPanel> {
   _Category? _activeCategory;
 
   static const _debounceMs = 320;
-  static const _minSize = 0.22;
+  static const _minSize = 0.24;
+  static const _midSize = 0.54;
+  static const _focusSize = 0.62;
   static const _maxSize = 0.80;
   static const _nearbyRadiusMeters = 25000;
 
@@ -52,7 +54,6 @@ class _HomeBottomPanelState extends State<HomeBottomPanel> {
     _loadRecents();
     _focus.addListener(() {
       setState(() => _hasFocus = _focus.hasFocus);
-      if (_focus.hasFocus) _animateTo(_maxSize);
     });
     _searchController.addListener(() => setState(() {}));
   }
@@ -161,7 +162,6 @@ class _HomeBottomPanelState extends State<HomeBottomPanel> {
     }
     setState(() => _activeCategory = cat);
     _searchController.text = cat.label;
-    _animateTo(_maxSize);
     _fetchSuggestions(cat.label);
   }
 
@@ -249,11 +249,16 @@ class _HomeBottomPanelState extends State<HomeBottomPanel> {
       minChildSize: _minSize,
       maxChildSize: _maxSize,
       snap: true,
-      snapSizes: const [_minSize, 0.50, _maxSize],
+      snapSizes: const [_minSize, _midSize, _focusSize, _maxSize],
       builder: (context, scrollController) {
         return GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onTap: () => _animateTo(_maxSize),
+          onTap: () {
+            if (widget.controller.isAttached &&
+                widget.controller.size <= (_minSize + 0.02)) {
+              _animateTo(_midSize);
+            }
+          },
           child: Container(
             decoration: BoxDecoration(
               color: context.appSectionBackground,
@@ -356,13 +361,14 @@ class _HomeBottomPanelState extends State<HomeBottomPanel> {
                               AnimatedContainer(
                                 duration: const Duration(milliseconds: 200),
                                 decoration: BoxDecoration(
-                                  color: context.appCardBackground,
+                                  color: context.appInputBackground,
                                   borderRadius: BorderRadius.circular(18),
                                   border: Border.all(
                                     color:
                                         _hasFocus
-                                            ? AppColors.headerBottom
-                                                .withValues(alpha: 0.55)
+                                            ? AppColors.headerBottom.withValues(
+                                              alpha: 0.55,
+                                            )
                                             : context.appBorderColor,
                                     width: _hasFocus ? 1.5 : 1,
                                   ),
@@ -372,7 +378,9 @@ class _HomeBottomPanelState extends State<HomeBottomPanel> {
                                           _hasFocus
                                               ? AppColors.headerBottom
                                                   .withValues(alpha: 0.10)
-                                              : Colors.black.withValues(alpha: 0.03),
+                                              : Colors.black.withValues(
+                                                alpha: 0.03,
+                                              ),
                                       blurRadius: _hasFocus ? 16 : 8,
                                       offset: const Offset(0, 3),
                                     ),
@@ -389,6 +397,7 @@ class _HomeBottomPanelState extends State<HomeBottomPanel> {
                                     color: context.appTextPrimaryColor,
                                   ),
                                   decoration: InputDecoration(
+                                    filled: false,
                                     hintText: 'Teatro, parqueo, hospital...',
                                     hintStyle: TextStyle(
                                       fontSize: 13,
@@ -455,6 +464,11 @@ class _HomeBottomPanelState extends State<HomeBottomPanel> {
                                             )
                                             : null,
                                     border: InputBorder.none,
+                                    enabledBorder: InputBorder.none,
+                                    focusedBorder: InputBorder.none,
+                                    disabledBorder: InputBorder.none,
+                                    errorBorder: InputBorder.none,
+                                    focusedErrorBorder: InputBorder.none,
                                     contentPadding: const EdgeInsets.symmetric(
                                       horizontal: 6,
                                       vertical: 14,
@@ -506,7 +520,9 @@ class _HomeBottomPanelState extends State<HomeBottomPanel> {
                                                     BoxShadow(
                                                       color: AppColors
                                                           .headerBottom
-                                                          .withValues(alpha: 0.28),
+                                                          .withValues(
+                                                            alpha: 0.28,
+                                                          ),
                                                       blurRadius: 10,
                                                       offset: const Offset(
                                                         0,

@@ -31,7 +31,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   // Must match HomeBottomPanel.initialChildSize/minChildSize so the floating
   // controls render in the correct position from the very first frame.
-  static const double _minSheet = 0.22;
+  static const double _minSheet = 0.24;
   double _sheetFraction = _minSheet;
 
   @override
@@ -117,7 +117,10 @@ class _HomePageState extends ConsumerState<HomePage> {
             left: 12,
             child: _TopBtn(
               icon: Icons.menu_rounded,
-              onTap: () => _scaffoldKey.currentState?.openDrawer(),
+              onTap: () {
+                _minimizePanel();
+                _scaffoldKey.currentState?.openDrawer();
+              },
             ),
           ),
 
@@ -127,15 +130,17 @@ class _HomePageState extends ConsumerState<HomePage> {
             right: 12,
             child: _TopBtn(
               icon: Icons.settings_outlined,
-              onTap:
-                  () => showModalBottomSheet(
-                    context: context,
-                    backgroundColor: Colors.transparent,
-                    builder:
-                        (_) => _SettingsSheet(
-                          themePreference: preferences.themePreference,
-                        ),
-                  ),
+              onTap: () {
+                _minimizePanel();
+                showModalBottomSheet(
+                  context: context,
+                  backgroundColor: Colors.transparent,
+                  builder:
+                      (_) => _SettingsSheet(
+                        themePreference: preferences.themePreference,
+                      ),
+                );
+              },
             ),
           ),
 
@@ -155,9 +160,18 @@ class _HomePageState extends ConsumerState<HomePage> {
             right: 12,
             bottom: controlsBottom,
             child: AppMapControls(
-              onZoomIn: _zoomIn,
-              onZoomOut: _zoomOut,
-              onMyLocation: _centerOnUser,
+              onZoomIn: () {
+                _minimizePanel();
+                _zoomIn();
+              },
+              onZoomOut: () {
+                _minimizePanel();
+                _zoomOut();
+              },
+              onMyLocation: () {
+                _minimizePanel();
+                _centerOnUser();
+              },
               loadingMyLocation: _locatingUser,
             ),
           ),
