@@ -55,10 +55,7 @@ class ReservationDialogs {
                       end: Alignment.bottomCenter,
                       colors:
                           context.isDarkMode
-                              ? const [
-                                Color(0xFF1E3A5F),
-                                Color(0xFF0F172A),
-                              ]
+                              ? const [Color(0xFF1E3A5F), Color(0xFF0F172A)]
                               : const [
                                 AppColors.headerTop,
                                 AppColors.headerBottom,
@@ -420,59 +417,70 @@ class ReservationDialogs {
   static Widget _title(BuildContext context, String text) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
     decoration: BoxDecoration(
-      color: AppColors.primarySoft.withValues(alpha: 0.25),
+      color:
+          context.isDarkMode
+              ? context.appBrandIconColor.withValues(alpha: 0.14)
+              : AppColors.primarySoft.withValues(alpha: 0.25),
       borderRadius: BorderRadius.circular(20),
     ),
     child: MyText(
       text: text,
       variant: MyTextVariant.normalBold,
-      customColor: AppColors.headerBottom,
+      customColor:
+          context.isDarkMode
+              ? context.appBrandTextColor
+              : AppColors.headerBottom,
       fontSize: 16,
     ),
   );
 
-  static Widget _strikeBox(BuildContext context, int used, int max) => Container(
-    width: double.infinity,
-    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-    decoration: BoxDecoration(
-      color: context.appCardBackgroundSoft,
-      borderRadius: BorderRadius.circular(14),
-    ),
-    child: Column(
-      children: [
-        const MyText(
-          text: 'Strikes',
-          variant: MyTextVariant.bodyMuted,
-          fontSize: 12,
+  static Widget _strikeBox(BuildContext context, int used, int max) =>
+      Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: context.appCardBackgroundSoft,
+          borderRadius: BorderRadius.circular(14),
         ),
-        const SizedBox(height: 4),
-        MyText(
-          text: '$used/$max',
-          variant: MyTextVariant.bodyBold,
-          fontSize: 18,
-          customColor: AppColors.headerBottom,
+        child: Column(
+          children: [
+            const MyText(
+              text: 'Strikes',
+              variant: MyTextVariant.bodyMuted,
+              fontSize: 12,
+            ),
+            const SizedBox(height: 4),
+            MyText(
+              text: '$used/$max',
+              variant: MyTextVariant.bodyBold,
+              fontSize: 18,
+              customColor:
+                  context.isDarkMode
+                      ? context.appBrandTextColor
+                      : AppColors.headerBottom,
+            ),
+          ],
         ),
-      ],
-    ),
-  );
+      );
 
-  static Widget _infoBox(BuildContext context, List<Widget> children) => Container(
-    width: double.infinity,
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: context.appCardBackgroundSoft,
-      borderRadius: BorderRadius.circular(16),
-    ),
-    child: Column(
-      children: List.generate(children.length, (index) {
-        final isLast = index == children.length - 1;
-        return Padding(
-          padding: EdgeInsets.only(bottom: isLast ? 0 : 12),
-          child: children[index],
-        );
-      }),
-    ),
-  );
+  static Widget _infoBox(BuildContext context, List<Widget> children) =>
+      Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: context.appCardBackgroundSoft,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          children: List.generate(children.length, (index) {
+            final isLast = index == children.length - 1;
+            return Padding(
+              padding: EdgeInsets.only(bottom: isLast ? 0 : 12),
+              child: children[index],
+            );
+          }),
+        ),
+      );
 
   static Widget _actions(
     BuildContext context,
@@ -487,7 +495,7 @@ class ReservationDialogs {
             onPressed: () => Navigator.pop(ctx, false),
             style: OutlinedButton.styleFrom(
               side: BorderSide(
-                color: AppColors.headerBottom.withValues(alpha: 0.35),
+                color: context.appBrandIconColor.withValues(alpha: 0.35),
                 width: 1.2,
               ),
               shape: RoundedRectangleBorder(
@@ -495,10 +503,13 @@ class ReservationDialogs {
               ),
               backgroundColor: context.appCardBackground,
             ),
-            child: const MyText(
+            child: MyText(
               text: 'No',
               variant: MyTextVariant.normalBold,
-              customColor: AppColors.headerBottom,
+              customColor:
+                  context.isDarkMode
+                      ? context.appBrandTextColor
+                      : AppColors.headerBottom,
               fontSize: 14,
             ),
           ),
@@ -544,7 +555,7 @@ class _Row extends StatelessWidget {
             color: context.appIconCircleColor,
             shape: BoxShape.circle,
           ),
-          child: Icon(icon, size: 16, color: AppColors.headerBottom),
+          child: Icon(icon, size: 16, color: context.appBrandIconColor),
         ),
         const SizedBox(width: 10),
         Expanded(
@@ -591,7 +602,7 @@ class _SummaryRow extends StatelessWidget {
             color: context.appIconCircleColor,
             shape: BoxShape.circle,
           ),
-          child: Icon(icon, size: 19, color: AppColors.headerBottom),
+          child: Icon(icon, size: 19, color: context.appBrandIconColor),
         ),
         const SizedBox(width: 12),
         Expanded(

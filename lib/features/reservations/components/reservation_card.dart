@@ -134,7 +134,10 @@ class _ReservationCardShell extends StatelessWidget {
                               text: 'No. ${reservation.reservationNumber}',
                               variant: MyTextVariant.bodyMuted,
                               fontSize: 12,
-                              customColor: AppColors.headerBottom,
+                              customColor:
+                                  context.isDarkMode
+                                      ? context.appBrandTextColor
+                                      : AppColors.headerBottom,
                             ),
                           ],
                           const SizedBox(height: 8),
@@ -205,7 +208,7 @@ class _ReservationCardShell extends StatelessWidget {
                                       ),
                               style: OutlinedButton.styleFrom(
                                 side: BorderSide(
-                                  color: AppColors.headerBottom.withValues(
+                                  color: context.appBrandIconColor.withValues(
                                     alpha: 0.18,
                                   ),
                                   width: 1.1,
@@ -217,20 +220,20 @@ class _ReservationCardShell extends StatelessWidget {
                                     context.isDarkMode
                                         ? context.appCardBackgroundSoft
                                         : const Color(0xFFF3F4F6),
-                                foregroundColor: AppColors.headerBottom,
+                                foregroundColor: context.appBrandIconColor,
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 8,
                                   vertical: 8,
                                 ),
                                 elevation: 0,
                               ),
-                              child: const Row(
+                              child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Icon(
                                     Icons.navigation_outlined,
                                     size: 15,
-                                    color: AppColors.headerBottom,
+                                    color: context.appBrandIconColor,
                                   ),
                                   SizedBox(width: 4),
                                   Flexible(
@@ -238,7 +241,7 @@ class _ReservationCardShell extends StatelessWidget {
                                       'Navegar',
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
-                                        color: AppColors.headerBottom,
+                                        color: context.appBrandTextColor,
                                         fontSize: 11.5,
                                         fontWeight: FontWeight.w700,
                                       ),
@@ -410,7 +413,7 @@ class _InfoChipLine extends StatelessWidget {
           decoration: BoxDecoration(
             color:
                 highlight
-                    ? AppColors.headerBottom.withValues(alpha: 0.10)
+                    ? context.appBrandIconColor.withValues(alpha: 0.12)
                     : context.appIconCircleColor,
             shape: BoxShape.circle,
           ),
@@ -419,8 +422,10 @@ class _InfoChipLine extends StatelessWidget {
             size: 13,
             color:
                 highlight
-                    ? AppColors.headerBottom
-                    : context.appTextSecondaryColor,
+                    ? context.appBrandIconColor
+                    : (context.isDarkMode
+                        ? context.appBrandIconColor
+                        : context.appTextSecondaryColor),
           ),
         ),
         const SizedBox(width: 7),
@@ -432,8 +437,10 @@ class _InfoChipLine extends StatelessWidget {
             style: TextStyle(
               color:
                   highlight
-                      ? AppColors.headerBottom
-                      : context.appTextSecondaryColor,
+                      ? context.appBrandTextColor
+                      : (context.isDarkMode
+                          ? context.appTextPrimaryColor
+                          : context.appTextSecondaryColor),
               fontSize: 11.5,
               fontWeight: highlight ? FontWeight.w700 : FontWeight.w500,
             ),

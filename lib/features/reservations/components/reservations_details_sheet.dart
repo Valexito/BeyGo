@@ -152,14 +152,20 @@ class _ReservationDetailsSheetState
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: AppColors.primarySoft.withValues(alpha: 0.20),
+            color:
+                context.isDarkMode
+                    ? context.appBrandIconColor.withValues(alpha: 0.14)
+                    : AppColors.primarySoft.withValues(alpha: 0.20),
             borderRadius: BorderRadius.circular(999),
           ),
           child: MyText(
             text: 'Espacio ${reservation.spaceNumber}',
             variant: MyTextVariant.bodyMuted,
             fontSize: 12,
-            customColor: AppColors.headerBottom,
+            customColor:
+                context.isDarkMode
+                    ? context.appBrandTextColor
+                    : AppColors.headerBottom,
           ),
         ),
         const SizedBox(height: 18),
@@ -306,7 +312,9 @@ class _ReservationDetailsSheetState
                               },
                       style: OutlinedButton.styleFrom(
                         side: BorderSide(
-                          color: AppColors.headerBottom.withValues(alpha: 0.35),
+                          color: context.appBrandIconColor.withValues(
+                            alpha: 0.35,
+                          ),
                           width: 1.2,
                         ),
                         shape: RoundedRectangleBorder(
@@ -317,7 +325,6 @@ class _ReservationDetailsSheetState
                       child: const MyText(
                         text: 'Cancelar reserva',
                         variant: MyTextVariant.normalBold,
-                        customColor: AppColors.headerBottom,
                         fontSize: 14,
                       ),
                     ),
@@ -450,10 +457,7 @@ class _ReservationDetailsSheetState
                         gradient: LinearGradient(
                           colors:
                               context.isDarkMode
-                                  ? const [
-                                    Color(0xFF1E3A5F),
-                                    Color(0xFF0F172A),
-                                  ]
+                                  ? const [Color(0xFF1E3A5F), Color(0xFF0F172A)]
                                   : const [
                                     AppColors.headerTop,
                                     AppColors.headerBottom,
@@ -464,7 +468,9 @@ class _ReservationDetailsSheetState
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.headerBottom.withValues(alpha: 0.22),
+                            color: AppColors.headerBottom.withValues(
+                              alpha: 0.22,
+                            ),
                             blurRadius: 16,
                             offset: const Offset(0, 8),
                           ),
@@ -483,13 +489,21 @@ class _ReservationDetailsSheetState
                         vertical: 8,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.primarySoft.withValues(alpha: 0.18),
+                        color:
+                            context.isDarkMode
+                                ? context.appBrandIconColor.withValues(
+                                  alpha: 0.14,
+                                )
+                                : AppColors.primarySoft.withValues(alpha: 0.18),
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: const MyText(
+                      child: MyText(
                         text: 'Confirmar cancelación',
                         variant: MyTextVariant.normalBold,
-                        customColor: AppColors.headerBottom,
+                        customColor:
+                            context.isDarkMode
+                                ? context.appBrandTextColor
+                                : AppColors.headerBottom,
                         fontSize: 16,
                       ),
                     ),
@@ -533,7 +547,10 @@ class _ReservationDetailsSheetState
                             text: '$previewStrike/$maxStrikes',
                             variant: MyTextVariant.bodyBold,
                             fontSize: 18,
-                            customColor: AppColors.headerBottom,
+                            customColor:
+                                context.isDarkMode
+                                    ? context.appBrandTextColor
+                                    : AppColors.headerBottom,
                           ),
                         ],
                       ),
@@ -548,7 +565,7 @@ class _ReservationDetailsSheetState
                               onPressed: () => Navigator.pop(ctx, false),
                               style: OutlinedButton.styleFrom(
                                 side: BorderSide(
-                                  color: AppColors.headerBottom.withValues(
+                                  color: context.appBrandIconColor.withValues(
                                     alpha: 0.35,
                                   ),
                                   width: 1.2,
@@ -560,10 +577,13 @@ class _ReservationDetailsSheetState
                                 ),
                                 backgroundColor: context.appCardBackground,
                               ),
-                              child: const MyText(
+                              child: MyText(
                                 text: 'No',
                                 variant: MyTextVariant.normalBold,
-                                customColor: AppColors.headerBottom,
+                                customColor:
+                                    context.isDarkMode
+                                        ? context.appBrandTextColor
+                                        : AppColors.headerBottom,
                                 fontSize: 14,
                               ),
                             ),
@@ -664,7 +684,7 @@ class _InfoRow extends StatelessWidget {
             color: context.appIconCircleColor,
             shape: BoxShape.circle,
           ),
-          child: Icon(icon, size: 16, color: AppColors.headerBottom),
+          child: Icon(icon, size: 16, color: context.appBrandIconColor),
         ),
         const SizedBox(width: 10),
         Expanded(
