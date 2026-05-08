@@ -173,7 +173,7 @@ class RouteBottomInfoCard extends StatelessWidget {
                       ),
                       child: const Icon(
                         Icons.directions_car_rounded,
-                        color: AppColors.headerBottom,
+                        color: Colors.white,
                         size: 22,
                       ),
                     ),
@@ -355,7 +355,12 @@ class _MiniDetailTile extends StatelessWidget {
               color: context.appIconCircleColor,
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, size: 17, color: AppColors.headerBottom),
+            child: Icon(
+              icon,
+              size: 17,
+              color:
+                  context.isDarkMode ? Colors.white : AppColors.headerBottom,
+            ),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -418,7 +423,14 @@ class _NavAppTile extends StatelessWidget {
                   color: context.appIconCircleColor,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(icon, color: AppColors.headerBottom, size: 20),
+                child: Icon(
+                  icon,
+                  color:
+                      context.isDarkMode
+                          ? Colors.white
+                          : AppColors.headerBottom,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(

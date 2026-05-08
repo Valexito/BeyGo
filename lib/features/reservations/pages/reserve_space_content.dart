@@ -375,7 +375,10 @@ class _ReserveSpaceContentState extends ConsumerState<ReserveSpaceContent> {
                                   Icon(
                                     Icons.directions_car_rounded,
                                     size: 18,
-                                    color: context.appBrandIconColor,
+                                    color:
+                                        context.isDarkMode
+                                            ? Colors.white
+                                            : context.appBrandIconColor,
                                   ),
                                   const SizedBox(width: 6),
                                   MyText(
@@ -650,7 +653,10 @@ class _VehicleSelectorCard extends StatelessWidget {
                 ),
                 child: Icon(
                   icon,
-                  color: context.appBrandIconColor,
+                  color:
+                      context.isDarkMode
+                          ? Colors.white
+                          : context.appBrandIconColor,
                   size: 20,
                 ),
               ),
@@ -985,7 +991,12 @@ class _InfoChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 18, color: AppColors.headerBottom),
+          Icon(
+            icon,
+            size: 18,
+            color:
+                context.isDarkMode ? Colors.white : AppColors.headerBottom,
+          ),
           const SizedBox(width: 8),
           MyText(text: label, variant: MyTextVariant.body, fontSize: 12),
         ],

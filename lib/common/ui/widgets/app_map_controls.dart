@@ -93,7 +93,7 @@ class _MapCtrlBtn extends StatelessWidget {
                     accent
                         ? Colors.white
                         : (context.isDarkMode
-                            ? context.appBrandIconColor
+                            ? Colors.white
                             : accentColor),
               ),
     ),
