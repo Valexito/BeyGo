@@ -125,6 +125,99 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
     );
   }
 
+  Future<void> _showPasswordRequirements() async {
+    await showDialog<void>(
+      context: context,
+      builder:
+          (ctx) => AlertDialog(
+            backgroundColor: ctx.appCardBackground,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(22),
+            ),
+            titlePadding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
+            contentPadding: const EdgeInsets.fromLTRB(20, 0, 20, 18),
+            title: Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: AppColors.headerBottom.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.info_outline_rounded,
+                    color: AppColors.headerBottom,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  'Contraseña segura',
+                  style: TextStyle(
+                    color: ctx.appTextPrimaryColor,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 18,
+                  ),
+                ),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Tu contraseña debe incluir:',
+                  style: TextStyle(
+                    color: ctx.appTextSecondaryColor,
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ...const [
+                  '8 caracteres o más',
+                  '1 letra mayúscula',
+                  '1 letra minúscula',
+                  '1 número',
+                  '1 símbolo o carácter especial',
+                ].map(
+                  (item) => Padding(
+                    padding: EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.check_circle_rounded,
+                          size: 18,
+                          color: AppColors.headerBottom,
+                        ),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            item,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Entendido'),
+              ),
+            ],
+          ),
+    );
+  }
+
   String? _validateEmail(String? v) {
     final email = (v ?? '').trim();
     if (email.isEmpty) return 'Ingresa tu correo.';
@@ -278,18 +371,33 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
                             const SizedBox(height: 6),
                             _Field(
                               controller: _email,
-                              hint: 'ejemplo@correo.com',
+                              hint: '',
                               icon: Icons.mail_outline_rounded,
                               keyboardType: TextInputType.emailAddress,
                               validator: _validateEmail,
                             ),
                             const SizedBox(height: 16),
 
-                            const _FieldLabel('Contraseña'),
+                            Row(
+                              children: [
+                                const Expanded(child: _FieldLabel('Contraseña')),
+                                IconButton(
+                                  tooltip: 'Requisitos de contraseña',
+                                  onPressed: _showPasswordRequirements,
+                                  icon: Icon(
+                                    Icons.info_outline_rounded,
+                                    size: 18,
+                                    color: context.appTextSecondaryColor,
+                                  ),
+                                  visualDensity: VisualDensity.compact,
+                                  splashRadius: 18,
+                                ),
+                              ],
+                            ),
                             const SizedBox(height: 6),
                             _Field(
                               controller: _password,
-                              hint: '••••••••',
+                              hint: '',
                               icon: Icons.lock_outline_rounded,
                               obscure: _obscurePass,
                               validator: _validatePassword,
@@ -301,22 +409,13 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
                                     ),
                               ),
                             ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Usa 8+ caracteres con mayúscula, minúscula, número y símbolo.',
-                              style: TextStyle(
-                                fontSize: 12,
-                                height: 1.35,
-                                color: context.appTextSecondaryColor,
-                              ),
-                            ),
                             const SizedBox(height: 16),
 
                             const _FieldLabel('Confirmar contraseña'),
                             const SizedBox(height: 6),
                             _Field(
                               controller: _confirm,
-                              hint: '••••••••',
+                              hint: '',
                               icon: Icons.lock_outline_rounded,
                               obscure: _obscureConfirm,
                               validator: _validateConfirm,

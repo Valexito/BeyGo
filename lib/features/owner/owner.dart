@@ -17,6 +17,6 @@ export 'providers/owner_management_providers.dart';
 export 'providers/provider_request_submit_provider.dart';
 export 'providers/provider_requests_providers.dart';
 export 'widgets/app_header.dart';
-export 'widgets/become_owner_page.dart';
+export 'pages/become_owner_page.dart';
 export 'widgets/open_parking_sheet.dart';
 export 'widgets/owner_dialogs.dart';

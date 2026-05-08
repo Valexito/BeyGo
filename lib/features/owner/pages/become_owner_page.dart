@@ -9,6 +9,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:beygo/common/common.dart';
 import 'package:beygo/features/owner/owner.dart';
 import 'package:beygo/features/core/core.dart';
+
 class BecomeOwnerPage extends ConsumerStatefulWidget {
   final VoidCallback? onBack;
   const BecomeOwnerPage({super.key, this.onBack});
@@ -164,9 +165,7 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
   Future<void> _pickOnMap() async {
     final result = await Navigator.push<LatLng>(
       context,
-      MaterialPageRoute(
-        builder: (_) => MapPickPage(initialPosition: _picked),
-      ),
+      MaterialPageRoute(builder: (_) => MapPickPage(initialPosition: _picked)),
     );
     if (result != null) setState(() => _picked = result);
   }
@@ -204,8 +203,10 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
     setState(() => _sending = true);
 
     try {
+      _showSubmissionLoading();
       final uid = _auth.currentUser?.uid;
       if (uid == null) {
+        if (mounted) Navigator.of(context, rootNavigator: true).pop();
         _showSnack('Debes iniciar sesión.');
         return;
       }
@@ -236,6 +237,7 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
       );
 
       if (!mounted) return;
+      Navigator.of(context, rootNavigator: true).pop();
 
       await AppDialog.show(
         context,
@@ -252,9 +254,11 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
       if (!mounted) return;
       Navigator.pop(context);
     } on ProviderRequestSubmitException catch (e) {
+      if (mounted) Navigator.of(context, rootNavigator: true).pop();
       if (!mounted) return;
       _showSnack(e.userMessage);
     } catch (e) {
+      if (mounted) Navigator.of(context, rootNavigator: true).pop();
       if (!mounted) return;
       final msg = e.toString().toLowerCase();
       if (msg.contains('network') ||
@@ -267,6 +271,21 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
     } finally {
       if (mounted) setState(() => _sending = false);
     }
+  }
+
+  void _showSubmissionLoading() {
+    showGeneralDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      barrierLabel: 'Enviando solicitud',
+      pageBuilder:
+          (_, __, ___) => const AppLoadingScreen(
+            message: 'Enviando tu solicitud',
+            submessage:
+                'Estamos cargando tus datos, verificando la información y subiendo tus fotos...',
+            variant: LoadingVariant.profile,
+          ),
+    );
   }
 
   void _showSnack(String msg) {
@@ -335,9 +354,7 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
               Container(
                 height: screen.height * 0.38,
                 width: double.infinity,
-                decoration: BoxDecoration(
-                  gradient: headerGradient,
-                ),
+                decoration: BoxDecoration(gradient: headerGradient),
               ),
 
               // Blobs
@@ -443,13 +460,6 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
                               ),
                             ),
                             const SizedBox(height: 4),
-                            Text(
-                              'Completa tu información, sube tus documentos y envía tu solicitud para revisión.',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: context.appTextSecondaryColor,
-                              ),
-                            ),
 
                             const SizedBox(height: 24),
 
@@ -460,10 +470,7 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
                             ),
                             const SizedBox(height: 14),
 
-                            _FieldLabel(
-                              label: 'Empresa o encargado',
-                              hint: 'Nombre legal o nombre del propietario',
-                            ),
+                            _FieldLabel(label: 'Empresa o encargado', hint: ''),
                             const SizedBox(height: 6),
                             _FormField(
                               controller: _companyName,
@@ -473,10 +480,7 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
                             ),
 
                             const SizedBox(height: 14),
-                            _FieldLabel(
-                              label: 'Nombre del parqueo',
-                              hint: 'Como aparecerá en la app',
-                            ),
+                            _FieldLabel(label: 'Nombre del parqueo', hint: ''),
                             const SizedBox(height: 6),
                             _FormField(
                               controller: _parkingName,
@@ -487,10 +491,7 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
                             ),
 
                             const SizedBox(height: 14),
-                            _FieldLabel(
-                              label: 'NIT',
-                              hint: 'Número de identificación tributaria',
-                            ),
+                            _FieldLabel(label: 'NIT', hint: ''),
                             const SizedBox(height: 6),
                             _FormField(
                               controller: _nit,
@@ -512,10 +513,7 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
                             ),
                             const SizedBox(height: 14),
 
-                            _FieldLabel(
-                              label: 'Correo electrónico',
-                              hint: 'Para recibir notificaciones',
-                            ),
+                            _FieldLabel(label: 'Correo electrónico', hint: ''),
                             const SizedBox(height: 6),
                             _FormField(
                               controller: _email,
@@ -528,7 +526,7 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
                             const SizedBox(height: 14),
                             _FieldLabel(
                               label: 'Teléfono de contacto',
-                              hint: 'Número con código de país',
+                              hint: '',
                             ),
                             const SizedBox(height: 6),
                             AppPhoneField(
@@ -546,10 +544,7 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
                             ),
                             const SizedBox(height: 14),
 
-                            _FieldLabel(
-                              label: 'Dirección',
-                              hint: 'Dirección exacta del parqueo',
-                            ),
+                            _FieldLabel(label: 'Dirección', hint: ''),
                             const SizedBox(height: 6),
                             _FormField(
                               controller: _address,
@@ -566,10 +561,7 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      _FieldLabel(
-                                        label: 'Capacidad',
-                                        hint: 'Espacios totales',
-                                      ),
+                                      _FieldLabel(label: 'Capacidad', hint: ''),
                                       const SizedBox(height: 6),
                                       _FormField(
                                         controller: _capacity,
@@ -601,7 +593,7 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
                                     children: [
                                       _FieldLabel(
                                         label: 'Precio / hora (Q)',
-                                        hint: 'En quetzales',
+                                        hint: '',
                                       ),
                                       const SizedBox(height: 6),
                                       _FormField(
@@ -629,10 +621,7 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
                             ),
 
                             const SizedBox(height: 14),
-                            _FieldLabel(
-                              label: 'Descripción breve',
-                              hint: 'Características del parqueo (opcional)',
-                            ),
+                            _FieldLabel(label: 'Descripción breve', hint: ''),
                             const SizedBox(height: 6),
                             TextFormField(
                               controller: _description,
@@ -1081,7 +1070,6 @@ class _FormField extends StatelessWidget {
   }
 }
 
-
 class _TimeButton extends StatelessWidget {
   final String label;
   final String time;
@@ -1100,7 +1088,7 @@ class _TimeButton extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(14),
-        child: Container(
+      child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color: context.appCardBackground,
@@ -1187,9 +1175,7 @@ class _CancellationSelector extends StatelessWidget {
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
                     color:
-                        selected
-                            ? Colors.white
-                            : context.appTextSecondaryColor,
+                        selected ? Colors.white : context.appTextSecondaryColor,
                   ),
                 ),
               ),
@@ -1208,13 +1194,13 @@ class _MapPickButton extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 18),
-          decoration: BoxDecoration(
-            color: context.appCardBackground,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 18),
+        decoration: BoxDecoration(
+          color: context.appCardBackground,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-              color: AppColors.headerBottom.withValues(alpha: 0.25),
+            color: AppColors.headerBottom.withValues(alpha: 0.25),
             width: 1.4,
           ),
         ),
