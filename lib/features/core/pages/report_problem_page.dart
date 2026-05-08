@@ -243,7 +243,7 @@ class _ReportProblemPageState extends ConsumerState<ReportProblemPage> {
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               MyText(
-                                text: 'Detalle del reporte',
+                                text: 'Detalle del reporte / retroalimentación',
                                 variant: MyTextVariant.title,
                                 customColor:
                                     context.isDarkMode

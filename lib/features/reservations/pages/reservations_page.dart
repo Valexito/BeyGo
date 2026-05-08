@@ -35,10 +35,12 @@ class _ReservationsPageState extends ConsumerState<ReservationsPage>
   late final TabController _tab = TabController(length: 3, vsync: this);
   final Set<String> _ratingPromptInFlight = <String>{};
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
   String _searchQuery = '';
   _ReservationsPeriodFilter _periodFilter = _ReservationsPeriodFilter.week;
   DateTimeRange? _dateRange;
   bool _handledInitialReservation = false;
+  bool _searchHasFocus = false;
 
   bool get _isActiveTab => _tab.index == 0;
 
@@ -46,7 +48,13 @@ class _ReservationsPageState extends ConsumerState<ReservationsPage>
   void initState() {
     super.initState();
     _tab.addListener(() {
+      if (!_tab.indexIsChanging) return;
+      FocusManager.instance.primaryFocus?.unfocus();
       if (mounted) setState(() {});
+    });
+    _searchFocusNode.addListener(() {
+      if (!mounted) return;
+      setState(() => _searchHasFocus = _searchFocusNode.hasFocus);
     });
   }
 
@@ -54,6 +62,7 @@ class _ReservationsPageState extends ConsumerState<ReservationsPage>
   void dispose() {
     _tab.dispose();
     _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -430,61 +439,101 @@ class _ReservationsPageState extends ConsumerState<ReservationsPage>
                 child: Column(
                   children: [
                     Container(
-                      decoration: BoxDecoration(
-                        color: context.appCardBackground,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: context.appBorderColor),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(
-                              alpha: context.isDarkMode ? 0.18 : 0.10,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        decoration: BoxDecoration(
+                          color: context.appInputBackground,
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color:
+                                _searchHasFocus
+                                    ? AppColors.headerBottom.withValues(
+                                      alpha: 0.55,
+                                    )
+                                    : context.appBorderColor,
+                            width: _searchHasFocus ? 1.5 : 1,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color:
+                                  _searchHasFocus
+                                      ? AppColors.headerBottom.withValues(
+                                        alpha: 0.10,
+                                      )
+                                      : Colors.black.withValues(
+                                        alpha: context.isDarkMode ? 0.06 : 0.03,
+                                      ),
+                              blurRadius: _searchHasFocus ? 16 : 8,
+                              offset: const Offset(0, 3),
                             ),
-                            blurRadius: 16,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: TextField(
-                        controller: _searchController,
-                        onChanged: (v) => setState(() => _searchQuery = v),
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: context.appTextPrimaryColor,
+                          ],
                         ),
-                        decoration: InputDecoration(
-                          hintText: 'Buscar por No., nombre, placa...',
-                          hintStyle: TextStyle(
-                            fontSize: 13,
-                            color: context.appTextSecondaryColor,
+                        child: TextField(
+                          controller: _searchController,
+                          focusNode: _searchFocusNode,
+                          onChanged: (v) => setState(() => _searchQuery = v),
+                          onTapOutside:
+                              (_) => FocusManager.instance.primaryFocus
+                                  ?.unfocus(),
+                          textInputAction: TextInputAction.search,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: context.appTextPrimaryColor,
                           ),
-                          prefixIcon: Icon(
-                            Icons.search_rounded,
-                            color: context.appTextSecondaryColor,
-                            size: 20,
-                          ),
-                          suffixIcon:
-                              _searchQuery.isNotEmpty
-                                  ? IconButton(
-                                    icon: Icon(
-                                      Icons.close_rounded,
-                                      size: 18,
-                                      color: context.appTextSecondaryColor,
-                                    ),
-                                    onPressed: () {
-                                      _searchController.clear();
-                                      setState(() => _searchQuery = '');
-                                    },
-                                  )
-                                  : null,
-                          filled: true,
-                          fillColor: context.appCardBackground,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 14,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide.none,
+                          decoration: InputDecoration(
+                            filled: false,
+                            hintText: 'Buscar por No., nombre, placa...',
+                            hintStyle: TextStyle(
+                              fontSize: 13,
+                              color: context.appTextSecondaryColor,
+                              fontWeight: FontWeight.w400,
+                            ),
+                            prefixIcon: Padding(
+                              padding: const EdgeInsets.all(13),
+                              child: Icon(
+                                Icons.search_rounded,
+                                size: 20,
+                                color:
+                                    _searchHasFocus
+                                        ? AppColors.headerBottom
+                                        : context.appTextSecondaryColor,
+                              ),
+                            ),
+                            suffixIcon:
+                                _searchQuery.isNotEmpty
+                                    ? GestureDetector(
+                                      onTap: () {
+                                        _searchController.clear();
+                                        setState(() => _searchQuery = '');
+                                      },
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(12),
+                                        child: Container(
+                                          padding: const EdgeInsets.all(3),
+                                          decoration: BoxDecoration(
+                                            color: context.appBorderColor,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: Icon(
+                                            Icons.close_rounded,
+                                            size: 12,
+                                            color: context.appTextSecondaryColor,
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                    : null,
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            disabledBorder: InputBorder.none,
+                            errorBorder: InputBorder.none,
+                            focusedErrorBorder: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 14,
+                            ),
                           ),
                         ),
                       ),
@@ -724,55 +773,68 @@ class _EmptyReservationsState extends StatelessWidget {
         icon = Icons.cancel_outlined;
     }
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 28),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 86,
-              height: 86,
-              decoration: BoxDecoration(
-                color: context.appCardBackground,
-                shape: BoxShape.circle,
-                border: Border.all(color: context.appBorderColor),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(
-                      alpha: context.isDarkMode ? 0.18 : 0.08,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(
+            28,
+            24,
+            28,
+            MediaQuery.of(context).viewInsets.bottom + 32,
+          ),
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight - 56),
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 86,
+                    height: 86,
+                    decoration: BoxDecoration(
+                      color: context.appCardBackground,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: context.appBorderColor),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(
+                            alpha: context.isDarkMode ? 0.18 : 0.08,
+                          ),
+                          blurRadius: 20,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
                     ),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
+                    child: Icon(
+                      icon,
+                      size: 34,
+                      color:
+                          context.isDarkMode
+                              ? context.appBrandIconColor
+                              : AppColors.headerBottom,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  MyText(
+                    text: title,
+                    variant: MyTextVariant.bodyBold,
+                    fontSize: 17,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  MyText(
+                    text: subtitle,
+                    variant: MyTextVariant.bodyMuted,
+                    fontSize: 14,
+                    textAlign: TextAlign.center,
                   ),
                 ],
               ),
-              child: Icon(
-                icon,
-                size: 34,
-                color:
-                    context.isDarkMode
-                        ? context.appBrandIconColor
-                        : AppColors.headerBottom,
-              ),
             ),
-            const SizedBox(height: 18),
-            MyText(
-              text: title,
-              variant: MyTextVariant.bodyBold,
-              fontSize: 17,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            MyText(
-              text: subtitle,
-              variant: MyTextVariant.bodyMuted,
-              fontSize: 14,
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

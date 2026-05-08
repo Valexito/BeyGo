@@ -438,60 +438,100 @@ class _SearchBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: context.appCardBackground,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.headerBottom.withValues(alpha: 0.12),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
+    return AnimatedBuilder(
+      animation: focusNode,
+      builder: (context, _) {
+        final hasFocus = focusNode.hasFocus;
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          decoration: BoxDecoration(
+            color: context.appInputBackground,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color:
+                  hasFocus
+                      ? AppColors.headerBottom.withValues(alpha: 0.55)
+                      : context.appBorderColor,
+              width: hasFocus ? 1.5 : 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color:
+                    hasFocus
+                        ? AppColors.headerBottom.withValues(alpha: 0.10)
+                        : Colors.black.withValues(
+                          alpha: context.isDarkMode ? 0.06 : 0.03,
+                        ),
+                blurRadius: hasFocus ? 16 : 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: TextField(
-        controller: controller,
-        focusNode: focusNode,
-        onChanged: onChanged,
-        style: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          color: context.appTextPrimaryColor,
-        ),
-        decoration: InputDecoration(
-          hintText: 'Buscar dirección...',
-          hintStyle: TextStyle(
-            fontSize: 13,
-            color: context.appTextSecondaryColor,
+          child: TextField(
+            controller: controller,
+            focusNode: focusNode,
+            onChanged: onChanged,
+            onTapOutside:
+                (_) => FocusManager.instance.primaryFocus?.unfocus(),
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: context.appTextPrimaryColor,
+            ),
+            decoration: InputDecoration(
+              hintText: 'Buscar dirección...',
+              hintStyle: TextStyle(
+                fontSize: 13,
+                color: context.appTextSecondaryColor,
+                fontWeight: FontWeight.w400,
+              ),
+              prefixIcon: Padding(
+                padding: const EdgeInsets.all(13),
+                child: Icon(
+                  Icons.search_rounded,
+                  color:
+                      hasFocus
+                          ? AppColors.headerBottom
+                          : context.appTextSecondaryColor,
+                  size: 20,
+                ),
+              ),
+              suffixIcon:
+                  controller.text.isNotEmpty
+                      ? GestureDetector(
+                        onTap: onClear,
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Container(
+                            padding: const EdgeInsets.all(3),
+                            decoration: BoxDecoration(
+                              color: context.appBorderColor,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.close_rounded,
+                              size: 12,
+                              color: context.appTextSecondaryColor,
+                            ),
+                          ),
+                        ),
+                      )
+                      : null,
+              filled: false,
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              disabledBorder: InputBorder.none,
+              errorBorder: InputBorder.none,
+              focusedErrorBorder: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 6,
+                vertical: 14,
+              ),
+            ),
           ),
-          prefixIcon: Icon(
-            Icons.search_rounded,
-            color: context.appTextSecondaryColor,
-            size: 20,
-          ),
-          suffixIcon:
-              controller.text.isNotEmpty
-                  ? IconButton(
-                    icon: Icon(
-                      Icons.close_rounded,
-                      color: Colors.grey.shade400,
-                    ),
-                    onPressed: onClear,
-                  )
-                  : null,
-          filled: true,
-          fillColor: context.appCardBackground,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 14,
-          ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide.none,
-          ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

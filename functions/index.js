@@ -1153,7 +1153,7 @@ exports.onProviderRequestCreated = onDocumentCreated({
         subject: `BeyGo: recibimos tu solicitud ${requestNumber}`,
         text:
             `Hola,\n\n` +
-            `Tu solicitud para convertirte en owner fue enviada correctamente.\n\n` +
+            `Tu solicitud para convertirte en propietario de ${parkingName} fue enviada correctamente.\n\n` +
             `Número de solicitud: ${requestNumber}\n` +
             `Parqueo: ${parkingName}\n\n` +
             `Nuestro equipo de soporte revisará tu información y se pondrá en contacto contigo para continuar el proceso.\n\n` +
@@ -1161,7 +1161,7 @@ exports.onProviderRequestCreated = onDocumentCreated({
         html:
             `<div style="font-family:Arial,sans-serif;padding:16px">` +
             `<h2>Solicitud recibida</h2>` +
-            `<p>Tu solicitud para convertirte en <strong>owner</strong> fue enviada correctamente.</p>` +
+            `<p>Tu solicitud para convertirte en <strong>propietario de ${parkingName}</strong> fue enviada correctamente.</p>` +
             `<p><strong>Número de solicitud:</strong> ${requestNumber}</p>` +
             `<p><strong>Parqueo:</strong> ${parkingName}</p>` +
             `<p>Nuestro equipo de soporte revisará tu información y se pondrá en contacto contigo para continuar el proceso.</p>` +

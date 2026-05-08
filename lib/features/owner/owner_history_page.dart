@@ -1916,53 +1916,68 @@ class _OwnerEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 28),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: context.appCardBackground,
-                shape: BoxShape.circle,
-                border: Border.all(color: context.appBorderColor),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(
-                      alpha: context.isDarkMode ? 0.18 : 0.08,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(
+            28,
+            24,
+            28,
+            MediaQuery.of(context).viewInsets.bottom + 32,
+          ),
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight - 56),
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      color: context.appCardBackground,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: context.appBorderColor),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(
+                            alpha: context.isDarkMode ? 0.18 : 0.08,
+                          ),
+                          blurRadius: 20,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
                     ),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
+                    child: Icon(
+                      icon,
+                      size: 32,
+                      color:
+                          context.isDarkMode
+                              ? Colors.white
+                              : AppColors.headerBottom,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  MyText(
+                    text: title,
+                    variant: MyTextVariant.bodyBold,
+                    fontSize: 16,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 6),
+                  MyText(
+                    text: subtitle,
+                    variant: MyTextVariant.bodyMuted,
+                    fontSize: 13,
+                    textAlign: TextAlign.center,
                   ),
                 ],
               ),
-              child: Icon(
-                icon,
-                size: 32,
-                color:
-                    context.isDarkMode ? Colors.white : AppColors.headerBottom,
-              ),
             ),
-            const SizedBox(height: 16),
-            MyText(
-              text: title,
-              variant: MyTextVariant.bodyBold,
-              fontSize: 16,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 6),
-            MyText(
-              text: subtitle,
-              variant: MyTextVariant.bodyMuted,
-              fontSize: 13,
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

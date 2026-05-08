@@ -459,7 +459,8 @@ class _SettingsBody extends ConsumerWidget {
             _SectionHeader(
               icon: Icons.support_agent_rounded,
               title: 'Soporte',
-              subtitle: 'Pide ayuda o envíanos feedback',
+              subtitle:
+                  'Pide ayuda o envíanos retroalimentación para mejorar BeyGo',
             ),
             _SettingsCard(
               children: [
@@ -484,7 +485,7 @@ class _SettingsBody extends ConsumerWidget {
                 _NavRow(
                   icon: Icons.chat_bubble_outline_rounded,
                   iconColor: const Color(0xFF0EA5E9),
-                  label: 'Enviar feedback',
+                  label: 'Enviar retroalimentación',
                   subtitle: 'Cuéntanos qué mejorar o qué te gustaría ver',
                   onTap:
                       () => Navigator.push(
@@ -493,7 +494,7 @@ class _SettingsBody extends ConsumerWidget {
                           builder:
                               (_) => const ReportProblemPage(
                                 initialReportType: 'Otro',
-                                initialSubject: 'Feedback de la app',
+                                initialSubject: 'Retroalimentación de la app',
                               ),
                         ),
                       ),
@@ -1058,8 +1059,8 @@ Future<void> _showThemePicker(BuildContext context, WidgetRef ref) async {
                 tileColor:
                     selected
                         ? context.appBrandIconColor.withValues(
-                            alpha: context.isDarkMode ? 0.16 : 0.08,
-                          )
+                          alpha: context.isDarkMode ? 0.16 : 0.08,
+                        )
                         : Colors.transparent,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
