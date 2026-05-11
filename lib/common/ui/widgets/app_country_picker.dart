@@ -322,9 +322,10 @@ class AppPhoneField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: context.appInputBackgroundActive,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: context.appBorderColor),
       ),
       child: Row(
@@ -333,7 +334,7 @@ class AppPhoneField extends StatelessWidget {
           GestureDetector(
             onTap: readOnly ? null : onPickCountry,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
               decoration: BoxDecoration(
                 border: Border(
                   right: BorderSide(color: context.appBorderColor),
@@ -373,31 +374,45 @@ class AppPhoneField extends StatelessWidget {
 
           // Number input
           Expanded(
-            child: TextField(
-              controller: numberController,
-              readOnly: readOnly,
-              keyboardType: TextInputType.phone,
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'[0-9\s\-]')),
-              ],
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color:
-                    readOnly
-                        ? context.appTextSecondaryColor
-                        : context.appTextPrimaryColor,
-              ),
-              decoration: InputDecoration(
-                hintText: hint,
-                hintStyle: TextStyle(
-                  fontSize: 13,
-                  color: context.appTextSecondaryColor,
+            child: Theme(
+              data: Theme.of(context).copyWith(
+                inputDecorationTheme: const InputDecorationTheme(
+                  isCollapsed: true,
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  disabledBorder: InputBorder.none,
+                  errorBorder: InputBorder.none,
+                  focusedErrorBorder: InputBorder.none,
                 ),
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 12,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 15,
+                ),
+                child: TextField(
+                  controller: numberController,
+                  readOnly: readOnly,
+                  keyboardType: TextInputType.phone,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'[0-9\s\-]')),
+                  ],
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color:
+                        readOnly
+                            ? context.appTextSecondaryColor
+                            : context.appTextPrimaryColor,
+                  ),
+                  decoration: InputDecoration.collapsed(
+                    hintText: hint,
+                    hintStyle: TextStyle(
+                      fontSize: 13,
+                      color: context.appTextSecondaryColor,
+                    ),
+                  ),
                 ),
               ),
             ),

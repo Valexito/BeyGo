@@ -104,10 +104,27 @@ class ProfilePage extends ConsumerWidget {
                                     children: [
                                       Row(
                                         mainAxisAlignment:
-                                            MainAxisAlignment.end,
+                                            MainAxisAlignment.spaceBetween,
                                         children: [
+                                          TextButton.icon(
+                                            onPressed:
+                                                () => Navigator.pop(context),
+                                            style: TextButton.styleFrom(
+                                              foregroundColor: Colors.white,
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 6,
+                                                    vertical: 4,
+                                                  ),
+                                            ),
+                                            icon: const Icon(
+                                              Icons.arrow_back_ios_new_rounded,
+                                              size: 16,
+                                            ),
+                                            label: const Text('Regresar'),
+                                          ),
                                           SizedBox(
-                                            height: 34,
+                                            height: 40,
                                             child: OutlinedButton(
                                               style: OutlinedButton.styleFrom(
                                                 side: BorderSide(
@@ -118,11 +135,11 @@ class ProfilePage extends ConsumerWidget {
                                                 foregroundColor: Colors.white,
                                                 padding:
                                                     const EdgeInsets.symmetric(
-                                                      horizontal: 14,
+                                                      horizontal: 16,
                                                     ),
                                                 shape: RoundedRectangleBorder(
                                                   borderRadius:
-                                                      BorderRadius.circular(12),
+                                                      BorderRadius.circular(14),
                                                 ),
                                               ),
                                               onPressed: () {
@@ -190,27 +207,6 @@ class ProfilePage extends ConsumerWidget {
                                       const SizedBox(height: 6),
                                     ],
                                   ),
-                                ),
-                              ),
-                            ),
-                            Positioned(
-                              left: 8,
-                              top: 10,
-                              child: SafeArea(
-                                child: TextButton.icon(
-                                  onPressed: () => Navigator.pop(context),
-                                  style: TextButton.styleFrom(
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 6,
-                                      vertical: 4,
-                                    ),
-                                  ),
-                                  icon: const Icon(
-                                    Icons.arrow_back_ios_new_rounded,
-                                    size: 16,
-                                  ),
-                                  label: const Text('Regresar'),
                                 ),
                               ),
                             ),

@@ -492,9 +492,18 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
                                         vertical: 7,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: AppColors.headerBottom
-                                            .withValues(alpha: 0.08),
+                                        color:
+                                            context.isDarkMode
+                                                ? context.appCardBackgroundSoft
+                                                : AppColors.headerBottom
+                                                    .withValues(alpha: 0.08),
                                         borderRadius: BorderRadius.circular(20),
+                                        border: Border.all(
+                                          color:
+                                              context.isDarkMode
+                                                  ? context.appBorderColor
+                                                  : Colors.transparent,
+                                        ),
                                       ),
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
@@ -586,7 +595,10 @@ class _SectionHeader extends StatelessWidget {
         width: 30,
         height: 30,
         decoration: BoxDecoration(
-          color: AppColors.headerBottom.withValues(alpha: 0.08),
+          color:
+              context.isDarkMode
+                  ? context.appCardBackgroundSoft
+                  : AppColors.headerBottom.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(9),
         ),
         child: Icon(icon, size: 16, color: context.appBrandIconColor),
@@ -750,8 +762,10 @@ class _VehicleCardState extends State<_VehicleCard> {
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.headerBottom.withValues(alpha: 0.05),
-            blurRadius: 10,
+            color: Colors.black.withValues(
+              alpha: context.isDarkMode ? 0.18 : 0.05,
+            ),
+            blurRadius: context.isDarkMode ? 18 : 10,
             offset: const Offset(0, 3),
           ),
         ],
@@ -828,7 +842,12 @@ class _VehicleCardState extends State<_VehicleCard> {
                     child: Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFDC2626).withValues(alpha: 0.08),
+                        color:
+                            context.isDarkMode
+                                ? const Color(0xFFDC2626).withValues(alpha: 0.14)
+                                : const Color(
+                                  0xFFDC2626,
+                                ).withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Icon(
@@ -910,6 +929,7 @@ class _VehicleCardState extends State<_VehicleCard> {
                   decoration: BoxDecoration(
                     color: context.appInputBackground,
                     borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: context.appBorderColor),
                   ),
                   child: Row(
                     children: [
@@ -917,7 +937,10 @@ class _VehicleCardState extends State<_VehicleCard> {
                         width: 52,
                         height: 52,
                         decoration: BoxDecoration(
-                          color: AppColors.headerBottom,
+                          color:
+                              context.isDarkMode
+                                  ? const Color(0xFF213453)
+                                  : AppColors.headerBottom,
                           borderRadius: const BorderRadius.only(
                             topLeft: Radius.circular(14),
                             bottomLeft: Radius.circular(14),
@@ -978,10 +1001,16 @@ class _VehicleCardState extends State<_VehicleCard> {
                     vertical: 10,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.headerBottom.withValues(alpha: 0.05),
+                    color:
+                        context.isDarkMode
+                            ? context.appCardBackgroundSoft
+                            : AppColors.headerBottom.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: AppColors.headerBottom.withValues(alpha: 0.12),
+                      color:
+                          context.isDarkMode
+                              ? context.appBorderColor
+                              : AppColors.headerBottom.withValues(alpha: 0.12),
                     ),
                   ),
                   child: Row(

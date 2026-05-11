@@ -213,43 +213,52 @@ class _ReservationChatSheetState extends ConsumerState<ReservationChatSheet> {
                       ),
                   data: (messages) {
                     if (messages.isEmpty) {
-                      return Center(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 32),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: 72,
-                                height: 72,
-                                decoration: BoxDecoration(
-                                  color: context.appIconCircleColor,
-                                  shape: BoxShape.circle,
+                      return LayoutBuilder(
+                        builder: (context, constraints) {
+                          return SingleChildScrollView(
+                            padding: const EdgeInsets.symmetric(horizontal: 32),
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(
+                                minHeight: constraints.maxHeight,
+                              ),
+                              child: Center(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Container(
+                                      width: 72,
+                                      height: 72,
+                                      decoration: BoxDecoration(
+                                        color: context.appIconCircleColor,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Icon(
+                                        Icons.mark_chat_unread_outlined,
+                                        color: context.appBrandIconColor,
+                                        size: 28,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    MyText(
+                                      text: 'Todavía no hay mensajes',
+                                      variant: MyTextVariant.bodyBold,
+                                      textAlign: TextAlign.center,
+                                      fontSize: 16,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    MyText(
+                                      text:
+                                          'Usa este espacio para coordinar detalles rápidos de la reservación.',
+                                      variant: MyTextVariant.bodyMuted,
+                                      textAlign: TextAlign.center,
+                                      fontSize: 13,
+                                    ),
+                                  ],
                                 ),
-                                child: Icon(
-                                  Icons.mark_chat_unread_outlined,
-                                  color: context.appBrandIconColor,
-                                  size: 28,
-                                ),
                               ),
-                              const SizedBox(height: 16),
-                              MyText(
-                                text: 'Todavía no hay mensajes',
-                                variant: MyTextVariant.bodyBold,
-                                textAlign: TextAlign.center,
-                                fontSize: 16,
-                              ),
-                              const SizedBox(height: 8),
-                              MyText(
-                                text:
-                                    'Usa este espacio para coordinar detalles rápidos de la reservación.',
-                                variant: MyTextVariant.bodyMuted,
-                                textAlign: TextAlign.center,
-                                fontSize: 13,
-                              ),
-                            ],
-                          ),
-                        ),
+                            ),
+                          );
+                        },
                       );
                     }
 
@@ -284,26 +293,51 @@ class _ReservationChatSheetState extends ConsumerState<ReservationChatSheet> {
                   children: [
                     Expanded(
                       child: Container(
+                        clipBehavior: Clip.antiAlias,
                         decoration: BoxDecoration(
                           color: context.appInputBackground,
                           borderRadius: BorderRadius.circular(22),
                           border: Border.all(color: context.appBorderColor),
                         ),
-                        child: TextField(
-                          controller: _controller,
-                          minLines: 1,
-                          maxLines: 4,
-                          enabled: _chatEnabled && !_sending,
-                          textInputAction: TextInputAction.newline,
-                          decoration: InputDecoration(
-                            hintText:
-                                _chatEnabled
-                                    ? 'Escribe un mensaje...'
-                                    : 'Chat no disponible',
-                            border: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(
+                        child: Theme(
+                          data: Theme.of(context).copyWith(
+                            inputDecorationTheme: const InputDecorationTheme(
+                              isCollapsed: true,
+                              border: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              focusedBorder: InputBorder.none,
+                              disabledBorder: InputBorder.none,
+                              errorBorder: InputBorder.none,
+                              focusedErrorBorder: InputBorder.none,
+                            ),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
                               horizontal: 16,
                               vertical: 14,
+                            ),
+                            child: TextField(
+                              controller: _controller,
+                              minLines: 1,
+                              maxLines: 4,
+                              enabled: _chatEnabled && !_sending,
+                              textInputAction: TextInputAction.newline,
+                              decoration: InputDecoration.collapsed(
+                                hintText:
+                                    _chatEnabled
+                                        ? 'Escribe un mensaje...'
+                                        : 'Chat no disponible',
+                                hintStyle: TextStyle(
+                                  color: context.appTextSecondaryColor,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              style: TextStyle(
+                                color: context.appTextPrimaryColor,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                         ),

@@ -614,7 +614,7 @@ class _ReservationDetailsSheetState
     if (r.state == 'pending') return 'Pendiente';
     if (r.providerApprovalStatus == 'rejected') return 'Denegada';
     if (r.state == 'completed') return 'Completada';
-    if (cancelledByOwner) return 'Cancelada por propietario';
+    if (cancelledByOwner) return 'Cancelada';
     if (r.state == 'cancelled') return 'Cancelada';
     if (r.state == 'cancellation_requested') return 'Cancelación pendiente';
     if (r.state == 'active' && r.exitStatus == 'approved')
@@ -630,7 +630,13 @@ class _ReservationDetailsSheetState
         (r.providerApprovalStatus == 'approved' ||
             r.cancellationReason == 'Cancelado por el propietario');
 
-    if (cancelledByOwner || r.state == 'cancelled' || r.isRejectedByProvider) {
+    if (cancelledByOwner) {
+      return 'Cancelada por propietario';
+    }
+    if (r.state == 'cancelled') {
+      return 'Cancelada por usuario';
+    }
+    if (r.isRejectedByProvider) {
       return 'No aplica';
     }
     if (r.amount != null) return 'Q ${r.amount}';

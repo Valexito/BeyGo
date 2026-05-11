@@ -234,11 +234,13 @@ class NotificationService {
     final route = (data['route'] as String? ?? '').trim();
     final reservationId = (data['reservationId'] as String? ?? '').trim();
     final type = (data['type'] as String? ?? '').trim();
+    final openChat = type == 'chat_message';
 
     if (route == 'reservations') {
       nav.push(_notificationRoute(
         ReservationsPage(
           initialReservationId: reservationId.isEmpty ? null : reservationId,
+          initialOpenChat: openChat,
         ),
       ));
       return;
@@ -261,6 +263,7 @@ class NotificationService {
       nav.push(_notificationRoute(
         OwnerReservationsPage(
           initialReservationId: reservationId.isEmpty ? null : reservationId,
+          initialOpenChat: openChat,
           initialTab:
               type == 'new_reservation'
                   ? OwnerReservationsTab.pending

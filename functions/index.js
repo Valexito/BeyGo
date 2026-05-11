@@ -1385,6 +1385,67 @@ exports.onReservationChanged = onDocumentWritten(
     }
 );
 
+exports.onReservationChatMessageCreated = onDocumentCreated(
+    "reservations/{resId}/messages/{messageId}",
+    async (event) => {
+        const data = event.data?.data() ?? {};
+        const reservationId = `${event.params.resId || ""}`.trim();
+        if (!reservationId) return;
+
+        const reservationSnap = await db
+            .collection("reservations")
+            .doc(reservationId)
+            .get();
+
+        if (!reservationSnap.exists) return;
+
+        const reservation = reservationSnap.data() || {};
+        const senderId = `${data.senderId || ""}`.trim();
+        const senderRole = `${data.senderRole || ""}`.trim().toLowerCase();
+        const text = `${data.text || ""}`.trim();
+
+        if (!senderId || !text) return;
+
+        const userId = `${reservation.userId || ""}`.trim();
+        const ownerId = `${reservation.ownerId || ""}`.trim();
+        const parkingName = `${reservation.parkingName || "tu reservación"}`.trim();
+        const spaceNumber = `${reservation.spaceNumber || ""}`.trim();
+        const reservationNumber = `${reservation.reservationNumber || ""}`.trim();
+        const state = `${reservation.state || ""}`.trim().toLowerCase();
+
+        if (!["pending", "active", "cancellation_requested"].includes(state)) {
+            return;
+        }
+
+        const targetUserId = senderRole === "owner" ? userId : ownerId;
+        if (!targetUserId) return;
+
+        const token = await getToken(targetUserId);
+        const senderLabel =
+            senderRole === "owner"
+                ? "El propietario"
+                : `${reservation.userName || "El usuario"}`.trim();
+        const preview =
+            text.length > 110 ? `${text.slice(0, 107)}...` : text;
+
+        await sendPush({
+            token,
+            title: `💬 Nuevo mensaje en ${parkingName}`,
+            body: `${senderLabel}: ${preview}`,
+            data: {
+                route: senderRole === "owner" ? "reservations" : "ownerReservations",
+                type: "chat_message",
+                category: "chat",
+                reservationId,
+                reservationNumber,
+                parkingId: `${reservation.parkingId || ""}`,
+                spaceNumber,
+                senderRole,
+            },
+        });
+    }
+);
+
 exports.onParkingReviewWritten = onDocumentWritten(
     "parkings/{parkingId}/reviews/{reviewId}",
     async (event) => {

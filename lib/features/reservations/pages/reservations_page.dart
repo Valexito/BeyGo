@@ -23,8 +23,13 @@ extension _ReservationsPeriodFilterLabel on _ReservationsPeriodFilter {
 
 class ReservationsPage extends ConsumerStatefulWidget {
   final String? initialReservationId;
+  final bool initialOpenChat;
 
-  const ReservationsPage({super.key, this.initialReservationId});
+  const ReservationsPage({
+    super.key,
+    this.initialReservationId,
+    this.initialOpenChat = false,
+  });
 
   @override
   ConsumerState<ReservationsPage> createState() => _ReservationsPageState();
@@ -262,18 +267,22 @@ class _ReservationsPageState extends ConsumerState<ReservationsPage>
         );
 
         if (target != null) {
-          _handledInitialReservation = true;
-          WidgetsBinding.instance.addPostFrameCallback((_) async {
-            if (!mounted) return;
-            await showModalBottomSheet<void>(
-              context: context,
-              isScrollControlled: true,
-              backgroundColor: Colors.transparent,
-              builder: (_) => ReservationDetailsSheet(reservation: target),
-            );
-          });
+      _handledInitialReservation = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
+        if (widget.initialOpenChat) {
+          await showReservationChatSheet(context, reservation: target);
+        } else {
+          await showModalBottomSheet<void>(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (_) => ReservationDetailsSheet(reservation: target),
+          );
         }
-      }
+      });
+    }
+  }
 
       final pendingPrompt = all.cast<Reservation?>().firstWhere(
         (reservation) => reservation?.needsRatingPrompt == true,

@@ -15,11 +15,13 @@ enum OwnerReservationsTab { active, pending }
 class OwnerReservationsPage extends ConsumerStatefulWidget {
   final String? initialReservationId;
   final OwnerReservationsTab initialTab;
+  final bool initialOpenChat;
 
   const OwnerReservationsPage({
     super.key,
     this.initialReservationId,
     this.initialTab = OwnerReservationsTab.active,
+    this.initialOpenChat = false,
   });
 
   @override
@@ -34,6 +36,7 @@ class _OwnerReservationsPageState extends ConsumerState<OwnerReservationsPage>
     vsync: this,
     initialIndex: widget.initialTab == OwnerReservationsTab.active ? 0 : 1,
   );
+  bool _handledInitialAction = false;
 
   @override
   void dispose() {
@@ -45,6 +48,28 @@ class _OwnerReservationsPageState extends ConsumerState<OwnerReservationsPage>
   Widget build(BuildContext context) {
     final allAsync = ref.watch(ownerAllReservationsProvider);
     final isDark = context.isDarkMode;
+
+    allAsync.whenData((items) {
+      if (_handledInitialAction ||
+          widget.initialReservationId == null ||
+          widget.initialReservationId!.isEmpty ||
+          !widget.initialOpenChat) {
+        return;
+      }
+
+      final target = items.cast<Reservation?>().firstWhere(
+        (reservation) => reservation?.id == widget.initialReservationId,
+        orElse: () => null,
+      );
+
+      if (target == null) return;
+
+      _handledInitialAction = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
+        await showReservationChatSheet(context, reservation: target);
+      });
+    });
 
     return OwnerOnly(
       builder:

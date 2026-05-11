@@ -323,8 +323,10 @@ class _ReservationCardShell extends StatelessWidget {
         reservation.state == 'cancelled' &&
         (reservation.providerApprovalStatus == 'approved' ||
             reservation.cancellationReason == 'Cancelado por el propietario');
-    if (cancelledByOwner) return 'Cancelado por propietario';
-    if (reservation.state == 'cancelled' || reservation.isRejectedByProvider) {
+    if (cancelledByOwner || reservation.state == 'cancelled') {
+      return 'Cancelada';
+    }
+    if (reservation.isRejectedByProvider) {
       return 'No aplica';
     }
     final pricePerHour = parking?.pricePerHour ?? 0;
@@ -364,7 +366,7 @@ class _ReservationCardShell extends StatelessWidget {
     if (r.providerApprovalStatus == 'pending') return 'PENDIENTE';
     if (r.state == 'pending') return 'PENDIENTE';
     if (r.state == 'completed') return 'COMPLETADA';
-    if (cancelledByOwner) return 'CANCELADA POR PROPIETARIO';
+    if (cancelledByOwner) return 'CANCELADA';
     if (r.state == 'cancelled') return 'CANCELADA';
     if (r.state == 'rejected' || r.providerApprovalStatus == 'rejected') {
       return 'DENEGADA';
