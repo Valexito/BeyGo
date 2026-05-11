@@ -958,32 +958,46 @@ class _VehicleCardState extends State<_VehicleCard> {
                         ),
                       ),
                       Expanded(
-                        child: TextField(
-                          controller: entry.correlativeController,
-                          textCapitalization: TextCapitalization.characters,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.allow(
-                              RegExp(r'[a-zA-Z0-9]'),
+                        child: Theme(
+                          data: Theme.of(context).copyWith(
+                            inputDecorationTheme: const InputDecorationTheme(
+                              isCollapsed: true,
+                              border: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              focusedBorder: InputBorder.none,
+                              disabledBorder: InputBorder.none,
+                              errorBorder: InputBorder.none,
+                              focusedErrorBorder: InputBorder.none,
                             ),
-                            LengthLimitingTextInputFormatter(8),
-                          ],
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: context.appTextPrimaryColor,
-                            letterSpacing: 2,
                           ),
-                          decoration: InputDecoration(
-                            hintText: '123ABC',
-                            hintStyle: TextStyle(
-                              fontSize: 16,
-                              color: context.appTextSecondaryColor,
-                              letterSpacing: 2,
-                              fontWeight: FontWeight.w600,
-                            ),
-                            border: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
                               horizontal: 14,
+                            ),
+                            child: TextField(
+                              controller: entry.correlativeController,
+                              textCapitalization: TextCapitalization.characters,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.allow(
+                                  RegExp(r'[a-zA-Z0-9]'),
+                                ),
+                                LengthLimitingTextInputFormatter(8),
+                              ],
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                                color: context.appTextPrimaryColor,
+                                letterSpacing: 2,
+                              ),
+                              decoration: InputDecoration.collapsed(
+                                hintText: '123ABC',
+                                hintStyle: TextStyle(
+                                  fontSize: 16,
+                                  color: context.appTextSecondaryColor,
+                                  letterSpacing: 2,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                             ),
                           ),
                         ),

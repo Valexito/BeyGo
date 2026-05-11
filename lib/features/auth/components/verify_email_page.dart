@@ -8,7 +8,12 @@ import 'package:beygo/features/auth/providers/auth_providers.dart'
 
 class VerifyEmailPage extends StatefulWidget {
   final User user;
-  const VerifyEmailPage({super.key, required this.user});
+  final bool autoSendOnOpen;
+  const VerifyEmailPage({
+    super.key,
+    required this.user,
+    this.autoSendOnOpen = false,
+  });
 
   @override
   State<VerifyEmailPage> createState() => _VerifyEmailPageState();
@@ -16,11 +21,16 @@ class VerifyEmailPage extends StatefulWidget {
 
 class _VerifyEmailPageState extends State<VerifyEmailPage>
     with SingleTickerProviderStateMixin {
+  static const int _resendCooldownSeconds = 45;
+
   bool _checking = false;
   bool _resending = false;
   bool _resent = false;
+  bool _initialEmailAttempted = false;
   String? _errorMsg;
   Timer? _pollTimer;
+  Timer? _cooldownTimer;
+  int _secondsUntilResend = 0;
 
   late final AnimationController _slideCtrl;
   late final Animation<Offset> _slideAnim;
@@ -37,12 +47,19 @@ class _VerifyEmailPageState extends State<VerifyEmailPage>
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _slideCtrl, curve: Curves.easeOut));
     _slideCtrl.forward();
+    if (widget.autoSendOnOpen) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _sendInitialEmailOnOpen();
+      });
+    }
     _startVerificationPolling();
   }
 
   @override
   void dispose() {
     _pollTimer?.cancel();
+    _cooldownTimer?.cancel();
     _slideCtrl.dispose();
     super.dispose();
   }
@@ -94,18 +111,120 @@ class _VerifyEmailPageState extends State<VerifyEmailPage>
   }
 
   Future<void> _resendEmail() async {
+    if (_secondsUntilResend > 0) return;
     setState(() {
       _resending = true;
       _errorMsg = null;
       _resent = false;
     });
     try {
-      await FirebaseAuth.instance.currentUser?.sendEmailVerification();
+      final current = await _resolveCurrentUser();
+      await current?.sendEmailVerification();
+      if (!mounted) return;
       setState(() => _resent = true);
-    } catch (_) {
-      setState(() => _errorMsg = 'No se pudo reenviar. Intenta de nuevo.');
+      _startResendCooldown();
+    } on FirebaseAuthException catch (e) {
+      debugPrint('[VerifyEmail] resend failed: $e');
+      if (!mounted) return;
+      setState(() => _errorMsg = _mapVerificationError(e.code));
+      if (e.code == 'too-many-requests') {
+        _startResendCooldown(seconds: 90);
+      }
+    } catch (e) {
+      debugPrint('[VerifyEmail] resend failed: $e');
+      if (!mounted) return;
+      setState(
+        () =>
+            _errorMsg =
+                'No se pudo reenviar por ahora. Espera un momento e intenta de nuevo.',
+      );
     } finally {
       if (mounted) setState(() => _resending = false);
+    }
+  }
+
+  Future<void> _sendInitialEmailOnOpen() async {
+    if (_initialEmailAttempted) return;
+    _initialEmailAttempted = true;
+
+    setState(() {
+      _resending = true;
+      _errorMsg = null;
+      _resent = false;
+    });
+    try {
+      await Future.delayed(const Duration(milliseconds: 1800));
+      final current = await _resolveCurrentUser() ?? widget.user;
+      await current.reload();
+      await current.sendEmailVerification();
+      if (!mounted) return;
+      setState(() => _resent = true);
+      _startResendCooldown();
+      debugPrint('[VerifyEmail] initial email sent to ${current.email}');
+    } on FirebaseAuthException catch (e) {
+      debugPrint('[VerifyEmail] initial send failed: $e');
+      if (!mounted) return;
+      setState(() => _errorMsg = _mapVerificationError(e.code));
+      if (e.code == 'too-many-requests') {
+        _startResendCooldown(seconds: 90);
+      }
+    } catch (e) {
+      debugPrint('[VerifyEmail] initial send failed: $e');
+      if (!mounted) return;
+      setState(
+        () =>
+            _errorMsg =
+                'No pudimos enviar el correo automáticamente. Usa reenviar en unos segundos.',
+      );
+    } finally {
+      if (mounted) setState(() => _resending = false);
+    }
+  }
+
+  void _startResendCooldown({int seconds = _resendCooldownSeconds}) {
+    _cooldownTimer?.cancel();
+    if (!mounted) return;
+    setState(() => _secondsUntilResend = seconds);
+    _cooldownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      if (_secondsUntilResend <= 1) {
+        timer.cancel();
+        setState(() => _secondsUntilResend = 0);
+        return;
+      }
+      setState(() => _secondsUntilResend -= 1);
+    });
+  }
+
+  String _mapVerificationError(String code) {
+    switch (code) {
+      case 'too-many-requests':
+        return 'Firebase bloqueó temporalmente los envíos desde este dispositivo. Espera un poco antes de reenviar.';
+      case 'network-request-failed':
+        return 'No pudimos enviar el correo por conexión inestable.';
+      case 'user-token-expired':
+      case 'invalid-user-token':
+        return 'Tu sesión se actualizó. Regresa e inicia sesión otra vez.';
+      default:
+        return 'No pudimos enviar el correo automáticamente. Intenta reenviar en un momento.';
+    }
+  }
+
+  Future<User?> _resolveCurrentUser() async {
+    final auth = FirebaseAuth.instance;
+    final current = auth.currentUser;
+    if (current != null) return current;
+
+    try {
+      return await auth.authStateChanges().first.timeout(
+        const Duration(seconds: 5),
+      );
+    } catch (e) {
+      debugPrint('[VerifyEmail] authStateChanges timeout/error: $e');
+      return null;
     }
   }
 
@@ -353,7 +472,10 @@ class _VerifyEmailPageState extends State<VerifyEmailPage>
                           SizedBox(
                             height: 50,
                             child: OutlinedButton.icon(
-                              onPressed: _resending ? null : _resendEmail,
+                              onPressed:
+                                  (_resending || _secondsUntilResend > 0)
+                                      ? null
+                                      : _resendEmail,
                               icon:
                                   _resending
                                       ? const SizedBox(
@@ -372,6 +494,8 @@ class _VerifyEmailPageState extends State<VerifyEmailPage>
                               label: Text(
                                 _resending
                                     ? 'Reenviando...'
+                                    : _secondsUntilResend > 0
+                                    ? 'Reenviar en ${_secondsUntilResend}s'
                                     : 'Reenviar correo de verificación',
                                 style: const TextStyle(
                                   color: AppColors.headerBottom,

@@ -62,11 +62,12 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
       );
       final user = cred.user;
       if (!mounted || user == null) return;
-      await user.sendEmailVerification();
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => VerifyEmailPage(user: user)),
+        MaterialPageRoute(
+          builder: (_) => VerifyEmailPage(user: user, autoSendOnOpen: true),
+        ),
       );
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
