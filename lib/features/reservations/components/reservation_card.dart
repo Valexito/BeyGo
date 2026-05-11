@@ -7,7 +7,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:beygo/common/common.dart';
 import 'package:beygo/features/reservations/reservations.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class ReservationCard extends ConsumerWidget {
   final Reservation reservation;
@@ -258,24 +257,35 @@ class _ReservationCardShell extends StatelessWidget {
                               height: 32,
                               child: ElevatedButton(
                                 onPressed: () {
-                                  final phone = (parking?.phone ?? '')
-                                      .replaceAll('+', '');
-                                  if (phone.isEmpty) return;
-                                  launchUrl(
-                                    Uri.parse('https://wa.me/$phone'),
-                                    mode: LaunchMode.externalApplication,
+                                  showReservationChatSheet(
+                                    context,
+                                    reservation: reservation,
                                   );
                                 },
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF25D366),
+                                  backgroundColor: const Color(0xFF22C55E),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(16),
                                   ),
                                 ),
-                                child: const Icon(
-                                  Icons.chat,
-                                  size: 15,
-                                  color: Colors.white,
+                                child: const Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.chat_bubble_outline_rounded,
+                                      size: 14,
+                                      color: Colors.white,
+                                    ),
+                                    SizedBox(width: 5),
+                                    Text(
+                                      'Chat',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
@@ -309,6 +319,14 @@ class _ReservationCardShell extends StatelessWidget {
   }
 
   static String _priceText(Parking? parking, Reservation reservation) {
+    final cancelledByOwner =
+        reservation.state == 'cancelled' &&
+        (reservation.providerApprovalStatus == 'approved' ||
+            reservation.cancellationReason == 'Cancelado por el propietario');
+    if (cancelledByOwner) return 'Cancelado por propietario';
+    if (reservation.state == 'cancelled' || reservation.isRejectedByProvider) {
+      return 'No aplica';
+    }
     final pricePerHour = parking?.pricePerHour ?? 0;
     return pricePerHour > 0 ? 'Q $pricePerHour por hora' : 'Tarifa no disp.';
   }
@@ -339,9 +357,14 @@ class _ReservationCardShell extends StatelessWidget {
   }
 
   static String _statusLabel(Reservation r) {
+    final cancelledByOwner =
+        r.state == 'cancelled' &&
+        (r.providerApprovalStatus == 'approved' ||
+            r.cancellationReason == 'Cancelado por el propietario');
     if (r.providerApprovalStatus == 'pending') return 'PENDIENTE';
     if (r.state == 'pending') return 'PENDIENTE';
     if (r.state == 'completed') return 'COMPLETADA';
+    if (cancelledByOwner) return 'CANCELADA POR PROPIETARIO';
     if (r.state == 'cancelled') return 'CANCELADA';
     if (r.state == 'rejected' || r.providerApprovalStatus == 'rejected') {
       return 'DENEGADA';

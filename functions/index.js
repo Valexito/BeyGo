@@ -1385,6 +1385,39 @@ exports.onReservationChanged = onDocumentWritten(
     }
 );
 
+exports.onParkingReviewWritten = onDocumentWritten(
+    "parkings/{parkingId}/reviews/{reviewId}",
+    async (event) => {
+        const parkingId = `${event.params.parkingId || ""}`.trim();
+        if (!parkingId) return;
+
+        const parkingRef = db.collection("parkings").doc(parkingId);
+        const reviewsSnap = await parkingRef.collection("reviews").get();
+
+        const ratings = reviewsSnap.docs
+            .map((doc) => Number(doc.data().rating || 0))
+            .filter((rating) => Number.isFinite(rating) && rating > 0);
+
+        const totalReviews = ratings.length;
+        const rating =
+            totalReviews > 0
+                ? Number(
+                    (ratings.reduce((sum, value) => sum + value, 0) / totalReviews)
+                        .toFixed(1)
+                )
+                : 0;
+
+        await parkingRef.set(
+            {
+                rating,
+                totalReviews,
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            },
+            { merge: true }
+        );
+    }
+);
+
 // ─── package.json reminder ─────────────────────────────────────────────────
 // {
 //   "name": "functions",

@@ -30,6 +30,13 @@ service cloud.firestore {
       return signedIn() && resource.data.ownerId == request.auth.uid;
     }
 
+    function reservationParticipant(resId) {
+      return signedIn() && (
+        get(/databases/$(db)/documents/reservations/$(resId)).data.userId == request.auth.uid ||
+        get(/databases/$(db)/documents/reservations/$(resId)).data.ownerId == request.auth.uid
+      );
+    }
+
     match /users/{uid} {
       allow read: if isSelf(uid) || isAdmin();
 
@@ -202,7 +209,24 @@ service cloud.firestore {
       match /reviews/{reviewId} {
         allow read: if true;
         allow create, update: if signedIn()
-          && request.resource.data.uid == request.auth.uid;
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.reservationId is string
+          && (
+            request.resource.data.rating is int ||
+            request.resource.data.rating is float
+          )
+          && (
+            request.resource.data.parkingRating is int ||
+            request.resource.data.parkingRating is float
+          )
+          && (
+            request.resource.data.serviceRating is int ||
+            request.resource.data.serviceRating is float
+          )
+          && (
+            !request.resource.data.keys().hasAny(['comment']) ||
+            request.resource.data.comment is string
+          );
         allow delete: if false;
       }
 
@@ -355,7 +379,11 @@ service cloud.firestore {
             'exitLockedAt',
             'estimatedAmount',
             'estimatedDurationMinutes',
-            'endedAt'
+            'endedAt',
+            'ratingPromptHandled',
+            'ratingSubmitted',
+            'ratingSubmittedAt',
+            'ratingSkippedAt'
           ])
         )
 
@@ -392,6 +420,41 @@ service cloud.firestore {
       allow delete: if signedIn() && (
         resource.data.userId == request.auth.uid || isAdmin()
       );
+
+      match /messages/{messageId} {
+        allow read: if reservationParticipant(resId) || isAdmin();
+
+        allow create: if
+          (reservationParticipant(resId) || isAdmin())
+          && request.resource.data.keys().hasOnly([
+            'reservationId',
+            'senderId',
+            'senderRole',
+            'text',
+            'createdAt'
+          ])
+          && request.resource.data.reservationId == resId
+          && request.resource.data.senderId == request.auth.uid
+          && request.resource.data.senderRole in ['user', 'owner']
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 500
+          && request.resource.data.createdAt is timestamp
+          && get(/databases/$(db)/documents/reservations/$(resId)).data.state in [
+            'pending',
+            'active',
+            'cancellation_requested'
+          ]
+          && (
+            (request.resource.data.senderRole == 'user' &&
+              get(/databases/$(db)/documents/reservations/$(resId)).data.userId == request.auth.uid)
+            ||
+            (request.resource.data.senderRole == 'owner' &&
+              get(/databases/$(db)/documents/reservations/$(resId)).data.ownerId == request.auth.uid)
+          );
+
+        allow update, delete: if false;
+      }
     }
 
     match /favorites/{favId} {

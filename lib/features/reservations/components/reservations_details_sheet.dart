@@ -236,19 +236,7 @@ class _ReservationDetailsSheetState
               _InfoRow(
                 icon: Icons.receipt_long_outlined,
                 label: 'Monto',
-                value:
-                    reservation.exitStatus == 'requested' ||
-                            reservation.exitStatus == 'approved'
-                        ? (reservation.estimatedAmount != null
-                            ? 'Q ${reservation.estimatedAmount}'
-                            : 'Calculando...')
-                        : (reservation.amount != null
-                            ? 'Q ${reservation.amount}'
-                            : (reservation.estimatedAmount != null
-                                ? 'Q ${reservation.estimatedAmount}'
-                                : (reservation.state == 'completed'
-                                    ? 'Pendiente'
-                                    : 'Calculando...'))),
+                value: _displayAmount(reservation),
               ),
             ],
           ),
@@ -433,12 +421,12 @@ class _ReservationDetailsSheetState
             insetPadding: const EdgeInsets.symmetric(horizontal: 24),
             child: Container(
               decoration: BoxDecoration(
-                color: context.appCardBackground,
+                color: ctx.appCardBackground,
                 borderRadius: BorderRadius.circular(AppDims.radiusXl),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(
-                      alpha: context.isDarkMode ? 0.24 : 0.10,
+                      alpha: ctx.isDarkMode ? 0.24 : 0.10,
                     ),
                     blurRadius: 28,
                     offset: const Offset(0, 14),
@@ -456,7 +444,7 @@ class _ReservationDetailsSheetState
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors:
-                              context.isDarkMode
+                              ctx.isDarkMode
                                   ? const [Color(0xFF1E3A5F), Color(0xFF0F172A)]
                                   : const [
                                     AppColors.headerTop,
@@ -490,8 +478,8 @@ class _ReservationDetailsSheetState
                       ),
                       decoration: BoxDecoration(
                         color:
-                            context.isDarkMode
-                                ? context.appBrandIconColor.withValues(
+                            ctx.isDarkMode
+                                ? ctx.appBrandIconColor.withValues(
                                   alpha: 0.14,
                                 )
                                 : AppColors.primarySoft.withValues(alpha: 0.18),
@@ -501,8 +489,8 @@ class _ReservationDetailsSheetState
                         text: 'Confirmar cancelación',
                         variant: MyTextVariant.normalBold,
                         customColor:
-                            context.isDarkMode
-                                ? context.appBrandTextColor
+                            ctx.isDarkMode
+                                ? ctx.appBrandTextColor
                                 : AppColors.headerBottom,
                         fontSize: 16,
                       ),
@@ -532,7 +520,7 @@ class _ReservationDetailsSheetState
                         vertical: 12,
                       ),
                       decoration: BoxDecoration(
-                        color: context.appCardBackgroundSoft,
+                        color: ctx.appCardBackgroundSoft,
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Column(
@@ -548,8 +536,8 @@ class _ReservationDetailsSheetState
                             variant: MyTextVariant.bodyBold,
                             fontSize: 18,
                             customColor:
-                                context.isDarkMode
-                                    ? context.appBrandTextColor
+                                ctx.isDarkMode
+                                    ? ctx.appBrandTextColor
                                     : AppColors.headerBottom,
                           ),
                         ],
@@ -565,7 +553,7 @@ class _ReservationDetailsSheetState
                               onPressed: () => Navigator.pop(ctx, false),
                               style: OutlinedButton.styleFrom(
                                 side: BorderSide(
-                                  color: context.appBrandIconColor.withValues(
+                                  color: ctx.appBrandIconColor.withValues(
                                     alpha: 0.35,
                                   ),
                                   width: 1.2,
@@ -575,14 +563,14 @@ class _ReservationDetailsSheetState
                                     AppDims.radiusLg,
                                   ),
                                 ),
-                                backgroundColor: context.appCardBackground,
+                                backgroundColor: ctx.appCardBackground,
                               ),
                               child: MyText(
                                 text: 'No',
                                 variant: MyTextVariant.normalBold,
                                 customColor:
-                                    context.isDarkMode
-                                        ? context.appBrandTextColor
+                                    ctx.isDarkMode
+                                        ? ctx.appBrandTextColor
                                         : AppColors.headerBottom,
                                 fontSize: 14,
                               ),
@@ -619,9 +607,14 @@ class _ReservationDetailsSheetState
   }
 
   String _displayStatus(Reservation r) {
+    final cancelledByOwner =
+        r.state == 'cancelled' &&
+        (r.providerApprovalStatus == 'approved' ||
+            r.cancellationReason == 'Cancelado por el propietario');
     if (r.state == 'pending') return 'Pendiente';
     if (r.providerApprovalStatus == 'rejected') return 'Denegada';
     if (r.state == 'completed') return 'Completada';
+    if (cancelledByOwner) return 'Cancelada por propietario';
     if (r.state == 'cancelled') return 'Cancelada';
     if (r.state == 'cancellation_requested') return 'Cancelación pendiente';
     if (r.state == 'active' && r.exitStatus == 'approved')
@@ -629,6 +622,24 @@ class _ReservationDetailsSheetState
     if (r.state == 'active' && r.exitStatus == 'requested')
       return 'Salida solicitada';
     return 'Activa';
+  }
+
+  String _displayAmount(Reservation r) {
+    final cancelledByOwner =
+        r.state == 'cancelled' &&
+        (r.providerApprovalStatus == 'approved' ||
+            r.cancellationReason == 'Cancelado por el propietario');
+
+    if (cancelledByOwner || r.state == 'cancelled' || r.isRejectedByProvider) {
+      return 'No aplica';
+    }
+    if (r.amount != null) return 'Q ${r.amount}';
+    if (r.estimatedAmount != null) return 'Q ${r.estimatedAmount}';
+    if (r.exitStatus == 'requested' || r.exitStatus == 'approved') {
+      return 'Calculando...';
+    }
+    if (r.state == 'completed') return 'Pendiente';
+    return 'Pendiente de salida';
   }
 
   String _formatDateTime(DateTime value) {

@@ -243,165 +243,270 @@ class _ActiveCard extends ConsumerWidget {
           '${reservation.spaceNumber}',
         ),
       ],
-      actions: Center(
-        child: SizedBox(
-          width: 180,
-          child: MyButton(
-            text: 'Finalizar',
-            height: 42,
-            margin: EdgeInsets.zero,
-            onTap: () async {
-              final ctrl = TextEditingController();
-              final ok = await _forceCancelDialog(context, ctrl);
-              if (ok != true) {
-                ctrl.dispose();
-                return;
-              }
-              try {
-                await ref.read(ownerForceCancelProvider)(
-                  reservation: reservation,
-                  reason: ctrl.text,
-                );
-              } catch (e) {
-                if (context.mounted)
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text('$e')));
-              } finally {
-                ctrl.dispose();
-              }
-            },
+      actions: Row(
+        children: [
+          Expanded(
+            child: SizedBox(
+              height: 42,
+              child: OutlinedButton.icon(
+                onPressed:
+                    () => showReservationChatSheet(
+                      context,
+                      reservation: reservation,
+                    ),
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(
+                    color: context.appBrandIconColor.withValues(alpha: 0.28),
+                  ),
+                  backgroundColor:
+                      context.isDarkMode
+                          ? context.appCardBackgroundSoft
+                          : const Color(0xFFF4F7FB),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                icon: Icon(
+                  Icons.chat_bubble_outline_rounded,
+                  size: 16,
+                  color: context.appBrandIconColor,
+                ),
+                label: Text(
+                  'Chat',
+                  style: TextStyle(
+                    color: context.appBrandTextColor,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ),
           ),
-        ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: MyButton(
+              text: 'Finalizar',
+              height: 42,
+              margin: EdgeInsets.zero,
+              onTap: () async {
+                final reason = await _forceCancelDialog(context);
+                if (reason == null) return;
+                try {
+                  await ref.read(ownerForceCancelProvider)(
+                    reservation: reservation,
+                    reason: reason,
+                  );
+                } catch (e) {
+                  if (context.mounted)
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text('$e')));
+                }
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Future<bool?> _forceCancelDialog(
-    BuildContext context,
-    TextEditingController ctrl,
-  ) {
-    return showDialog<bool>(
+  Future<String?> _forceCancelDialog(BuildContext context) {
+    return showDialog<String>(
       context: context,
-      builder:
-          (ctx) => Dialog(
-            backgroundColor: Colors.transparent,
-            insetPadding: const EdgeInsets.symmetric(horizontal: 28),
-            child: Container(
-              decoration: BoxDecoration(
-                color: ctx.appCardBackground,
-                borderRadius: BorderRadius.circular(28),
-                border: Border.all(color: ctx.appBorderColor),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(
-                      alpha: ctx.isDarkMode ? 0.28 : 0.10,
-                    ),
-                    blurRadius: 28,
-                    offset: const Offset(0, 14),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _GradHeader('Forzar finalización', icon: Icons.flag_rounded),
-                  Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        MyText(
-                          text: 'Motivo',
-                          variant: MyTextVariant.bodyBold,
-                          fontSize: 13,
-                          customColor: ctx.appTextPrimaryColor,
-                        ),
-                        const SizedBox(height: 8),
-                        TextField(
-                          controller: ctrl,
-                          maxLines: 3,
-                          maxLength: 200,
-                          decoration: InputDecoration(
-                            hintText: 'Ej: Usuario no llegó...',
-                            filled: true,
-                            fillColor: ctx.appCardBackgroundSoft,
-                            contentPadding: const EdgeInsets.all(12),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
-                              borderSide: BorderSide(color: ctx.appBorderColor),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
-                              borderSide: BorderSide(color: ctx.appBorderColor),
-                            ),
-                            focusedBorder: const OutlineInputBorder(
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(14),
-                              ),
-                              borderSide: BorderSide(
-                                color: AppColors.headerBottom,
-                                width: 1.4,
-                              ),
-                            ),
-                          ),
-                          style: TextStyle(color: ctx.appTextPrimaryColor),
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: SizedBox(
-                                height: 46,
-                                child: OutlinedButton(
-                                  onPressed: () => Navigator.pop(ctx, false),
-                                  style: OutlinedButton.styleFrom(
-                                    side: BorderSide(
-                                      color: ctx.appBrandIconColor.withValues(
-                                        alpha: .35,
-                                      ),
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                    backgroundColor: ctx.appCardBackground,
-                                  ),
-                                  child: MyText(
-                                    text: 'Cancelar',
-                                    variant: MyTextVariant.normalBold,
-                                    customColor:
-                                        ctx.isDarkMode
-                                            ? ctx.appBrandTextColor
-                                            : AppColors.headerBottom,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: MyButton(
-                                text: 'Confirmar',
-                                height: 46,
-                                onTap: () => Navigator.pop(ctx, true),
-                                margin: EdgeInsets.zero,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+      builder: (ctx) => const _ForceCancelDialog(),
     );
   }
 
   String _fmt(DateTime v) {
     return '${v.day.toString().padLeft(2, '0')}/${v.month.toString().padLeft(2, '0')} '
         '${v.hour.toString().padLeft(2, '0')}:${v.minute.toString().padLeft(2, '0')}';
+  }
+}
+
+class _ForceCancelDialog extends StatefulWidget {
+  const _ForceCancelDialog();
+
+  @override
+  State<_ForceCancelDialog> createState() => _ForceCancelDialogState();
+}
+
+class _ForceCancelDialogState extends State<_ForceCancelDialog> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 28),
+      child: SingleChildScrollView(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            color: context.appCardBackground,
+            borderRadius: BorderRadius.circular(34),
+            border: Border.all(color: context.appBorderColor),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(
+                  alpha: context.isDarkMode ? 0.28 : 0.10,
+                ),
+                blurRadius: 36,
+                spreadRadius: 2,
+                offset: const Offset(0, 18),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const _GradHeader(
+                'Forzar finalización',
+                icon: Icons.flag_rounded,
+                topRadius: 34,
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: context.appCardBackgroundSoft,
+                        borderRadius: BorderRadius.circular(22),
+                        border: Border.all(color: context.appBorderColor),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 42,
+                            height: 42,
+                            decoration: BoxDecoration(
+                              color: AppColors.headerBottom.withValues(
+                                alpha: 0.10,
+                              ),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.info_outline_rounded,
+                              color: AppColors.headerBottom,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: MyText(
+                              text:
+                                  'Esta acción cerrará la reservación y notificará al usuario.',
+                              variant: MyTextVariant.bodyMuted,
+                              fontSize: 12,
+                              customColor: context.appTextSecondaryColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    MyText(
+                      text: 'Motivo',
+                      variant: MyTextVariant.bodyBold,
+                      fontSize: 13,
+                      customColor: context.appTextPrimaryColor,
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _controller,
+                      maxLines: 3,
+                      maxLength: 200,
+                      decoration: InputDecoration(
+                        hintText: 'Ej: Usuario no llegó...',
+                        filled: true,
+                        fillColor: context.appCardBackgroundSoft,
+                        contentPadding: const EdgeInsets.all(14),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(18),
+                          borderSide: BorderSide(color: context.appBorderColor),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(18),
+                          borderSide: BorderSide(color: context.appBorderColor),
+                        ),
+                        focusedBorder: const OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(18)),
+                          borderSide: BorderSide(
+                            color: AppColors.headerBottom,
+                            width: 1.4,
+                          ),
+                        ),
+                      ),
+                      style: TextStyle(color: context.appTextPrimaryColor),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: SizedBox(
+                            height: 46,
+                            child: OutlinedButton(
+                              onPressed: () => Navigator.pop(context),
+                              style: OutlinedButton.styleFrom(
+                                side: BorderSide(
+                                  color: context.appBrandIconColor.withValues(
+                                    alpha: .35,
+                                  ),
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(18),
+                                ),
+                                backgroundColor: context.appCardBackground,
+                              ),
+                              child: MyText(
+                                text: 'Cancelar',
+                                variant: MyTextVariant.normalBold,
+                                customColor:
+                                    context.isDarkMode
+                                        ? context.appBrandTextColor
+                                        : AppColors.headerBottom,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: MyButton(
+                            text: 'Confirmar',
+                            height: 46,
+                            onTap:
+                                () => Navigator.pop(context, _controller.text),
+                            margin: EdgeInsets.zero,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -563,26 +668,46 @@ class _ApproveCardState extends ConsumerState<_ApproveCard> {
             child: Container(
               decoration: BoxDecoration(
                 color: ctx.appCardBackground,
-                borderRadius: BorderRadius.circular(28),
+                borderRadius: BorderRadius.circular(34),
                 border: Border.all(color: ctx.appBorderColor),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(
                       alpha: ctx.isDarkMode ? 0.28 : 0.10,
                     ),
-                    blurRadius: 28,
-                    offset: const Offset(0, 14),
+                    blurRadius: 36,
+                    spreadRadius: 2,
+                    offset: const Offset(0, 18),
                   ),
                 ],
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _GradHeader(title, icon: icon),
+                  _GradHeader(title, icon: icon, topRadius: 34),
                   Padding(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
                     child: Column(
                       children: [
+                        Container(
+                          width: 68,
+                          height: 68,
+                          decoration: BoxDecoration(
+                            color: (confirmColor ?? AppColors.headerBottom)
+                                .withValues(alpha: 0.10),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: (confirmColor ?? AppColors.headerBottom)
+                                  .withValues(alpha: 0.16),
+                            ),
+                          ),
+                          child: Icon(
+                            icon,
+                            color: confirmColor ?? AppColors.headerBottom,
+                            size: 30,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
                         MyText(
                           text: message,
                           variant: MyTextVariant.bodyMuted,
@@ -606,7 +731,7 @@ class _ApproveCardState extends ConsumerState<_ApproveCard> {
                                       width: 1.2,
                                     ),
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
+                                      borderRadius: BorderRadius.circular(18),
                                     ),
                                     backgroundColor: ctx.appCardBackground,
                                   ),
@@ -635,8 +760,9 @@ class _ApproveCardState extends ConsumerState<_ApproveCard> {
                                             backgroundColor: confirmColor,
                                             shape: RoundedRectangleBorder(
                                               borderRadius:
-                                                  BorderRadius.circular(16),
+                                                  BorderRadius.circular(18),
                                             ),
+                                            elevation: 0,
                                           ),
                                           child: Text(
                                             confirmText,
@@ -705,7 +831,7 @@ class _Card extends StatelessWidget {
     clipBehavior: Clip.antiAlias,
     child: Column(
       children: [
-        _GradHeader(header),
+        _GradHeader(header, topRadius: 22),
         Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -729,17 +855,21 @@ class _Card extends StatelessWidget {
 class _GradHeader extends StatelessWidget {
   final String label;
   final IconData? icon;
-  const _GradHeader(this.label, {this.icon});
+  final double topRadius;
+  const _GradHeader(this.label, {this.icon, this.topRadius = 0});
 
   @override
   Widget build(BuildContext context) => Container(
     width: double.infinity,
     padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-    decoration: const BoxDecoration(
-      gradient: LinearGradient(
+    decoration: BoxDecoration(
+      gradient: const LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [AppColors.headerTop, AppColors.headerBottom],
+      ),
+      borderRadius: BorderRadius.vertical(
+        top: Radius.circular(topRadius),
       ),
     ),
     child: Row(
