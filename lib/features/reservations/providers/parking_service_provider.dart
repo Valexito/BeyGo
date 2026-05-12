@@ -38,20 +38,19 @@ class ParkingService {
     _ensureSameUser(ownerID);
 
     final ref = await _firestore.collection('parkings').add({
-      // <— PLURAL
       'ownerID': ownerID,
       'name': name,
       'lat': lat,
       'lng': lng,
       'spaces': spaces,
       'pricePerHour': price,
-      'price': price, // compat
       'descripcion': descripcion,
       'imageUrl': imageUrl,
       'localImagePath': localImagePath,
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     });
+    await _syncParkingSpaces(ref: ref, targetSpaces: spaces);
     return ref.id;
   }
 
@@ -83,12 +82,12 @@ class ParkingService {
       'lng': lng,
       'spaces': spaces,
       'pricePerHour': price,
-      'price': price, // compat
       'descripcion':
           (descripcion == null || descripcion.isEmpty) ? null : descripcion,
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
+    await _syncParkingSpaces(ref: docRef, targetSpaces: spaces);
 
     // pequeña espera ayuda a reglas de Storage que leen el doc recién creado
     await Future.delayed(const Duration(milliseconds: 200));
@@ -163,7 +162,13 @@ class ParkingService {
     if (!snap.exists) {
       throw StateError('El parqueo ya no existe.');
     }
-    if (snap.data()?['ownerID'] != ownerID) {
+    final currentData = snap.data() ?? <String, dynamic>{};
+    final currentOwnerId =
+        ((currentData['ownerID'] as String?) ??
+                (currentData['ownerUid'] as String?) ??
+                '')
+            .trim();
+    if (currentOwnerId != ownerID) {
       throw StateError('No tienes permiso para editar este parqueo.');
     }
 
@@ -189,13 +194,13 @@ class ParkingService {
             : (snap.data()?['coverUrl'] as String?);
 
     await docRef.set({
+      'ownerID': ownerID,
       'name': name,
       'phone': phone,
       'address': address,
       'spaces': spaces,
       'descripcion': description,
       'pricePerHour': pricePerHour,
-      'price': pricePerHour,
       'businessHours': {
         'open': openTime,
         'close': closeTime,
@@ -204,8 +209,79 @@ class ParkingService {
       if (lng != null) 'lng': lng,
       'photos': mergedPhotos,
       'coverUrl': coverUrl,
+      'parkingName': FieldValue.delete(),
+      'ownerUid': FieldValue.delete(),
+      'capacity': FieldValue.delete(),
+      'description': FieldValue.delete(),
+      'price': FieldValue.delete(),
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
+
+    await _syncParkingSpaces(ref: docRef, targetSpaces: spaces);
+  }
+
+  Future<void> _syncParkingSpaces({
+    required DocumentReference<Map<String, dynamic>> ref,
+    required int targetSpaces,
+  }) async {
+    if (targetSpaces <= 0) {
+      throw StateError('La cantidad de espacios debe ser mayor a cero.');
+    }
+
+    final spacesRef = ref.collection('spaces');
+    final snapshot = await spacesRef.get();
+    final docsByNumber = <int, QueryDocumentSnapshot<Map<String, dynamic>>>{};
+
+    for (final doc in snapshot.docs) {
+      final parsedNumber =
+          int.tryParse(doc.id) ?? (doc.data()['spaceNumber'] as num?)?.toInt();
+      if (parsedNumber == null || parsedNumber <= 0) continue;
+      docsByNumber[parsedNumber] = doc;
+    }
+
+    final batch = _firestore.batch();
+
+    for (var number = 1; number <= targetSpaces; number++) {
+      final existing = docsByNumber[number];
+      if (existing == null) {
+        batch.set(spacesRef.doc('$number'), {
+          'spaceNumber': number,
+          'status': 'free',
+          'currentReservationId': null,
+          'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+        continue;
+      }
+
+      final data = existing.data();
+      final currentSpaceNumber = (data['spaceNumber'] as num?)?.toInt();
+      if (currentSpaceNumber != number) {
+        batch.set(existing.reference, {
+          'spaceNumber': number,
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+      }
+    }
+
+    for (final entry in docsByNumber.entries) {
+      if (entry.key <= targetSpaces) continue;
+
+      final data = entry.value.data();
+      final status = ((data['status'] as String?) ?? 'free').trim().toLowerCase();
+      final currentReservationId =
+          (data['currentReservationId'] as String?)?.trim() ?? '';
+
+      if (status != 'free' || currentReservationId.isNotEmpty) {
+        throw StateError(
+          'No puedes reducir espacios porque el espacio ${entry.key} está en uso.',
+        );
+      }
+
+      batch.delete(entry.value.reference);
+    }
+
+    await batch.commit();
   }
 
   // ===== Helpers =====

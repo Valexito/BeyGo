@@ -422,14 +422,20 @@ class _ForceCancelDialogState extends State<_ForceCancelDialog> {
                             width: 42,
                             height: 42,
                             decoration: BoxDecoration(
-                              color: AppColors.headerBottom.withValues(
-                                alpha: 0.10,
-                              ),
+                              color:
+                                  context.isDarkMode
+                                      ? Colors.white.withValues(alpha: 0.10)
+                                      : AppColors.headerBottom.withValues(
+                                        alpha: 0.10,
+                                      ),
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.info_outline_rounded,
-                              color: AppColors.headerBottom,
+                              color:
+                                  context.isDarkMode
+                                      ? Colors.white
+                                      : AppColors.headerBottom,
                               size: 20,
                             ),
                           ),
@@ -718,17 +724,26 @@ class _ApproveCardState extends ConsumerState<_ApproveCard> {
                           width: 68,
                           height: 68,
                           decoration: BoxDecoration(
-                            color: (confirmColor ?? AppColors.headerBottom)
-                                .withValues(alpha: 0.10),
+                            color:
+                                context.isDarkMode
+                                    ? Colors.white.withValues(alpha: 0.10)
+                                    : (confirmColor ?? AppColors.headerBottom)
+                                        .withValues(alpha: 0.10),
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: (confirmColor ?? AppColors.headerBottom)
-                                  .withValues(alpha: 0.16),
+                              color:
+                                  context.isDarkMode
+                                      ? Colors.white.withValues(alpha: 0.16)
+                                      : (confirmColor ?? AppColors.headerBottom)
+                                          .withValues(alpha: 0.16),
                             ),
                           ),
                           child: Icon(
                             icon,
-                            color: confirmColor ?? AppColors.headerBottom,
+                            color:
+                                context.isDarkMode
+                                    ? Colors.white
+                                    : (confirmColor ?? AppColors.headerBottom),
                             size: 30,
                           ),
                         ),

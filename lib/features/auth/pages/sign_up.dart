@@ -369,7 +369,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
                             const SizedBox(height: 14),
 
                             const _FieldLabel('Correo electrónico'),
-                            const SizedBox(height: 6),
+                            const SizedBox(height: 4),
                             _Field(
                               controller: _email,
                               hint: '',
@@ -395,7 +395,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 6),
+                            const SizedBox(height: 4),
                             _Field(
                               controller: _password,
                               hint: '',
@@ -413,7 +413,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
                             const SizedBox(height: 16),
 
                             const _FieldLabel('Confirmar contraseña'),
-                            const SizedBox(height: 6),
+                            const SizedBox(height: 4),
                             _Field(
                               controller: _confirm,
                               hint: '',

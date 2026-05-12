@@ -950,6 +950,7 @@ exports.ownerForceFinalizeReservation = onCall(async (request) => {
             state: "cancelled",
             endedAt: admin.firestore.Timestamp.fromDate(now),
             cancellationReason: reason,
+            cancelledBy: "owner",
             cancellationPenaltyApplied: true,
             providerApprovalStatus: "approved",
             cancelAttempts: Number(latest.cancelAttempts || 0) + 1,

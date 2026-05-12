@@ -419,7 +419,10 @@ class _EditVehiclesPageState extends State<EditVehiclesPage> {
                                         child: Icon(
                                           Icons.info_outline_rounded,
                                           size: 17,
-                                          color: AppColors.headerBottom,
+                                          color:
+                                              context.isDarkMode
+                                                  ? Colors.white
+                                                  : AppColors.headerBottom,
                                         ),
                                       ),
                                       const SizedBox(width: 12),

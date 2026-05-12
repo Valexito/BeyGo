@@ -372,7 +372,7 @@ class _EditOwnerParkingPageState extends ConsumerState<EditOwnerParkingPage> {
     setState(() => _saving = true);
     try {
       await ref.read(parkingServiceProvider).updateParkingDetails(
-        ownerID: parking.data['ownerID'] as String? ?? '',
+        ownerID: parking.ownerId,
         parkingId: parking.id,
         name: _nameCtrl.text.trim(),
         phone: _selectedCountry.combine(_phoneCtrl.text),
@@ -411,13 +411,37 @@ class _EditOwnerParkingPageState extends ConsumerState<EditOwnerParkingPage> {
 
   TimeOfDay? _parseTime(String? raw) {
     if (raw == null || raw.trim().isEmpty) return null;
-    final parts = raw.split(':');
-    if (parts.length != 2) return null;
-    final hour = int.tryParse(parts[0]);
-    final minute = int.tryParse(parts[1]);
-    if (hour == null || minute == null) return null;
-    if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return null;
-    return TimeOfDay(hour: hour, minute: minute);
+    final normalized = raw.trim().toUpperCase();
+
+    final twelveHourMatch = RegExp(
+      r'^(\d{1,2}):(\d{2})\s*(AM|PM)$',
+    ).firstMatch(normalized);
+    if (twelveHourMatch != null) {
+      final rawHour = int.tryParse(twelveHourMatch.group(1)!);
+      final minute = int.tryParse(twelveHourMatch.group(2)!);
+      final suffix = twelveHourMatch.group(3)!;
+      if (rawHour == null || minute == null) return null;
+      if (rawHour < 1 || rawHour > 12 || minute < 0 || minute > 59) {
+        return null;
+      }
+
+      var hour = rawHour % 12;
+      if (suffix == 'PM') hour += 12;
+      return TimeOfDay(hour: hour, minute: minute);
+    }
+
+    final twentyFourHourMatch = RegExp(r'^(\d{1,2}):(\d{2})$').firstMatch(
+      normalized,
+    );
+    if (twentyFourHourMatch != null) {
+      final hour = int.tryParse(twentyFourHourMatch.group(1)!);
+      final minute = int.tryParse(twentyFourHourMatch.group(2)!);
+      if (hour == null || minute == null) return null;
+      if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return null;
+      return TimeOfDay(hour: hour, minute: minute);
+    }
+
+    return null;
   }
 }
 

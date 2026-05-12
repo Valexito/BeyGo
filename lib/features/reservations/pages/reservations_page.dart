@@ -488,7 +488,10 @@ class _ReservationsPageState extends ConsumerState<ReservationsPage>
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: context.appTextPrimaryColor,
+                            color:
+                                context.isDarkMode
+                                    ? Colors.white
+                                    : context.appTextPrimaryColor,
                           ),
                           decoration: InputDecoration(
                             filled: false,
@@ -505,7 +508,9 @@ class _ReservationsPageState extends ConsumerState<ReservationsPage>
                                 size: 20,
                                 color:
                                     _searchHasFocus
-                                        ? AppColors.headerBottom
+                                        ? (context.isDarkMode
+                                            ? Colors.white
+                                            : AppColors.headerBottom)
                                         : context.appTextSecondaryColor,
                               ),
                             ),

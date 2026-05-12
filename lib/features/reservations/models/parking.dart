@@ -18,6 +18,7 @@ class Parking {
   final List<String> photos;
   final int pricePerHour;
   final Map<String, String>? businessHours;
+  final int freeCancellationMinutes;
   final bool autoApproveReservations;
   final bool requirePlateOnEntry;
 
@@ -39,6 +40,7 @@ class Parking {
     this.pricePerHour = 0,
     this.businessHours,
     this.phone,
+    this.freeCancellationMinutes = 0,
     this.autoApproveReservations = false,
     this.requirePlateOnEntry = true,
   });
@@ -71,6 +73,7 @@ class Parking {
   factory Parking.fromMap(Map<String, dynamic> data, {required String id}) {
     final parsedPrice = _toInt(data['price']);
     final parsedPricePerHour = _toInt(data['pricePerHour']);
+    final canonicalPrice = parsedPricePerHour > 0 ? parsedPricePerHour : parsedPrice;
 
     final bh = data['businessHours'];
     Map<String, String>? parsedHours;
@@ -85,10 +88,10 @@ class Parking {
       id: id,
       lat: _toDouble(data['lat']),
       lng: _toDouble(data['lng']),
-      name: (data['name'] as String?) ?? '',
-      ownerID: (data['ownerID'] as String?) ?? '',
-      price: parsedPrice,
-      spaces: _toInt(data['spaces']),
+      name: ((data['name'] as String?) ?? (data['parkingName'] as String?) ?? ''),
+      ownerID: ((data['ownerID'] as String?) ?? (data['ownerUid'] as String?) ?? ''),
+      price: canonicalPrice,
+      spaces: _toInt(data['spaces']) > 0 ? _toInt(data['spaces']) : _toInt(data['capacity']),
       rating: data['rating'] is num ? (data['rating'] as num).toDouble() : null,
       originalPrice:
           data['originalPrice'] is num
@@ -101,9 +104,10 @@ class Parking {
           (data['description'] as String?),
       coverUrl: data['coverUrl'] as String?,
       photos: _toStringList(data['photos']),
-      pricePerHour: parsedPricePerHour > 0 ? parsedPricePerHour : parsedPrice,
+      pricePerHour: canonicalPrice,
       businessHours: parsedHours,
       phone: data['phone'] as String?,
+      freeCancellationMinutes: _toInt(data['freeCancellationMinutes']),
       autoApproveReservations:
           (data['autoApproveReservations'] as bool?) ?? false,
       requirePlateOnEntry: (data['requirePlateOnEntry'] as bool?) ?? true,
@@ -115,19 +119,18 @@ class Parking {
     'lng': lng,
     'name': name,
     'ownerID': ownerID,
-    'price': price,
     'spaces': spaces,
     'rating': rating,
     'originalPrice': originalPrice,
     'imageUrl': imageUrl,
     'localImagePath': localImagePath,
     'descripcion': descripcion,
-    'description': descripcion,
     'coverUrl': coverUrl,
     'photos': photos,
     'pricePerHour': pricePerHour,
     'businessHours': businessHours,
     'phone': phone,
+    'freeCancellationMinutes': freeCancellationMinutes,
     'autoApproveReservations': autoApproveReservations,
     'requirePlateOnEntry': requirePlateOnEntry,
   };
@@ -150,6 +153,7 @@ class Parking {
     int? pricePerHour,
     Map<String, String>? businessHours,
     String? phone,
+    int? freeCancellationMinutes,
     bool? autoApproveReservations,
     bool? requirePlateOnEntry,
   }) {
@@ -171,6 +175,8 @@ class Parking {
       pricePerHour: pricePerHour ?? this.pricePerHour,
       businessHours: businessHours ?? this.businessHours,
       phone: phone ?? this.phone,
+      freeCancellationMinutes:
+          freeCancellationMinutes ?? this.freeCancellationMinutes,
       autoApproveReservations:
           autoApproveReservations ?? this.autoApproveReservations,
       requirePlateOnEntry: requirePlateOnEntry ?? this.requirePlateOnEntry,

@@ -207,6 +207,8 @@ class RouteBottomInfoCard extends StatelessWidget {
                       final isActive = status == 'active';
                       final isCancelRequested =
                           status == 'cancellation_requested';
+                      final isRejected =
+                          status == 'rejected' || status == 'cancelled';
 
                       final chipColor =
                           isPending
@@ -214,6 +216,8 @@ class RouteBottomInfoCard extends StatelessWidget {
                               : isActive
                               ? const Color(0xFFE8F5E9)
                               : isCancelRequested
+                              ? const Color(0xFFFFEBEE)
+                              : isRejected
                               ? const Color(0xFFFFEBEE)
                               : const Color(0xFFE3F2FD);
 
@@ -224,6 +228,8 @@ class RouteBottomInfoCard extends StatelessWidget {
                               ? const Color(0xFF16A34A)
                               : isCancelRequested
                               ? const Color(0xFFDC2626)
+                              : isRejected
+                              ? const Color(0xFFDC2626)
                               : const Color(0xFF1976D2);
 
                       final label =
@@ -233,6 +239,8 @@ class RouteBottomInfoCard extends StatelessWidget {
                               ? 'ACTIVO'
                               : isCancelRequested
                               ? 'CANCELACIÓN'
+                              : isRejected
+                              ? 'RECHAZADO'
                               : status.toUpperCase();
 
                       return Container(

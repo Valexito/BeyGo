@@ -273,9 +273,12 @@ class _RatingDialogState extends State<_RatingDialog> {
                                 vertical: 8,
                               ),
                               decoration: BoxDecoration(
-                                color: AppColors.headerBottom.withValues(
-                                  alpha: 0.08,
-                                ),
+                                color:
+                                    context.isDarkMode
+                                        ? Colors.white.withValues(alpha: 0.08)
+                                        : AppColors.headerBottom.withValues(
+                                          alpha: 0.08,
+                                        ),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Row(
@@ -289,10 +292,13 @@ class _RatingDialogState extends State<_RatingDialog> {
                                   const SizedBox(width: 6),
                                   Text(
                                     'Promedio: ${_avgRating.toStringAsFixed(1)}',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontWeight: FontWeight.w700,
                                       fontSize: 14,
-                                      color: AppColors.headerBottom,
+                                      color:
+                                          context.isDarkMode
+                                              ? Colors.white
+                                              : AppColors.headerBottom,
                                     ),
                                   ),
                                 ],
@@ -357,9 +363,13 @@ class _RatingDialogState extends State<_RatingDialog> {
                                   onPressed: _submitting ? null : _skip,
                                   style: OutlinedButton.styleFrom(
                                     side: BorderSide(
-                                      color: AppColors.headerBottom.withValues(
-                                        alpha: 0.35,
-                                      ),
+                                      color:
+                                          context.isDarkMode
+                                              ? Colors.white.withValues(
+                                                alpha: 0.18,
+                                              )
+                                              : AppColors.headerBottom
+                                                  .withValues(alpha: 0.35),
                                       width: 1.2,
                                     ),
                                     shape: RoundedRectangleBorder(
@@ -367,10 +377,13 @@ class _RatingDialogState extends State<_RatingDialog> {
                                     ),
                                     backgroundColor: context.appCardBackground,
                                   ),
-                                  child: const MyText(
+                                  child: MyText(
                                     text: 'Omitir',
                                     variant: MyTextVariant.normalBold,
-                                    customColor: AppColors.headerBottom,
+                                    customColor:
+                                        context.isDarkMode
+                                            ? Colors.white70
+                                            : AppColors.headerBottom,
                                     fontSize: 14,
                                   ),
                                 ),
@@ -475,7 +488,14 @@ class _StarSection extends StatelessWidget {
                         : context.appBrandIconColor.withValues(alpha: 0.10),
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, size: 14, color: context.appBrandIconColor),
+              child: Icon(
+                icon,
+                size: 14,
+                color:
+                    context.isDarkMode
+                        ? Colors.white
+                        : context.appBrandIconColor,
+              ),
             ),
             const SizedBox(width: 8),
             Text(

@@ -16,13 +16,19 @@ class OwnerParkingDocument {
   final String id;
   final Map<String, dynamic> data;
 
-  String get name => (data['name'] as String? ?? '').trim();
+  String get ownerId =>
+      ((data['ownerID'] as String?) ?? (data['ownerUid'] as String?) ?? '')
+          .trim();
+  String get name =>
+      ((data['name'] as String?) ?? (data['parkingName'] as String?) ?? '')
+          .trim();
   String get phone => (data['phone'] as String? ?? '').trim();
   String get address => (data['address'] as String? ?? '').trim();
   String get description =>
       ((data['descripcion'] as String?) ?? (data['description'] as String?) ?? '')
           .trim();
-  int get spaces => (data['spaces'] as num?)?.toInt() ?? 0;
+  int get spaces =>
+      ((data['spaces'] as num?) ?? (data['capacity'] as num?) ?? 0).toInt();
   double get lat => (data['lat'] as num?)?.toDouble() ?? 0;
   double get lng => (data['lng'] as num?)?.toDouble() ?? 0;
   int get pricePerHour =>

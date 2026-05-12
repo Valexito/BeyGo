@@ -348,7 +348,7 @@ class _OwnerSettingsPageState extends ConsumerState<OwnerSettingsPage> {
                         _NavRow(
                           icon: Icons.chat_bubble_outline_rounded,
                           iconColor: context.appBrandIconColor,
-                          label: 'Enviar feedback',
+                          label: 'Enviar retroalimentación',
                           subtitle: 'Cuéntanos cómo mejorar la app',
                           onTap: () => _openFeedback(),
                         ),
@@ -541,7 +541,7 @@ class _OwnerSettingsPageState extends ConsumerState<OwnerSettingsPage> {
         builder:
             (_) => const ReportProblemPage(
               initialReportType: 'Otro',
-              initialSubject: 'Feedback de la app',
+              initialSubject: 'Retroalimentación de la app',
             ),
       ),
     );
@@ -825,7 +825,8 @@ class _OwnerSettingsPageState extends ConsumerState<OwnerSettingsPage> {
       pageBuilder:
           (_, __, ___) => const AppLoadingScreen(
             message: 'Validando tu identidad',
-            submessage: 'Estamos preparando el código de verificación para restablecer tu PIN...',
+            submessage:
+                'Estamos preparando el código de verificación para restablecer tu PIN...',
             variant: LoadingVariant.profile,
           ),
     );
@@ -1612,9 +1613,7 @@ class _RevenuePinDialogState extends State<_RevenuePinDialog> {
                       controller: _confirmCtrl,
                       keyboardType: TextInputType.number,
                       textInputAction: TextInputAction.done,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                      ],
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       obscureText: true,
                       maxLength: 4,
                       scrollPadding: const EdgeInsets.only(bottom: 140),
@@ -1635,7 +1634,9 @@ class _RevenuePinDialogState extends State<_RevenuePinDialog> {
                         color: const Color(0xFFDC2626).withValues(alpha: 0.10),
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                          color: const Color(0xFFDC2626).withValues(alpha: 0.18),
+                          color: const Color(
+                            0xFFDC2626,
+                          ).withValues(alpha: 0.18),
                         ),
                       ),
                       child: Text(
@@ -1815,10 +1816,14 @@ class _RevenueOtpDialogState extends State<_RevenueOtpDialog> {
                             width: 52,
                             height: 52,
                             decoration: BoxDecoration(
-                              color: AppColors.headerBottom.withValues(alpha: 0.12),
+                              color: AppColors.headerBottom.withValues(
+                                alpha: 0.12,
+                              ),
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: AppColors.headerBottom.withValues(alpha: 0.18),
+                                color: AppColors.headerBottom.withValues(
+                                  alpha: 0.18,
+                                ),
                               ),
                             ),
                             child: Icon(
@@ -1866,7 +1871,9 @@ class _RevenueOtpDialogState extends State<_RevenueOtpDialog> {
                                 width: 34,
                                 height: 34,
                                 decoration: BoxDecoration(
-                                  color: AppColors.headerBottom.withValues(alpha: 0.10),
+                                  color: AppColors.headerBottom.withValues(
+                                    alpha: 0.10,
+                                  ),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Icon(
@@ -1923,7 +1930,9 @@ class _RevenueOtpDialogState extends State<_RevenueOtpDialog> {
                             border: Border.all(
                               color:
                                   _error != null
-                                      ? const Color(0xFFDC2626).withValues(alpha: 0.35)
+                                      ? const Color(
+                                        0xFFDC2626,
+                                      ).withValues(alpha: 0.35)
                                       : context.appBorderColor,
                             ),
                             boxShadow: [
@@ -1957,7 +1966,9 @@ class _RevenueOtpDialogState extends State<_RevenueOtpDialog> {
                               counterText: '',
                               hintText: '000000',
                               hintStyle: TextStyle(
-                                color: context.appTextSecondaryColor.withValues(alpha: 0.55),
+                                color: context.appTextSecondaryColor.withValues(
+                                  alpha: 0.55,
+                                ),
                                 fontSize: 22,
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: 6,
@@ -1986,10 +1997,14 @@ class _RevenueOtpDialogState extends State<_RevenueOtpDialog> {
                               vertical: 10,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFDC2626).withValues(alpha: 0.10),
+                              color: const Color(
+                                0xFFDC2626,
+                              ).withValues(alpha: 0.10),
                               borderRadius: BorderRadius.circular(14),
                               border: Border.all(
-                                color: const Color(0xFFDC2626).withValues(alpha: 0.18),
+                                color: const Color(
+                                  0xFFDC2626,
+                                ).withValues(alpha: 0.18),
                               ),
                             ),
                             child: Text(
@@ -2020,7 +2035,9 @@ class _RevenueOtpDialogState extends State<_RevenueOtpDialog> {
                                       : AppColors.headerBottom,
                             ),
                             label: Text(
-                              _resending ? 'Reenviando código...' : 'Reenviar código',
+                              _resending
+                                  ? 'Reenviando código...'
+                                  : 'Reenviar código',
                               style: TextStyle(
                                 fontWeight: FontWeight.w700,
                                 color:
@@ -2037,10 +2054,14 @@ class _RevenueOtpDialogState extends State<_RevenueOtpDialog> {
                             Expanded(
                               child: OutlinedButton(
                                 onPressed:
-                                    _loading ? null : () => Navigator.pop(context),
+                                    _loading
+                                        ? null
+                                        : () => Navigator.pop(context),
                                 style: OutlinedButton.styleFrom(
                                   minimumSize: const Size.fromHeight(46),
-                                  side: BorderSide(color: context.appBorderColor),
+                                  side: BorderSide(
+                                    color: context.appBorderColor,
+                                  ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(16),
                                   ),

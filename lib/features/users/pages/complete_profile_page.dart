@@ -451,10 +451,10 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
                             const SizedBox(height: 14),
 
                             const _FieldLabel('Nombre completo'),
-                            const SizedBox(height: 6),
+                            const SizedBox(height: 4),
                             _Field(
                               controller: _nameController,
-                              hint: 'Ej: Juan Carlos Pérez',
+                              hint: '',
                               icon: Icons.person_outline_rounded,
                               validator:
                                   (v) =>
@@ -465,7 +465,7 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
                             const SizedBox(height: 16),
 
                             const _FieldLabel('Teléfono'),
-                            const SizedBox(height: 6),
+                            const SizedBox(height: 4),
                             // Phone field with country code picker
                             AppPhoneField(
                               selectedCountry: _selectedCountry,

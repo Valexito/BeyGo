@@ -262,6 +262,16 @@ class _HomeBottomPanelState extends State<HomeBottomPanel> {
     return AppColors.headerBottom;
   }
 
+  Color _panelAccent(BuildContext context) {
+    return context.isDarkMode ? Colors.white : AppColors.headerBottom;
+  }
+
+  Color _panelSecondaryAccent(BuildContext context) {
+    return context.isDarkMode
+        ? Colors.white.withValues(alpha: 0.72)
+        : AppColors.headerBottom.withValues(alpha: 0.7);
+  }
+
   @override
   Widget build(BuildContext context) {
     final hasLocation = widget.userLocation != null;
@@ -367,8 +377,9 @@ class _HomeBottomPanelState extends State<HomeBottomPanel> {
                                           fontSize: 11,
                                           color:
                                               hasLocation
-                                                  ? AppColors.headerBottom
-                                                      .withValues(alpha: 0.7)
+                                                  ? _panelSecondaryAccent(
+                                                    context,
+                                                  )
                                                   : context
                                                       .appTextSecondaryColor,
                                           fontWeight: FontWeight.w500,
@@ -389,7 +400,7 @@ class _HomeBottomPanelState extends State<HomeBottomPanel> {
                                   border: Border.all(
                                     color:
                                         _hasFocus
-                                            ? AppColors.headerBottom.withValues(
+                                            ? _panelAccent(context).withValues(
                                               alpha: 0.55,
                                             )
                                             : context.appBorderColor,
@@ -399,8 +410,9 @@ class _HomeBottomPanelState extends State<HomeBottomPanel> {
                                     BoxShadow(
                                       color:
                                           _hasFocus
-                                              ? AppColors.headerBottom
-                                                  .withValues(alpha: 0.10)
+                                              ? _panelAccent(
+                                                context,
+                                              ).withValues(alpha: 0.10)
                                               : Colors.black.withValues(
                                                 alpha: 0.03,
                                               ),
@@ -439,8 +451,9 @@ class _HomeBottomPanelState extends State<HomeBottomPanel> {
                                                     CircularProgressIndicator(
                                                       strokeWidth: 2,
                                                       color:
-                                                          AppColors
-                                                              .headerBottom,
+                                                          _panelAccent(
+                                                            context,
+                                                          ),
                                                     ),
                                               )
                                               : Icon(
@@ -448,7 +461,7 @@ class _HomeBottomPanelState extends State<HomeBottomPanel> {
                                                 size: 20,
                                                 color:
                                                     _hasFocus
-                                                        ? AppColors.headerBottom
+                                                        ? _panelAccent(context)
                                                         : context
                                                             .appTextSecondaryColor,
                                               ),
@@ -527,7 +540,7 @@ class _HomeBottomPanelState extends State<HomeBottomPanel> {
                                         decoration: BoxDecoration(
                                           color:
                                               active
-                                                  ? AppColors.headerBottom
+                                                  ? _panelAccent(context)
                                                   : context.appCardBackground,
                                           borderRadius: BorderRadius.circular(
                                             20,
@@ -535,15 +548,16 @@ class _HomeBottomPanelState extends State<HomeBottomPanel> {
                                           border: Border.all(
                                             color:
                                                 active
-                                                    ? AppColors.headerBottom
+                                                    ? _panelAccent(context)
                                                     : context.appBorderColor,
                                           ),
                                           boxShadow:
                                               active
                                                   ? [
                                                     BoxShadow(
-                                                      color: AppColors
-                                                          .headerBottom
+                                                      color: _panelAccent(
+                                                            context,
+                                                          )
                                                           .withValues(
                                                             alpha: 0.28,
                                                           ),
@@ -673,16 +687,18 @@ class _SectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final accent =
+        context.isDarkMode ? Colors.white : AppColors.headerBottom;
     return Row(
       children: [
-        Icon(icon, size: 12, color: AppColors.headerBottom),
+        Icon(icon, size: 12, color: accent),
         const SizedBox(width: 5),
         Text(
           label.toUpperCase(),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 10,
             fontWeight: FontWeight.w800,
-            color: AppColors.headerBottom,
+            color: accent,
             letterSpacing: 0.9,
           ),
         ),
@@ -710,6 +726,8 @@ class _ResultTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final effectiveIconColor =
+        context.isDarkMode && !isRecent ? Colors.white : iconColor;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Material(
@@ -738,10 +756,12 @@ class _ResultTile extends StatelessWidget {
                   width: 42,
                   height: 42,
                   decoration: BoxDecoration(
-                    color: iconColor.withValues(alpha: 0.10),
+                    color: effectiveIconColor.withValues(
+                      alpha: context.isDarkMode ? 0.12 : 0.10,
+                    ),
                     borderRadius: BorderRadius.circular(13),
                   ),
-                  child: Icon(icon, color: iconColor, size: 19),
+                  child: Icon(icon, color: effectiveIconColor, size: 19),
                 ),
                 const SizedBox(width: 12),
                 Expanded(

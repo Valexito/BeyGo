@@ -603,19 +603,17 @@ class _ReservationDetailsSheetState
           now.isAtSameMomentAs(reservation.freeCancellationUntil!);
     }
     final elapsedMinutes = now.difference(reservation.reservedAt).inMinutes;
-    return elapsedMinutes <= Reservation.freeCancellationWindowMinutesLimit;
+    return elapsedMinutes <= reservation.freeCancellationMinutes;
   }
 
   String _displayStatus(Reservation r) {
+    if (r.providerApprovalStatus == 'rejected') return 'Rechazada';
     final cancelledByOwner =
-        r.state == 'cancelled' &&
-        (r.providerApprovalStatus == 'approved' ||
-            r.cancellationReason == 'Cancelado por el propietario');
+        r.state == 'cancelled' && _isOwnerInitiatedCancellation(r);
     if (r.state == 'pending') return 'Pendiente';
-    if (r.providerApprovalStatus == 'rejected') return 'Denegada';
     if (r.state == 'completed') return 'Completada';
-    if (cancelledByOwner) return 'Cancelada';
-    if (r.state == 'cancelled') return 'Cancelada';
+    if (cancelledByOwner) return 'Cancelada por propietario';
+    if (r.state == 'cancelled') return 'Cancelada por usuario';
     if (r.state == 'cancellation_requested') return 'Cancelación pendiente';
     if (r.state == 'active' && r.exitStatus == 'approved')
       return 'Salida aprobada';
@@ -625,19 +623,17 @@ class _ReservationDetailsSheetState
   }
 
   String _displayAmount(Reservation r) {
+    if (r.isRejectedByProvider) {
+      return 'Solicitud rechazada';
+    }
     final cancelledByOwner =
-        r.state == 'cancelled' &&
-        (r.providerApprovalStatus == 'approved' ||
-            r.cancellationReason == 'Cancelado por el propietario');
+        r.state == 'cancelled' && _isOwnerInitiatedCancellation(r);
 
     if (cancelledByOwner) {
       return 'Cancelada por propietario';
     }
     if (r.state == 'cancelled') {
       return 'Cancelada por usuario';
-    }
-    if (r.isRejectedByProvider) {
-      return 'No aplica';
     }
     if (r.amount != null) return 'Q ${r.amount}';
     if (r.estimatedAmount != null) return 'Q ${r.estimatedAmount}';
@@ -646,6 +642,17 @@ class _ReservationDetailsSheetState
     }
     if (r.state == 'completed') return 'Pendiente';
     return 'Pendiente de salida';
+  }
+
+  bool _isOwnerInitiatedCancellation(Reservation reservation) {
+    if (reservation.cancelledBy == 'owner') return true;
+    if (reservation.cancelledBy == 'user') return false;
+    final reason =
+        (reservation.cancellationReason ?? '').trim().toLowerCase();
+    return reason == 'cancelado por el propietario' ||
+        reason == 'cancelada por el propietario' ||
+        reason == 'cancelado por propietario' ||
+        reason == 'cancelada por propietario';
   }
 
   String _formatDateTime(DateTime value) {

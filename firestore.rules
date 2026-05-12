@@ -368,6 +368,7 @@ service cloud.firestore {
             'state',
             'cancelRequestedAt',
             'cancellationReason',
+            'cancelledBy',
             'cancellationPenaltyApplied',
             'providerApprovalStatus',
             'cancelAttempts',
@@ -406,6 +407,7 @@ service cloud.firestore {
             'durationMinutes',
             'pricePerHour',
             'cancellationReason',
+            'cancelledBy',
             'cancellationPenaltyApplied',
             'estimatedAmount',
             'estimatedDurationMinutes'

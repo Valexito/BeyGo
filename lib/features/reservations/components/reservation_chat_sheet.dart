@@ -32,6 +32,12 @@ class _ReservationChatSheetState extends ConsumerState<ReservationChatSheet> {
   late final TextEditingController _controller;
   bool _sending = false;
 
+  Color get _chatAccent =>
+      context.isDarkMode ? const Color(0xFF3B82F6) : const Color(0xFF315EA8);
+
+  Color get _chatSoft =>
+      context.isDarkMode ? const Color(0xFF172036) : const Color(0xFFEAF1FF);
+
   bool get _chatEnabled {
     final state = widget.reservation.state.toLowerCase().trim();
     return state == 'pending' ||
@@ -122,8 +128,14 @@ class _ReservationChatSheetState extends ConsumerState<ReservationChatSheet> {
                       width: 48,
                       height: 48,
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [AppColors.headerTop, AppColors.headerBottom],
+                        gradient: LinearGradient(
+                          colors:
+                              context.isDarkMode
+                                  ? const [Color(0xFF1E3A5F), Color(0xFF0F172A)]
+                                  : const [
+                                    Color(0xFF4C7FD1),
+                                    Color(0xFF315EA8),
+                                  ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
@@ -169,7 +181,7 @@ class _ReservationChatSheetState extends ConsumerState<ReservationChatSheet> {
                   color:
                       context.isDarkMode
                           ? context.appCardBackgroundSoft
-                          : const Color(0xFFF4F7FB),
+                          : _chatSoft,
                   borderRadius: BorderRadius.circular(18),
                   border: Border.all(color: context.appBorderColor),
                 ),
@@ -229,12 +241,15 @@ class _ReservationChatSheetState extends ConsumerState<ReservationChatSheet> {
                                       width: 72,
                                       height: 72,
                                       decoration: BoxDecoration(
-                                        color: context.appIconCircleColor,
+                                        color:
+                                            context.isDarkMode
+                                                ? context.appIconCircleColor
+                                                : _chatSoft,
                                         shape: BoxShape.circle,
                                       ),
                                       child: Icon(
                                         Icons.mark_chat_unread_outlined,
-                                        color: context.appBrandIconColor,
+                                        color: _chatAccent,
                                         size: 28,
                                       ),
                                     ),
@@ -297,7 +312,12 @@ class _ReservationChatSheetState extends ConsumerState<ReservationChatSheet> {
                         decoration: BoxDecoration(
                           color: context.appInputBackground,
                           borderRadius: BorderRadius.circular(22),
-                          border: Border.all(color: context.appBorderColor),
+                          border: Border.all(
+                            color:
+                                context.isDarkMode
+                                    ? context.appBorderColor
+                                    : _chatAccent.withValues(alpha: 0.18),
+                          ),
                         ),
                         child: Theme(
                           data: Theme.of(context).copyWith(
@@ -351,9 +371,9 @@ class _ReservationChatSheetState extends ConsumerState<ReservationChatSheet> {
                         onPressed: _chatEnabled && !_sending ? _send : null,
                         style: ElevatedButton.styleFrom(
                           elevation: 0,
-                          backgroundColor: AppColors.headerBottom,
+                          backgroundColor: _chatAccent,
                           disabledBackgroundColor:
-                              AppColors.headerBottom.withValues(alpha: 0.35),
+                              _chatAccent.withValues(alpha: 0.35),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(18),
                           ),
@@ -400,12 +420,14 @@ class _ChatBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final chatAccent =
+        context.isDarkMode ? const Color(0xFF3B82F6) : const Color(0xFF315EA8);
+    final chatSoft =
+        context.isDarkMode ? context.appCardBackgroundSoft : const Color(0xFFEAF1FF);
     final bubbleColor =
         isMine
-            ? AppColors.headerBottom
-            : (context.isDarkMode
-                ? context.appCardBackgroundSoft
-                : const Color(0xFFF4F7FB));
+            ? chatAccent
+            : chatSoft;
 
     final textColor =
         isMine ? Colors.white : context.appTextPrimaryColor;

@@ -35,12 +35,14 @@ class Reservation {
 
   /// Fin de la ventana de cancelación gratis.
   final DateTime? freeCancellationUntil;
+  final int freeCancellationMinutes;
 
   /// Momento en que el usuario solicitó cancelar.
   final DateTime? cancelRequestedAt;
 
   /// Motivo opcional de cancelación.
   final String? cancellationReason;
+  final String? cancelledBy;
 
   /// true si la cancelación contó como penalizada.
   final bool cancellationPenaltyApplied;
@@ -84,8 +86,10 @@ class Reservation {
     this.cancelAttempts = 0,
     this.userCancelAttempts = 0,
     this.freeCancellationUntil,
+    this.freeCancellationMinutes = freeCancellationWindowMinutesLimit,
     this.cancelRequestedAt,
     this.cancellationReason,
+    this.cancelledBy,
     this.cancellationPenaltyApplied = false,
     this.providerApprovalStatus,
     this.exitStatus = 'none',
@@ -165,8 +169,12 @@ class Reservation {
       cancelAttempts: (data['cancelAttempts'] as num?)?.toInt() ?? 0,
       userCancelAttempts: (data['userCancelAttempts'] as num?)?.toInt() ?? 0,
       freeCancellationUntil: parseTimestamp(data['freeCancellationUntil']),
+      freeCancellationMinutes:
+          (data['freeCancellationMinutes'] as num?)?.toInt() ??
+          freeCancellationWindowMinutesLimit,
       cancelRequestedAt: parseTimestamp(data['cancelRequestedAt']),
       cancellationReason: data['cancellationReason'] as String?,
+      cancelledBy: data['cancelledBy'] as String?,
       cancellationPenaltyApplied:
           data['cancellationPenaltyApplied'] as bool? ?? false,
       providerApprovalStatus: data['providerApprovalStatus'] as String?,
@@ -209,11 +217,13 @@ class Reservation {
           freeCancellationUntil != null
               ? Timestamp.fromDate(freeCancellationUntil!)
               : null,
+      'freeCancellationMinutes': freeCancellationMinutes,
       'cancelRequestedAt':
           cancelRequestedAt != null
               ? Timestamp.fromDate(cancelRequestedAt!)
               : null,
       'cancellationReason': cancellationReason,
+      'cancelledBy': cancelledBy,
       'cancellationPenaltyApplied': cancellationPenaltyApplied,
       'providerApprovalStatus': providerApprovalStatus,
       'exitStatus': exitStatus,
@@ -259,8 +269,10 @@ class Reservation {
     int? cancelAttempts,
     int? userCancelAttempts,
     DateTime? freeCancellationUntil,
+    int? freeCancellationMinutes,
     DateTime? cancelRequestedAt,
     String? cancellationReason,
+    String? cancelledBy,
     bool? cancellationPenaltyApplied,
     String? providerApprovalStatus,
     String? exitStatus,
@@ -298,8 +310,11 @@ class Reservation {
       userCancelAttempts: userCancelAttempts ?? this.userCancelAttempts,
       freeCancellationUntil:
           freeCancellationUntil ?? this.freeCancellationUntil,
+      freeCancellationMinutes:
+          freeCancellationMinutes ?? this.freeCancellationMinutes,
       cancelRequestedAt: cancelRequestedAt ?? this.cancelRequestedAt,
       cancellationReason: cancellationReason ?? this.cancellationReason,
+      cancelledBy: cancelledBy ?? this.cancelledBy,
       cancellationPenaltyApplied:
           cancellationPenaltyApplied ?? this.cancellationPenaltyApplied,
       providerApprovalStatus:

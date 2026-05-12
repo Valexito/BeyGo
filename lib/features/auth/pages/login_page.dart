@@ -241,7 +241,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                           const SizedBox(height: 22),
 
                           _FieldLabel(label: 'Correo electrónico'),
-                          const SizedBox(height: 6),
+                          const SizedBox(height: 4),
                           MyTextField(
                             controller: _emailCtrl,
                             hintText: '',
@@ -254,7 +254,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                           const SizedBox(height: 14),
 
                           _FieldLabel(label: 'Contraseña'),
-                          const SizedBox(height: 6),
+                          const SizedBox(height: 4),
                           MyPasswordField(
                             controller: _passCtrl,
                             hintText: '',

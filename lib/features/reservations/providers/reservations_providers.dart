@@ -32,8 +32,6 @@ DocumentReference<Map<String, dynamic>> _userReservationControlDoc(
     .collection('reservation_control')
     .doc('main');
 
-const int freeCancellationWindowMinutes =
-    Reservation.freeCancellationWindowMinutesLimit;
 const int maxCancellationAttempts = Reservation.maxCancellationAttemptsLimit;
 const int reservationCooldownDays = Reservation.reservationCooldownDaysLimit;
 
@@ -58,7 +56,7 @@ bool _isWithinFreeCancellationWindow(Reservation reservation) {
   }
 
   final elapsedMinutes = now.difference(reservation.reservedAt).inMinutes;
-  return elapsedMinutes <= freeCancellationWindowMinutes;
+  return elapsedMinutes <= reservation.freeCancellationMinutes;
 }
 
 DateTime? _parseTimestamp(dynamic value) {
@@ -223,8 +221,12 @@ final reserveSpaceProvider = Provider<
     final spaceRef = _spaceDoc(db, parkingId, spaceNumber);
 
     final now = DateTime.now();
+    final freeCancellationMinutes =
+        p.freeCancellationMinutes > 0
+            ? p.freeCancellationMinutes
+            : Reservation.freeCancellationWindowMinutesLimit;
     final freeUntil = now.add(
-      const Duration(minutes: freeCancellationWindowMinutes),
+      Duration(minutes: freeCancellationMinutes),
     );
     final number = _generateReservationNumber();
     final autoApprove = p.autoApproveReservations;
@@ -244,6 +246,7 @@ final reserveSpaceProvider = Provider<
       providerApprovalStatus: 'pending',
       pricePerHour: p.pricePerHour,
       freeCancellationUntil: freeUntil,
+      freeCancellationMinutes: freeCancellationMinutes,
       exitStatus: 'none',
     );
 
@@ -339,6 +342,7 @@ final cancelReservationProvider =
               'endedAt': Timestamp.fromDate(now),
               'cancelRequestedAt': Timestamp.fromDate(now),
               'cancellationReason': 'Cancelación dentro del tiempo permitido',
+              'cancelledBy': 'user',
               'cancellationPenaltyApplied': false,
               'providerApprovalStatus': null,
             });
@@ -387,6 +391,7 @@ final cancelReservationProvider =
             'state': 'cancellation_requested',
             'cancelRequestedAt': Timestamp.fromDate(now),
             'cancellationReason': 'Cancelación fuera del tiempo permitido',
+            'cancelledBy': 'user',
             'cancellationPenaltyApplied': true,
             'providerApprovalStatus': 'pending',
             'cancelAttempts': (latestReservation.cancelAttempts) + 1,
@@ -684,6 +689,7 @@ final ownerConfirmCancellationProvider =
           tx.update(reservationRef, {
             'state': 'cancelled',
             'providerApprovalStatus': 'approved',
+            'cancelledBy': 'user',
             'endedAt': Timestamp.fromDate(now),
           });
 
@@ -831,6 +837,7 @@ final ownerRejectReservationProvider =
             'providerApprovalStatus': 'rejected',
             'endedAt': Timestamp.fromDate(now),
             'cancellationReason': 'Rechazada por el propietario',
+            'cancelledBy': 'owner',
           });
 
           final spaceData = spaceSnap.data() ?? <String, dynamic>{};

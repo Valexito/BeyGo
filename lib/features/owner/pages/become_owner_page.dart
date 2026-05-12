@@ -471,20 +471,20 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
                             const SizedBox(height: 14),
 
                             _FieldLabel(label: 'Empresa o encargado', hint: ''),
-                            const SizedBox(height: 6),
+                            const SizedBox(height: 4),
                             _FormField(
                               controller: _companyName,
-                              hint: 'Ej: Parqueos del Centro S.A.',
+                              hint: '',
                               icon: Icons.business_outlined,
                               validator: (v) => _required(v, 'Empresa'),
                             ),
 
                             const SizedBox(height: 14),
                             _FieldLabel(label: 'Nombre del parqueo', hint: ''),
-                            const SizedBox(height: 6),
+                            const SizedBox(height: 4),
                             _FormField(
                               controller: _parkingName,
-                              hint: 'Ej: Parqueo Central Xela',
+                              hint: '',
                               icon: Icons.local_parking_outlined,
                               validator:
                                   (v) => _required(v, 'Nombre del parqueo'),
@@ -492,10 +492,10 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
 
                             const SizedBox(height: 14),
                             _FieldLabel(label: 'NIT', hint: ''),
-                            const SizedBox(height: 6),
+                            const SizedBox(height: 4),
                             _FormField(
                               controller: _nit,
-                              hint: 'Ej: 112615953',
+                              hint: '',
                               icon: Icons.badge_outlined,
                               keyboardType: TextInputType.number,
                               inputFormatters: [
@@ -514,10 +514,10 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
                             const SizedBox(height: 14),
 
                             _FieldLabel(label: 'Correo electrónico', hint: ''),
-                            const SizedBox(height: 6),
+                            const SizedBox(height: 4),
                             _FormField(
                               controller: _email,
-                              hint: 'ejemplo@correo.com',
+                              hint: '',
                               icon: Icons.mail_outline_rounded,
                               keyboardType: TextInputType.emailAddress,
                               validator: _emailValidator,
@@ -528,7 +528,7 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
                               label: 'Teléfono de contacto',
                               hint: '',
                             ),
-                            const SizedBox(height: 6),
+                            const SizedBox(height: 4),
                             AppPhoneField(
                               numberController: _phoneNumber,
                               selectedCountry: _selectedCountry,
@@ -545,10 +545,10 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
                             const SizedBox(height: 14),
 
                             _FieldLabel(label: 'Dirección', hint: ''),
-                            const SizedBox(height: 6),
+                            const SizedBox(height: 4),
                             _FormField(
                               controller: _address,
-                              hint: 'Ej: 4a Calle 14-50 Zona 1',
+                              hint: '',
                               icon: Icons.place_outlined,
                               validator: (v) => _required(v, 'Dirección'),
                             ),
@@ -562,10 +562,10 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
                                         CrossAxisAlignment.start,
                                     children: [
                                       _FieldLabel(label: 'Capacidad', hint: ''),
-                                      const SizedBox(height: 6),
+                                      const SizedBox(height: 4),
                                       _FormField(
                                         controller: _capacity,
-                                        hint: 'Ej: 20',
+                                        hint: '',
                                         icon:
                                             Icons.format_list_numbered_outlined,
                                         keyboardType: TextInputType.number,
@@ -595,10 +595,10 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
                                         label: 'Precio / hora (Q)',
                                         hint: '',
                                       ),
-                                      const SizedBox(height: 6),
+                                      const SizedBox(height: 4),
                                       _FormField(
                                         controller: _pricePerHour,
-                                        hint: 'Ej: 10',
+                                        hint: '',
                                         icon: Icons.attach_money_outlined,
                                         keyboardType: TextInputType.number,
                                         inputFormatters: [
@@ -622,7 +622,7 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
 
                             const SizedBox(height: 14),
                             _FieldLabel(label: 'Descripción breve', hint: ''),
-                            const SizedBox(height: 6),
+                            const SizedBox(height: 4),
                             TextFormField(
                               controller: _description,
                               maxLines: 3,
@@ -631,8 +631,7 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
                                 color: context.appTextPrimaryColor,
                               ),
                               decoration: InputDecoration(
-                                hintText:
-                                    'Ej: Parqueo techado, seguridad 24h...',
+                                hintText: '',
                                 hintStyle: TextStyle(
                                   fontSize: 13,
                                   color: context.appTextSecondaryColor,
@@ -998,11 +997,16 @@ class _FieldLabel extends StatelessWidget {
           color: context.appTextPrimaryColor,
         ),
       ),
-      const SizedBox(height: 2),
-      Text(
-        hint,
-        style: TextStyle(fontSize: 11, color: context.appTextSecondaryColor),
-      ),
+      if (hint.trim().isNotEmpty) ...[
+        const SizedBox(height: 1),
+        Text(
+          hint,
+          style: TextStyle(
+            fontSize: 11,
+            color: context.appTextSecondaryColor,
+          ),
+        ),
+      ],
     ],
   );
 }

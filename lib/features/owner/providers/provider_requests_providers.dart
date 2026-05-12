@@ -40,6 +40,7 @@ final approveProviderRequestProvider =
 
         final data = requestSnap.data() as Map<String, dynamic>;
         final uid = data['uid'];
+        final capacity = (data['capacity'] as num?)?.toInt() ?? 0;
 
         final parkingRef = db.collection('parkings').doc();
 
@@ -53,7 +54,7 @@ final approveProviderRequestProvider =
             'address': data['address'],
             'descripcion': data['description'],
             'pricePerHour': data['pricePerHour'],
-            'spaces': data['capacity'],
+            'spaces': capacity,
             'lat': data['lat'],
             'lng': data['lng'],
             'photos': data['parkingImages'],
@@ -65,6 +66,16 @@ final approveProviderRequestProvider =
             'createdAt': FieldValue.serverTimestamp(),
             'updatedAt': FieldValue.serverTimestamp(),
           });
+
+          for (var number = 1; number <= capacity; number++) {
+            tx.set(parkingRef.collection('spaces').doc('$number'), {
+              'spaceNumber': number,
+              'status': 'free',
+              'currentReservationId': null,
+              'createdAt': FieldValue.serverTimestamp(),
+              'updatedAt': FieldValue.serverTimestamp(),
+            }, SetOptions(merge: true));
+          }
 
           /// UPDATE REQUEST STATUS
           tx.update(requestRef, {

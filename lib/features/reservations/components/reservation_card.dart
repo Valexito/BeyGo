@@ -263,7 +263,10 @@ class _ReservationCardShell extends StatelessWidget {
                                   );
                                 },
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF22C55E),
+                                  backgroundColor:
+                                      context.isDarkMode
+                                          ? const Color(0xFF3B82F6)
+                                          : const Color(0xFF315EA8),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(16),
                                   ),
@@ -319,15 +322,16 @@ class _ReservationCardShell extends StatelessWidget {
   }
 
   static String _priceText(Parking? parking, Reservation reservation) {
+    if (reservation.isRejectedByProvider) {
+      return 'Solicitud rechazada';
+    }
     final cancelledByOwner =
         reservation.state == 'cancelled' &&
-        (reservation.providerApprovalStatus == 'approved' ||
-            reservation.cancellationReason == 'Cancelado por el propietario');
+        _isOwnerInitiatedCancellation(reservation);
     if (cancelledByOwner || reservation.state == 'cancelled') {
-      return 'Cancelada';
-    }
-    if (reservation.isRejectedByProvider) {
-      return 'No aplica';
+      return cancelledByOwner
+          ? 'Cancelada por propietario'
+          : 'Cancelada por usuario';
     }
     final pricePerHour = parking?.pricePerHour ?? 0;
     return pricePerHour > 0 ? 'Q $pricePerHour por hora' : 'Tarifa no disp.';
@@ -359,18 +363,16 @@ class _ReservationCardShell extends StatelessWidget {
   }
 
   static String _statusLabel(Reservation r) {
+    if (r.state == 'rejected' || r.providerApprovalStatus == 'rejected') {
+      return 'RECHAZADA';
+    }
     final cancelledByOwner =
-        r.state == 'cancelled' &&
-        (r.providerApprovalStatus == 'approved' ||
-            r.cancellationReason == 'Cancelado por el propietario');
+        r.state == 'cancelled' && _isOwnerInitiatedCancellation(r);
     if (r.providerApprovalStatus == 'pending') return 'PENDIENTE';
     if (r.state == 'pending') return 'PENDIENTE';
     if (r.state == 'completed') return 'COMPLETADA';
     if (cancelledByOwner) return 'CANCELADA';
     if (r.state == 'cancelled') return 'CANCELADA';
-    if (r.state == 'rejected' || r.providerApprovalStatus == 'rejected') {
-      return 'DENEGADA';
-    }
     if (r.state == 'active' && r.exitStatus == 'approved') return 'SALIDA OK';
     if (r.state == 'active' && r.exitStatus == 'requested') {
       return 'SALIDA SOL.';
@@ -379,15 +381,15 @@ class _ReservationCardShell extends StatelessWidget {
   }
 
   static Color _statusColor(Reservation r) {
+    if (r.state == 'rejected' || r.providerApprovalStatus == 'rejected') {
+      return const Color(0xFFDC2626);
+    }
     if (r.providerApprovalStatus == 'pending') {
       return const Color(0xFFF59E0B);
     }
     if (r.state == 'pending') return const Color(0xFFF59E0B);
     if (r.state == 'completed') return const Color(0xFF2563EB);
     if (r.state == 'cancelled') return const Color(0xFFDC2626);
-    if (r.state == 'rejected' || r.providerApprovalStatus == 'rejected') {
-      return const Color(0xFFDC2626);
-    }
     if (r.state == 'active' && r.exitStatus == 'approved') {
       return const Color(0xFF0EA5E9);
     }
@@ -395,6 +397,17 @@ class _ReservationCardShell extends StatelessWidget {
       return const Color(0xFFF59E0B);
     }
     return const Color(0xFF16A34A);
+  }
+
+  static bool _isOwnerInitiatedCancellation(Reservation reservation) {
+    if (reservation.cancelledBy == 'owner') return true;
+    if (reservation.cancelledBy == 'user') return false;
+    final reason =
+        (reservation.cancellationReason ?? '').trim().toLowerCase();
+    return reason == 'cancelado por el propietario' ||
+        reason == 'cancelada por el propietario' ||
+        reason == 'cancelado por propietario' ||
+        reason == 'cancelada por propietario';
   }
 
   static void _openNavigation(

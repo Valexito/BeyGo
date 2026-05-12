@@ -950,10 +950,13 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
                           children: [
                             Text(
                               'Q ${amount.toStringAsFixed(2)}',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 40,
                                 fontWeight: FontWeight.w900,
-                                color: AppColors.headerBottom,
+                                color:
+                                    context.isDarkMode
+                                        ? Colors.white
+                                        : AppColors.headerBottom,
                                 height: 1,
                               ),
                             ),

@@ -126,13 +126,15 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage>
       final firestorePhoto = (data['photoURL'] as String?)?.trim() ?? '';
       final authPhoto = (refreshedUser.photoURL ?? u.photoURL ?? '').trim();
       final firestorePhone = (data['phone'] as String?)?.trim() ?? '';
-      final authPhone = (refreshedUser.phoneNumber ?? u.phoneNumber ?? '').trim();
+      final authPhone =
+          (refreshedUser.phoneNumber ?? u.phoneNumber ?? '').trim();
 
       _nameCtrl.text =
           (data['name'] as String? ?? refreshedUser.displayName ?? '').trim();
       _dobCtrl.text = (data['dob'] as String?) ?? '';
       _gender = rawGender.isNotEmpty ? rawGender : 'male';
-      _existingPhotoUrl = firestorePhoto.isNotEmpty ? firestorePhoto : authPhoto;
+      _existingPhotoUrl =
+          firestorePhoto.isNotEmpty ? firestorePhoto : authPhoto;
 
       _applyPhoneValue(firestorePhone.isNotEmpty ? firestorePhone : authPhone);
 
@@ -543,13 +545,12 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage>
 
                                     _FieldLabel(
                                       label: 'Nombre completo',
-                                      hint:
-                                          'Escribe tu nombre como aparece en tu DPI',
+                                      hint: '',
                                     ),
-                                    const SizedBox(height: 6),
+                                    const SizedBox(height: 4),
                                     _StyledField(
                                       controller: _nameCtrl,
-                                      hint: 'Ej: Juan Carlos Pérez',
+                                      hint: '',
                                       icon: Icons.person_outline,
                                       validator:
                                           (v) =>
@@ -561,9 +562,9 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage>
                                     const SizedBox(height: 16),
                                     _FieldLabel(
                                       label: 'Fecha de nacimiento',
-                                      hint: 'Usada para verificar tu edad',
+                                      hint: '',
                                     ),
-                                    const SizedBox(height: 6),
+                                    const SizedBox(height: 4),
                                     _ReadonlyField(
                                       controller: _dobCtrl,
                                       hint: 'DD/MM/AAAA',
@@ -574,10 +575,13 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage>
                                     const SizedBox(height: 16),
                                     _FieldLabel(
                                       label: 'Correo electrónico',
-                                      hint:
-                                          'No editable — asociado a tu cuenta',
+                                      hint: '',
+                                      trailing: _InfoIconButton(
+                                        message:
+                                            'No editable — asociado a tu cuenta',
+                                      ),
                                     ),
-                                    const SizedBox(height: 6),
+                                    const SizedBox(height: 4),
                                     _ReadonlyField(
                                       controller: TextEditingController(
                                         text: user?.email ?? '',
@@ -591,10 +595,9 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage>
                                     const SizedBox(height: 16),
                                     _FieldLabel(
                                       label: 'Número de teléfono',
-                                      hint:
-                                          'Incluye tu código de país y número',
+                                      hint: '',
                                     ),
-                                    const SizedBox(height: 6),
+                                    const SizedBox(height: 4),
                                     AppPhoneField(
                                       numberController: _phoneNumberCtrl,
                                       selectedCountry: _selectedCountry,
@@ -602,12 +605,8 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage>
                                     ),
 
                                     const SizedBox(height: 16),
-                                    _FieldLabel(
-                                      label: 'Género',
-                                      hint:
-                                          'Opcional — ayuda a personalizar tu experiencia',
-                                    ),
-                                    const SizedBox(height: 8),
+                                    _FieldLabel(label: 'Género', hint: ''),
+                                    const SizedBox(height: 6),
                                     Row(
                                       children: [
                                         _GenderChip(
@@ -701,7 +700,8 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage>
                                               child: Icon(
                                                 Icons.directions_car_outlined,
                                                 size: 18,
-                                                color: context.appBrandIconColor,
+                                                color:
+                                                    context.appBrandIconColor,
                                               ),
                                             ),
                                             const SizedBox(width: 12),
@@ -736,8 +736,7 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage>
                                             ),
                                             Icon(
                                               Icons.chevron_right_rounded,
-                                              color:
-                                                  context.appBrandIconColor,
+                                              color: context.appBrandIconColor,
                                               size: 20,
                                             ),
                                           ],
@@ -1126,28 +1125,95 @@ class _VehicleEditCardState extends State<_VehicleEditCard> {
 class _FieldLabel extends StatelessWidget {
   final String label;
   final String hint;
+  final Widget? trailing;
 
-  const _FieldLabel({required this.label, required this.hint});
+  const _FieldLabel({
+    required this.label,
+    required this.hint,
+    this.trailing,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-            color: context.appTextPrimaryColor,
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: context.appTextPrimaryColor,
+                ),
+              ),
+            ),
+            if (trailing != null) trailing!,
+          ],
+        ),
+        if (hint.trim().isNotEmpty) ...[
+          const SizedBox(height: 1),
+          Text(
+            hint,
+            style: TextStyle(
+              fontSize: 11,
+              color: context.appTextSecondaryColor,
+            ),
           ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          hint,
-          style: TextStyle(fontSize: 11, color: context.appTextSecondaryColor),
-        ),
+        ],
       ],
+    );
+  }
+}
+
+class _InfoIconButton extends StatelessWidget {
+  const _InfoIconButton({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(999),
+      onTap: () {
+        showDialog<void>(
+          context: context,
+          builder:
+              (ctx) => AlertDialog(
+                backgroundColor: ctx.appCardBackground,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                title: Text(
+                  'Correo electrónico',
+                  style: TextStyle(
+                    color: ctx.appTextPrimaryColor,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                content: Text(
+                  message,
+                  style: TextStyle(color: ctx.appTextSecondaryColor),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text('Entendido'),
+                  ),
+                ],
+              ),
+        );
+      },
+      child: Padding(
+        padding: const EdgeInsets.all(2),
+        child: Icon(
+          Icons.info_outline_rounded,
+          size: 16,
+          color: context.appTextSecondaryColor,
+        ),
+      ),
     );
   }
 }
@@ -1176,7 +1242,10 @@ class _StyledField extends StatelessWidget {
       ),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(fontSize: 13, color: context.appTextSecondaryColor),
+        hintStyle: TextStyle(
+          fontSize: 13,
+          color: context.appTextSecondaryColor,
+        ),
         prefixIcon: Icon(icon, size: 18, color: context.appBrandIconColor),
         filled: true,
         fillColor: context.appInputBackgroundActive,
@@ -1230,18 +1299,24 @@ class _ReadonlyField extends StatelessWidget {
         fontSize: 14,
         fontWeight: FontWeight.w600,
         color:
-            muted
-                ? context.appTextSecondaryColor
-                : context.appTextPrimaryColor,
+            muted ? context.appTextSecondaryColor : context.appTextPrimaryColor,
       ),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(fontSize: 13, color: context.appTextSecondaryColor),
+        hintStyle: TextStyle(
+          fontSize: 13,
+          color: context.appTextSecondaryColor,
+        ),
         prefixIcon: Icon(
           icon,
           size: 18,
           color:
-              muted ? context.appTextSecondaryColor : AppColors.headerBottom,
+              muted
+                  ? context.appTextSecondaryColor
+                  : (context.isDarkMode &&
+                          icon == Icons.calendar_today_outlined)
+                  ? Colors.white
+                  : AppColors.headerBottom,
         ),
         suffixIcon:
             onTap != null && !muted
@@ -1259,7 +1334,9 @@ class _ReadonlyField extends StatelessWidget {
                 : null,
         filled: true,
         fillColor:
-            muted ? context.appInputBackground : context.appInputBackgroundActive,
+            muted
+                ? context.appInputBackground
+                : context.appInputBackgroundActive,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 14,
@@ -1280,7 +1357,6 @@ class _ReadonlyField extends StatelessWidget {
     );
   }
 }
-
 
 class _SectionHeader extends StatelessWidget {
   final IconData icon;
@@ -1345,8 +1421,7 @@ class _GenderChip extends StatelessWidget {
               Icon(
                 icon,
                 size: 18,
-                color:
-                    selected ? Colors.white : context.appTextSecondaryColor,
+                color: selected ? Colors.white : context.appTextSecondaryColor,
               ),
               const SizedBox(height: 4),
               Text(
