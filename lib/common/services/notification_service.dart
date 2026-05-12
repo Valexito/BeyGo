@@ -237,31 +237,34 @@ class NotificationService {
     final openChat = type == 'chat_message';
 
     if (route == 'reservations') {
-      nav.push(_notificationRoute(
-        ReservationsPage(
+      _resetStackAndOpen(
+        rootRouteName: '/homePage',
+        child: ReservationsPage(
           initialReservationId: reservationId.isEmpty ? null : reservationId,
           initialOpenChat: openChat,
         ),
-      ));
+      );
       return;
     }
 
     if (route == 'ownerRequests') {
-      nav.push(_notificationRoute(
-        OwnerRequestsPage(
+      _resetStackAndOpen(
+        rootRouteName: '/owner',
+        child: OwnerRequestsPage(
           initialReservationId: reservationId.isEmpty ? null : reservationId,
           initialTab:
               type == 'cancel_requested'
                   ? OwnerRequestTab.cancellations
                   : OwnerRequestTab.exits,
         ),
-      ));
+      );
       return;
     }
 
     if (route == 'ownerReservations') {
-      nav.push(_notificationRoute(
-        OwnerReservationsPage(
+      _resetStackAndOpen(
+        rootRouteName: '/owner',
+        child: OwnerReservationsPage(
           initialReservationId: reservationId.isEmpty ? null : reservationId,
           initialOpenChat: openChat,
           initialTab:
@@ -269,8 +272,24 @@ class NotificationService {
                   ? OwnerReservationsTab.pending
                   : OwnerReservationsTab.active,
         ),
-      ));
+      );
     }
+  }
+
+  void _resetStackAndOpen({
+    required String rootRouteName,
+    required Widget child,
+  }) {
+    final nav = navigatorKey.currentState;
+    if (nav == null) return;
+
+    nav.pushNamedAndRemoveUntil(rootRouteName, (_) => false);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final readyNav = navigatorKey.currentState;
+      if (readyNav == null) return;
+      readyNav.push(_notificationRoute(child));
+    });
   }
 
   Route<void> _notificationRoute(Widget child) {
