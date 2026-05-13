@@ -11,10 +11,7 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return signedIn() &&
-        request.auth.token.email in [
-          "alexarpe.15@gmail.com"
-        ];
+      return signedIn() && request.auth.token.admin == true;
     }
 
     function isParkingOwner(pid) {

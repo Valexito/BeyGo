@@ -49,3 +49,10 @@ app.*.map.json
 
 # Env / secretos
 lib/common/env/env.dart
+android/local.properties
+android/key.properties
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+env_dev.json
+*.jks
+*.keystore
