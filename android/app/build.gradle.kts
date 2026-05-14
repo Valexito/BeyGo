@@ -112,6 +112,8 @@ dependencies {
     // Required by flutter_local_notifications
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 
+    implementation("com.google.android.libraries.places:places:4.1.0")
+
     // Firebase BOM
     implementation(platform("com.google.firebase:firebase-bom:33.2.0"))
     implementation("com.google.firebase:firebase-analytics")

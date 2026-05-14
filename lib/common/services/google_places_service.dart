@@ -1,11 +1,14 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:beygo/common/common.dart';
 
 class GooglePlacesService {
   static const Duration _timeout = Duration(seconds: 6);
+  static const MethodChannel _placesChannel = MethodChannel('beygo/places');
 
   Future<List<PlaceAutocompleteSuggestion>> autocomplete({
     required String input,
@@ -17,6 +20,16 @@ class GooglePlacesService {
   }) async {
     final query = input.trim();
     if (query.isEmpty) return const [];
+
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      return _autocompleteNative(
+        input: query,
+        countryCode: countryCode,
+        locationBias: locationBias,
+        radiusMeters: radiusMeters,
+      );
+    }
+
     final apiKey = await Env.resolveGoogleMapsKey();
     if (apiKey.isEmpty) {
       throw Exception(
@@ -34,8 +47,7 @@ class GooglePlacesService {
     };
 
     if (locationBias != null) {
-      params['location'] =
-          '${locationBias.latitude},${locationBias.longitude}';
+      params['location'] = '${locationBias.latitude},${locationBias.longitude}';
     }
 
     if (locationBias != null && radiusMeters != null) {
@@ -66,7 +78,8 @@ class GooglePlacesService {
       return PlaceAutocompleteSuggestion(
         placeId: p['place_id'] as String? ?? '',
         mainText:
-            (sf?['main_text'] as String?) ?? (p['description'] as String? ?? ''),
+            (sf?['main_text'] as String?) ??
+            (p['description'] as String? ?? ''),
         secondaryText: (sf?['secondary_text'] as String?) ?? '',
         fullText: p['description'] as String? ?? '',
         types: ((p['types'] as List?) ?? const []).cast<String>(),
@@ -76,6 +89,11 @@ class GooglePlacesService {
 
   Future<LatLng?> fetchPlaceLocation(String placeId) async {
     if (placeId.isEmpty) return null;
+
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      return _fetchPlaceLocationNative(placeId);
+    }
+
     final apiKey = await Env.resolveGoogleMapsKey();
     if (apiKey.isEmpty) return null;
 
@@ -101,6 +119,48 @@ class GooglePlacesService {
       (loc['lat'] as num).toDouble(),
       (loc['lng'] as num).toDouble(),
     );
+  }
+
+  Future<List<PlaceAutocompleteSuggestion>> _autocompleteNative({
+    required String input,
+    required String countryCode,
+    LatLng? locationBias,
+    int? radiusMeters,
+  }) async {
+    final raw = await _placesChannel.invokeListMethod<dynamic>('autocomplete', {
+      'input': input,
+      'countryCode': countryCode,
+      'latitude': locationBias?.latitude,
+      'longitude': locationBias?.longitude,
+      'radiusMeters': radiusMeters,
+    });
+
+    final items = raw ?? const [];
+    return items.map((entry) {
+      final p = Map<String, dynamic>.from(entry as Map);
+      return PlaceAutocompleteSuggestion(
+        placeId: p['placeId'] as String? ?? '',
+        mainText: p['mainText'] as String? ?? '',
+        secondaryText: p['secondaryText'] as String? ?? '',
+        fullText: p['fullText'] as String? ?? '',
+        types: ((p['types'] as List?) ?? const []).cast<String>(),
+      );
+    }).toList();
+  }
+
+  Future<LatLng?> _fetchPlaceLocationNative(String placeId) async {
+    final raw = await _placesChannel.invokeMapMethod<dynamic, dynamic>(
+      'fetchPlaceLocation',
+      {'placeId': placeId},
+    );
+    if (raw == null) return null;
+
+    final data = Map<String, dynamic>.from(raw);
+    final lat = data['lat'];
+    final lng = data['lng'];
+    if (lat is! num || lng is! num) return null;
+
+    return LatLng(lat.toDouble(), lng.toDouble());
   }
 }
 

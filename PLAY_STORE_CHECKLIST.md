@@ -14,34 +14,6 @@ Lo bloqueante: faltan reglas de Storage, secretos no excluidos en `.gitignore`, 
 
 ## 1) BLOQUEANTES (resolver antes de subir a Production)
 
-### 1.1 Storage rules no existen
-
-`firebase.json` línea 41 referencia `"rules": "storage.rules"` pero el archivo no existe en el repo. Sin reglas explícitas, Storage opera con lo que esté configurado en consola (default-deny o lo que hayan tocado manualmente).
-
-**Acción:** crear `storage.rules` en raíz del proyecto. Ejemplo mínimo:
-
-```
-rules_version = '2';
-service firebase.storage {
-  match /b/{bucket}/o {
-    match /users/{uid}/profile.{ext} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null
-        && request.auth.uid == uid
-        && request.resource.size < 5 * 1024 * 1024
-        && request.resource.contentType.matches('image/.*');
-    }
-    match /provider_requests/{uid}/{filename} {
-      allow read: if request.auth != null
-        && (request.auth.uid == uid || request.auth.token.email == 'alexarpe.15@gmail.com');
-      allow write: if request.auth != null
-        && request.auth.uid == uid
-        && request.resource.size < 10 * 1024 * 1024;
-    }
-    match /{allPaths=**} { allow read, write: if false; }
-  }
-}
-```
 
 Luego: `firebase deploy --only storage`.
 

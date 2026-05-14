@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
@@ -30,6 +31,11 @@ class GoogleDirectionsService {
   // ── Internal ───────────────────────────────────────────────────────────────
 
   Future<_RouteData> _fetch(LatLng o, LatLng d) async {
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      print('[DIRECTIONS] Android client -> using OSRM');
+      return _fetchOsrm(o, d);
+    }
+
     final key = (_keyOverride?.trim().isNotEmpty ?? false)
         ? _keyOverride!.trim()
         : await Env.resolveGoogleMapsKey();
