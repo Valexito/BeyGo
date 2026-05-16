@@ -1,5 +1,8 @@
 {
   "projects": {
-    "default": "parkingappprod"
-  }
+    "default": "parkingappprod",
+    "beygo-app-prod-alias": "beygo-app-prod"
+  },
+  "targets": {},
+  "etags": {}
 }

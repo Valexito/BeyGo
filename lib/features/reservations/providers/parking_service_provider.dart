@@ -1,10 +1,9 @@
 // lib/features/reservations/services/parking_service.dart
 // ignore_for_file: avoid_print
-import 'dart:typed_data';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -314,7 +313,7 @@ class ParkingService {
       //     /parkings/{parkingId}/photos/{uuid.ext}
       final fileName = '${_uuid.v4()}.$ext';
       final path = 'parkings/$parkingId/photos/$fileName';
-      print('[upload] uid=$ownerID path=$path size=${bytes.length}');
+      debugPrint('[upload] uid=$ownerID path=$path size=${bytes.length}');
 
       final ref = _storage.ref(path);
       final metadata = SettableMetadata(contentType: contentType);
@@ -322,7 +321,7 @@ class ParkingService {
       try {
         await ref.putData(Uint8List.fromList(bytes), metadata);
       } on FirebaseException catch (e) {
-        print(
+        debugPrint(
           '[upload][FirebaseException] code=${e.code} message=${e.message}',
         );
         rethrow;

@@ -80,6 +80,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
       if (!mounted || user == null) return;
       await _routeAfterAuth(user);
     } catch (e) {
+      debugPrint('[GoogleSignIn] Login failed: $e');
       if (!mounted) return;
       final msg = e.toString().toLowerCase();
       final cancelled =
@@ -88,7 +89,16 @@ class _LoginPageState extends ConsumerState<LoginPage>
           msg.contains('cancelado') ||
           msg.contains('sign-in cancelled');
       if (!cancelled) {
-        _showError('Error al iniciar sesión con Google. Intenta de nuevo.');
+        if (msg.contains('apiexception: 10') ||
+            msg.contains('developer_error')) {
+          _showError(
+            'Google Sign-In no está configurado correctamente para esta app. Revisa SHA-1, package name y proveedor de Google.',
+          );
+        } else if (msg.contains('network') || msg.contains('socket')) {
+          _showError('Sin conexión a internet. Revisa tu red.');
+        } else {
+          _showError('Error al iniciar sesión con Google. Intenta de nuevo.');
+        }
       }
     } finally {
       if (mounted) setState(() => _googleLoading = false);

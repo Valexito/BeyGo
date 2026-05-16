@@ -6,6 +6,7 @@ library;
 
 export 'env/env.dart';
 export 'services/app_preferences_service.dart';
+export 'services/app_navigator.dart';
 export 'services/geolocator.dart';
 export 'services/google_directions_service.dart';
 export 'services/google_places_service.dart';

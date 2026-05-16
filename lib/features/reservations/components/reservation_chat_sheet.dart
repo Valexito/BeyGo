@@ -86,10 +86,16 @@ class _ReservationChatSheetState extends ConsumerState<ReservationChatSheet> {
     final messagesAsync = ref.watch(
       reservationChatMessagesProvider(widget.reservation.id),
     );
+    final blockStateAsync = ref.watch(
+      reservationChatBlockStateProvider(widget.reservation),
+    );
     final auth = ref.watch(firebaseAuthProvider);
     final currentUid = auth.currentUser?.uid ?? '';
     final peerLabel =
         currentUid == widget.reservation.ownerId ? 'usuario' : 'dueño';
+    final blockState = blockStateAsync.valueOrNull;
+    final isConversationBlocked = blockState?.isConversationBlocked ?? false;
+    final blockedByMe = blockState?.blockedByMe ?? false;
 
     return FractionallySizedBox(
       heightFactor: 0.88,
@@ -195,9 +201,14 @@ class _ReservationChatSheetState extends ConsumerState<ReservationChatSheet> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        _chatEnabled
-                            ? 'Conversación directa con el $peerLabel mientras la reservación esté activa.'
-                            : 'La conversación está cerrada porque la reservación ya no está activa.',
+                        !_chatEnabled
+                            ? 'La conversación está cerrada porque la reservación ya no está activa.'
+                            : isConversationBlocked
+                            ? blockedByMe
+                                ? 'Bloqueaste a este participante. No recibirás sus notificaciones y no se podrán enviar nuevos mensajes.'
+                                : 'La otra persona bloqueó la conversación. Ya no se podrán enviar nuevos mensajes.'
+                            : 'Conversación directa con el $peerLabel mientras la reservación esté activa.'
+                        ,
                         style: TextStyle(
                           color: context.appTextSecondaryColor,
                           fontSize: 12,
@@ -289,6 +300,14 @@ class _ReservationChatSheetState extends ConsumerState<ReservationChatSheet> {
                           message: message,
                           isMine: isMine,
                           reservation: widget.reservation,
+                          onLongPress:
+                              isMine
+                                  ? null
+                                  : () => _showMessageActions(
+                                    message: message,
+                                    peerLabel: peerLabel,
+                                    blockedByMe: blockedByMe,
+                                  ),
                         );
                       },
                     );
@@ -340,11 +359,14 @@ class _ReservationChatSheetState extends ConsumerState<ReservationChatSheet> {
                               controller: _controller,
                               minLines: 1,
                               maxLines: 4,
-                              enabled: _chatEnabled && !_sending,
+                              enabled:
+                                  _chatEnabled &&
+                                  !_sending &&
+                                  !isConversationBlocked,
                               textInputAction: TextInputAction.newline,
                               decoration: InputDecoration.collapsed(
                                 hintText:
-                                    _chatEnabled
+                                    _chatEnabled && !isConversationBlocked
                                         ? 'Escribe un mensaje...'
                                         : 'Chat no disponible',
                                 hintStyle: TextStyle(
@@ -368,7 +390,12 @@ class _ReservationChatSheetState extends ConsumerState<ReservationChatSheet> {
                       width: 52,
                       height: 52,
                       child: ElevatedButton(
-                        onPressed: _chatEnabled && !_sending ? _send : null,
+                        onPressed:
+                            _chatEnabled &&
+                                    !_sending &&
+                                    !isConversationBlocked
+                                ? _send
+                                : null,
                         style: ElevatedButton.styleFrom(
                           elevation: 0,
                           backgroundColor: _chatAccent,
@@ -405,17 +432,158 @@ class _ReservationChatSheetState extends ConsumerState<ReservationChatSheet> {
       ),
     );
   }
+
+  Future<void> _showMessageActions({
+    required ReservationChatMessage message,
+    required String peerLabel,
+    required bool blockedByMe,
+  }) async {
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: context.appCardBackground,
+      builder:
+          (sheetContext) => SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.flag_rounded),
+                  title: const Text('Reportar mensaje'),
+                  subtitle: const Text('Se enviará al equipo de soporte.'),
+                  onTap: () => Navigator.of(sheetContext).pop('report'),
+                ),
+                ListTile(
+                  leading: Icon(
+                    blockedByMe ? Icons.lock_open_rounded : Icons.block_rounded,
+                  ),
+                  title: Text(
+                    blockedByMe
+                        ? 'Desbloquear participante'
+                        : 'Bloquear $peerLabel',
+                  ),
+                  subtitle: Text(
+                    blockedByMe
+                        ? 'Volverán a permitirse mensajes y notificaciones.'
+                        : 'Detiene nuevas notificaciones y nuevos mensajes en este chat.',
+                  ),
+                  onTap:
+                      () => Navigator.of(
+                        sheetContext,
+                      ).pop(blockedByMe ? 'unblock' : 'block'),
+                ),
+              ],
+            ),
+          ),
+    );
+
+    if (!mounted || action == null) return;
+
+    switch (action) {
+      case 'report':
+        await _reportMessage(message);
+        break;
+      case 'block':
+        await _blockParticipant();
+        break;
+      case 'unblock':
+        await _unblockParticipant();
+        break;
+    }
+  }
+
+  Future<void> _reportMessage(ReservationChatMessage message) async {
+    try {
+      final reportNumber = await ref.read(reportReservationChatMessageProvider)(
+        reservation: widget.reservation,
+        message: message,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Mensaje reportado correctamente. Folio: $reportNumber'),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('No se pudo reportar: $e')));
+    }
+  }
+
+  Future<void> _blockParticipant() async {
+    final confirmed =
+        await showDialog<bool>(
+          context: context,
+          builder:
+              (dialogContext) => AlertDialog(
+                title: const Text('Bloquear participante'),
+                content: const Text(
+                  'Ya no recibirás notificaciones de este chat y no se podrán '
+                  'enviar nuevos mensajes en esta conversación. La reservación '
+                  'seguirá activa. ¿Deseas continuar?',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(false),
+                    child: const Text('Cancelar'),
+                  ),
+                  FilledButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(true),
+                    child: const Text('Bloquear'),
+                  ),
+                ],
+              ),
+        ) ??
+        false;
+
+    if (!confirmed || !mounted) return;
+
+    try {
+      await ref.read(blockReservationChatParticipantProvider)(
+        reservation: widget.reservation,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Participante bloqueado en este chat.')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('No se pudo bloquear: $e')));
+    }
+  }
+
+  Future<void> _unblockParticipant() async {
+    try {
+      await ref.read(unblockReservationChatParticipantProvider)(
+        reservation: widget.reservation,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Participante desbloqueado.')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('No se pudo desbloquear: $e')));
+    }
+  }
 }
 
 class _ChatBubble extends StatelessWidget {
   final ReservationChatMessage message;
   final bool isMine;
   final Reservation reservation;
+  final VoidCallback? onLongPress;
 
   const _ChatBubble({
     required this.message,
     required this.isMine,
     required this.reservation,
+    this.onLongPress,
   });
 
   @override
@@ -437,63 +605,64 @@ class _ChatBubble extends StatelessWidget {
 
     return Align(
       alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        constraints: const BoxConstraints(maxWidth: 280),
-        padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
-        decoration: BoxDecoration(
-          color: bubbleColor,
-          borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(18),
-            topRight: const Radius.circular(18),
-            bottomLeft: Radius.circular(isMine ? 18 : 6),
-            bottomRight: Radius.circular(isMine ? 6 : 18),
+      child: GestureDetector(
+        onLongPress: onLongPress,
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          constraints: const BoxConstraints(maxWidth: 280),
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+          decoration: BoxDecoration(
+            color: bubbleColor,
+            borderRadius: BorderRadius.only(
+              topLeft: const Radius.circular(18),
+              topRight: const Radius.circular(18),
+              bottomLeft: Radius.circular(isMine ? 18 : 6),
+              bottomRight: Radius.circular(isMine ? 6 : 18),
+            ),
+            border:
+                isMine ? null : Border.all(color: context.appBorderColor),
           ),
-          border:
-              isMine
-                  ? null
-                  : Border.all(color: context.appBorderColor),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              senderLabel,
-              style: TextStyle(
-                color:
-                    isMine
-                        ? Colors.white.withValues(alpha: 0.86)
-                        : context.appTextSecondaryColor,
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              message.text,
-              style: TextStyle(
-                color: textColor,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                height: 1.35,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Align(
-              alignment: Alignment.bottomRight,
-              child: Text(
-                _formatTime(message.createdAt),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                senderLabel,
                 style: TextStyle(
                   color:
                       isMine
-                          ? Colors.white.withValues(alpha: 0.72)
+                          ? Colors.white.withValues(alpha: 0.86)
                           : context.appTextSecondaryColor,
                   fontSize: 11,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
-            ),
-          ],
+              const SizedBox(height: 4),
+              Text(
+                message.text,
+                style: TextStyle(
+                  color: textColor,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  height: 1.35,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Align(
+                alignment: Alignment.bottomRight,
+                child: Text(
+                  _formatTime(message.createdAt),
+                  style: TextStyle(
+                    color:
+                        isMine
+                            ? Colors.white.withValues(alpha: 0.72)
+                            : context.appTextSecondaryColor,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

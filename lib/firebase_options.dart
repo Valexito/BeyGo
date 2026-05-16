@@ -53,11 +53,11 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyCRim1QwmDqdH20Cu-DdCRIVUQHpdiBMHs',
-    appId: '1:1000811558307:android:3d0a9d7c4bc0da6a6d1616',
-    messagingSenderId: '1000811558307',
-    projectId: 'parkingappprod',
-    storageBucket: 'parkingappprod.firebasestorage.app',
+    apiKey: 'AIzaSyCjw6F6V0xYyw35pZXB1TyE9gnRMDlNQ_Y',
+    appId: '1:102949234278:android:6f20440780929538a96fa7',
+    messagingSenderId: '102949234278',
+    projectId: 'beygo-app-prod',
+    storageBucket: 'beygo-app-prod.firebasestorage.app',
   );
 
 }

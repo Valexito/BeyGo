@@ -237,6 +237,8 @@ function normalizeReportRange(periodType, rawStartDate, rawEndDate) {
     throw new HttpsError("invalid-argument", "Periodo de reporte no válido.");
 }
 
+
+
 function getRecordStateLabel(record) {
     if (record.type === "manual") return "Presencial";
     if (record.state === "completed") return "Completada";
@@ -328,8 +330,8 @@ async function buildOwnerHistoryReportDataset({
                     data.amount != null
                         ? Number(data.amount)
                         : data.estimatedAmount != null
-                        ? Number(data.estimatedAmount)
-                        : null,
+                            ? Number(data.estimatedAmount)
+                            : null,
                 parkingName: `${data.parkingName || ""}`.trim(),
             };
         })
@@ -450,13 +452,13 @@ function buildHistoryReportHtml({
 
             <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:20px;">
               ${[
-        ["Movimientos", kpis.totalMovements],
-        ["Completadas", kpis.completed],
-        ["Canceladas", kpis.cancelled],
-        ["Canceladas c/ penalización", kpis.cancelledPenalty],
-        ["Presenciales", kpis.manual],
-        ["Ingresos", formatCurrencyQ(kpis.revenueTotal)],
-    ].map(([label, value]) => `
+            ["Movimientos", kpis.totalMovements],
+            ["Completadas", kpis.completed],
+            ["Canceladas", kpis.cancelled],
+            ["Canceladas c/ penalización", kpis.cancelledPenalty],
+            ["Presenciales", kpis.manual],
+            ["Ingresos", formatCurrencyQ(kpis.revenueTotal)],
+        ].map(([label, value]) => `
                 <div style="background:#F8FAFC;border:1px solid #E5E7EB;border-radius:14px;padding:14px;">
                   <div style="font-size:12px;color:#64748B;margin-bottom:6px;">${escapeHtml(label)}</div>
                   <div style="font-size:20px;font-weight:800;color:#1E3A5F;">${escapeHtml(value)}</div>
@@ -722,6 +724,7 @@ async function assertReservationOwnerAction(uid, reservationId) {
 }
 
 exports.requestOwnerRevenuePinOtp = onCall({
+    enforceAppCheck: true,
     secrets: [ownerSecurityEmail, ownerSecurityEmailPassword],
 }, async (request) => {
     if (!request.auth?.uid) {
@@ -805,7 +808,9 @@ exports.requestOwnerRevenuePinOtp = onCall({
     }
 });
 
-exports.verifyOwnerRevenuePinOtp = onCall(async (request) => {
+exports.verifyOwnerRevenuePinOtp = onCall({
+    enforceAppCheck: true,
+}, async (request) => {
     if (!request.auth?.uid) {
         throw new HttpsError("unauthenticated", "Debes iniciar sesión.");
     }
@@ -835,7 +840,7 @@ exports.verifyOwnerRevenuePinOtp = onCall(async (request) => {
 
     const expiresAt = otpData.expiresAt?.toDate?.();
     if (!expiresAt || expiresAt.getTime() < Date.now()) {
-      await docRef.delete().catch(() => null);
+        await docRef.delete().catch(() => null);
         throw new HttpsError("deadline-exceeded", "El codigo ya vencio.");
     }
 
@@ -870,7 +875,9 @@ exports.verifyOwnerRevenuePinOtp = onCall(async (request) => {
     };
 });
 
-exports.ownerForceFinalizeReservation = onCall(async (request) => {
+exports.ownerForceFinalizeReservation = onCall({
+    enforceAppCheck: true,
+}, async (request) => {
     if (!request.auth?.uid) {
         throw new HttpsError("unauthenticated", "Debes iniciar sesión.");
     }
@@ -998,6 +1005,7 @@ exports.ownerForceFinalizeReservation = onCall(async (request) => {
 });
 
 exports.sendOwnerHistoryReport = onCall({
+    enforceAppCheck: true,
     secrets: [ownerSecurityEmail, ownerSecurityEmailPassword],
 }, async (request) => {
     if (!request.auth?.uid) {
@@ -1420,6 +1428,27 @@ exports.onReservationChatMessageCreated = onDocumentCreated(
 
         const targetUserId = senderRole === "owner" ? userId : ownerId;
         if (!targetUserId) return;
+
+        const senderBlockSnap = await db
+            .collection("reservations")
+            .doc(reservationId)
+            .collection("chat_blocks")
+            .doc(senderId)
+            .get();
+        if (senderBlockSnap.exists) return;
+
+        const targetBlockSnap = await db
+            .collection("reservations")
+            .doc(reservationId)
+            .collection("chat_blocks")
+            .doc(targetUserId)
+            .get();
+        if (
+            targetBlockSnap.exists &&
+            `${targetBlockSnap.data()?.blockedUid || ""}`.trim() === senderId
+        ) {
+            return;
+        }
 
         const token = await getToken(targetUserId);
         const senderLabel =

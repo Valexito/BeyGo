@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 enum AppThemePreference { system, light, dark }
@@ -70,11 +71,17 @@ class AppPreferencesService {
   static const _appUpdatesKey = 'app.notifications.updates';
   static const _ownerRevenueVisibleKey = 'owner.dashboard.revenue_visible';
   static const _ownerRevenuePinKey = 'owner.dashboard.revenue_pin';
+  static const _locationDisclosureAcceptedKey =
+      'app.location_disclosure_accepted';
+  static const _secureStorage = FlutterSecureStorage();
 
   late SharedPreferences _prefs;
+  String? _ownerRevenuePin;
 
   Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
+    await _migrateOwnerRevenuePinIfNeeded();
+    _ownerRevenuePin = await _secureStorage.read(key: _ownerRevenuePinKey);
   }
 
   AppPreferencesState loadState() {
@@ -86,7 +93,7 @@ class AppPreferencesService {
           _prefs.getBool(_reservationRemindersKey) ?? true,
       appUpdatesEnabled: _prefs.getBool(_appUpdatesKey) ?? true,
       ownerRevenueVisible: _prefs.getBool(_ownerRevenueVisibleKey) ?? false,
-      ownerRevenuePin: _prefs.getString(_ownerRevenuePinKey),
+      ownerRevenuePin: _ownerRevenuePin,
     );
   }
 
@@ -115,11 +122,20 @@ class AppPreferencesService {
   }
 
   Future<void> setOwnerRevenuePin(String value) async {
-    await _prefs.setString(_ownerRevenuePinKey, value);
+    await _secureStorage.write(key: _ownerRevenuePinKey, value: value);
+    _ownerRevenuePin = value;
   }
 
   Future<void> clearOwnerRevenuePin() async {
-    await _prefs.remove(_ownerRevenuePinKey);
+    await _secureStorage.delete(key: _ownerRevenuePinKey);
+    _ownerRevenuePin = null;
+  }
+
+  bool get locationDisclosureAccepted =>
+      _prefs.getBool(_locationDisclosureAcceptedKey) ?? false;
+
+  Future<void> setLocationDisclosureAccepted(bool value) async {
+    await _prefs.setBool(_locationDisclosureAcceptedKey, value);
   }
 
   AppThemePreference _readThemePreference() {
@@ -128,5 +144,17 @@ class AppPreferencesService {
       if (value.name == raw) return value;
     }
     return AppThemePreference.system;
+  }
+
+  Future<void> _migrateOwnerRevenuePinIfNeeded() async {
+    final legacyPin = _prefs.getString(_ownerRevenuePinKey);
+    if (legacyPin == null || legacyPin.isEmpty) return;
+
+    final securePin = await _secureStorage.read(key: _ownerRevenuePinKey);
+    if (securePin == null || securePin.isEmpty) {
+      await _secureStorage.write(key: _ownerRevenuePinKey, value: legacyPin);
+    }
+
+    await _prefs.remove(_ownerRevenuePinKey);
   }
 }

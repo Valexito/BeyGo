@@ -444,15 +444,58 @@ service cloud.firestore {
             'active',
             'cancellation_requested'
           ]
+          && !exists(/databases/$(db)/documents/reservations/$(resId)/chat_blocks/$(request.auth.uid))
           && (
             (request.resource.data.senderRole == 'user' &&
-              get(/databases/$(db)/documents/reservations/$(resId)).data.userId == request.auth.uid)
+              get(/databases/$(db)/documents/reservations/$(resId)).data.userId == request.auth.uid &&
+              (
+                !exists(/databases/$(db)/documents/reservations/$(resId)/chat_blocks/$(get(/databases/$(db)/documents/reservations/$(resId)).data.ownerId))
+                ||
+                get(/databases/$(db)/documents/reservations/$(resId)/chat_blocks/$(get(/databases/$(db)/documents/reservations/$(resId)).data.ownerId)).data.blockedUid != request.auth.uid
+              ))
             ||
             (request.resource.data.senderRole == 'owner' &&
-              get(/databases/$(db)/documents/reservations/$(resId)).data.ownerId == request.auth.uid)
+              get(/databases/$(db)/documents/reservations/$(resId)).data.ownerId == request.auth.uid &&
+              (
+                !exists(/databases/$(db)/documents/reservations/$(resId)/chat_blocks/$(get(/databases/$(db)/documents/reservations/$(resId)).data.userId))
+                ||
+                get(/databases/$(db)/documents/reservations/$(resId)/chat_blocks/$(get(/databases/$(db)/documents/reservations/$(resId)).data.userId)).data.blockedUid != request.auth.uid
+              ))
           );
 
-        allow update, delete: if false;
+        allow update: if false;
+        allow delete: if isAdmin();
+      }
+
+      match /chat_blocks/{blockerUid} {
+        allow read: if reservationParticipant(resId) || isAdmin();
+
+        allow create: if signedIn()
+          && blockerUid == request.auth.uid
+          && request.resource.data.keys().hasOnly([
+            'reservationId',
+            'blockerUid',
+            'blockedUid',
+            'createdAt'
+          ])
+          && request.resource.data.reservationId == resId
+          && request.resource.data.blockerUid == request.auth.uid
+          && request.resource.data.blockedUid is string
+          && request.resource.data.createdAt is timestamp
+          && (
+            (
+              get(/databases/$(db)/documents/reservations/$(resId)).data.userId == request.auth.uid
+              && request.resource.data.blockedUid == get(/databases/$(db)/documents/reservations/$(resId)).data.ownerId
+            )
+            ||
+            (
+              get(/databases/$(db)/documents/reservations/$(resId)).data.ownerId == request.auth.uid
+              && request.resource.data.blockedUid == get(/databases/$(db)/documents/reservations/$(resId)).data.userId
+            )
+          );
+
+        allow delete: if signedIn() && blockerUid == request.auth.uid || isAdmin();
+        allow update: if false;
       }
     }
 

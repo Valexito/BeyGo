@@ -1,4 +1,4 @@
-import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -50,8 +50,8 @@ final submitProviderRequestProvider = Provider<
 
     final metadata = SettableMetadata(contentType: 'image/jpeg');
 
-    print('📤 Uploading to: $path');
-    print('📦 Bytes size: ${file.length}');
+    debugPrint('Uploading to: $path');
+    debugPrint('Bytes size: ${file.length}');
     try {
       await refSt.putData(file, metadata);
     } on FirebaseException catch (e) {
@@ -78,7 +78,7 @@ final submitProviderRequestProvider = Provider<
         'No se pudo subir la documentación del parqueo en este momento. Intenta de nuevo en unos minutos.',
       );
     }
-    print('✅ Uploaded: $path');
+    debugPrint('Uploaded: $path');
 
     return refSt.getDownloadURL();
   }
@@ -105,7 +105,7 @@ final submitProviderRequestProvider = Provider<
     required String closeTime,
   }) async {
     try {
-      print('🚀 START submitProviderRequest');
+      debugPrint('START submitProviderRequest');
       final userRef = db.collection('users').doc(uid);
       final requestRef = db.collection('provider_requests').doc();
       final requestId = requestRef.id;
@@ -170,21 +170,21 @@ final submitProviderRequestProvider = Provider<
         'providerStatus': 'pending',
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
-      print('✅ SUCCESS submitProviderRequest');
+      debugPrint('SUCCESS submitProviderRequest');
       return requestNumber;
     } on ProviderRequestSubmitException {
       rethrow;
     } on FirebaseException catch (e, st) {
-      print('❌ ERROR submitProviderRequest: $e');
-      print(st);
+      debugPrint('ERROR submitProviderRequest: $e');
+      debugPrint('$st');
       throw ProviderRequestSubmitException(
         e.message?.trim().isNotEmpty == true
             ? e.message!.trim()
             : 'No se pudo enviar la solicitud del parqueo en este momento.',
       );
     } catch (e, st) {
-      print('❌ ERROR submitProviderRequest: $e');
-      print(st);
+      debugPrint('ERROR submitProviderRequest: $e');
+      debugPrint('$st');
       rethrow;
     }
   };

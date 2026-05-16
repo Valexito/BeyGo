@@ -6,6 +6,7 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("com.google.gms.google-services")
+    id("com.google.firebase.crashlytics")
     id("dev.flutter.flutter-gradle-plugin")
 }
 
@@ -20,20 +21,23 @@ val mapsApiKey: String =
         ?: ""
 
 // ─── Lee key.properties (firma de release) ─────────────────────────────────────
+val keyPropertiesFile = rootProject.file("key.properties")
 val keystoreProperties = Properties().apply {
-    val f = rootProject.file("key.properties")
-    if (f.exists()) load(FileInputStream(f))
+    if (keyPropertiesFile.exists()) load(FileInputStream(keyPropertiesFile))
+}
+val isReleaseBuildRequested = gradle.startParameter.taskNames.any { taskName ->
+    taskName.contains("release", ignoreCase = true)
 }
 
 android {
-    namespace = "com.dev.parking"
+    namespace = "com.beygo.app"
 
     // Play Store exige targetSdk >= 35 para apps nuevas (desde Ago/2025).
     // Lo explicitamos en lugar de heredar de Flutter por si el SDK local va atrás.
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.dev.parking"
+        applicationId = "com.beygo.app"
         minSdk = 23
         targetSdk = 35
         versionCode = flutter.versionCode
@@ -56,12 +60,27 @@ android {
 
     signingConfigs {
         create("release") {
-            val storeFilePath = keystoreProperties.getProperty("storeFile")
-            if (storeFilePath != null) {
+            if (keyPropertiesFile.exists()) {
+                val storeFilePath = keystoreProperties.getProperty("storeFile")
+                val storePasswordValue = keystoreProperties.getProperty("storePassword")
+                val keyAliasValue = keystoreProperties.getProperty("keyAlias")
+                val keyPasswordValue = keystoreProperties.getProperty("keyPassword")
+
+                if (
+                    storeFilePath.isNullOrBlank() ||
+                    storePasswordValue.isNullOrBlank() ||
+                    keyAliasValue.isNullOrBlank() ||
+                    keyPasswordValue.isNullOrBlank()
+                ) {
+                    error("key.properties is incomplete for release signing")
+                }
+
                 storeFile = file(storeFilePath)
-                storePassword = keystoreProperties.getProperty("storePassword")
-                keyAlias = keystoreProperties.getProperty("keyAlias")
-                keyPassword = keystoreProperties.getProperty("keyPassword")
+                storePassword = storePasswordValue
+                keyAlias = keyAliasValue
+                keyPassword = keyPasswordValue
+            } else if (isReleaseBuildRequested) {
+                error("key.properties missing for release signing")
             }
         }
     }
@@ -72,13 +91,7 @@ android {
             isShrinkResources = false
         }
         release {
-            // Si key.properties existe, firma con la release; si no, cae a debug
-            // (útil para que el build no falle en CI/local sin la keystore aún)
-            signingConfig = if (rootProject.file("key.properties").exists()) {
-                signingConfigs.getByName("release")
-            } else {
-                signingConfigs.getByName("debug")
-            }
+            signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -118,6 +131,7 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:33.2.0"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-crashlytics")
     implementation("com.google.firebase:firebase-firestore")
     implementation("com.google.firebase:firebase-messaging") // FCM
 

@@ -18,7 +18,7 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 class NotificationService {
   NotificationService._();
   static final instance = NotificationService._();
-  static final navigatorKey = GlobalKey<NavigatorState>();
+  static final navigatorKey = AppNavigator.key;
 
   final _fcm = FirebaseMessaging.instance;
   final _localNotif = FlutterLocalNotificationsPlugin();

@@ -1,4 +1,4 @@
-package com.dev.parking
+package com.beygo.app
 
 import android.content.pm.PackageManager
 import com.google.android.gms.maps.model.LatLng
