@@ -1,19 +1,9 @@
 # BeyGo — Checklist para publicar en Play Store
 
-Auditoría hecha sobre el código actual (lib/, android/, functions/, firestore.rules, firebase.json, pubspec.yaml). Lo que aparece marcado como **bloqueante** debe resolverse antes de Production. Internal testing puede empezar con casi todo lo demás.
 
----
 
-## 0) Resumen ejecutivo
-
-Lo bueno: App Check con Play Integrity está bien configurado, targetSdk 35, ProGuard/R8 activos, keystore via `key.properties`, Firestore rules detalladas con validación por campos, Cloud Functions usan `defineSecret`, account deletion existe, legal info en app.
-
-Lo bloqueante: faltan reglas de Storage, secretos no excluidos en `.gitignore`, `print()` en código de release, App Check no se enforza en Functions callables, no hay prominent disclosure de ubicación, no hay Privacy Policy ni URL de deletion públicas, no hay block/report en chat, account deletion incompleta.
-
----
 
 ## 1) BLOQUEANTES (resolver antes de subir a Production)
-
 
 
 ### 1.6 Privacy Policy URL pública
@@ -41,27 +31,12 @@ Google exige (a) borrado in-app, (b) URL pública donde un usuario que YA desins
 
 
 
-### 1.9 `applicationId` final: `com.dev.parking`
-
-Este nombre NO se puede cambiar después del primer release a producción. "com.dev.parking" es genérico y no refleja la marca BeyGo.
-
-**Decisión a tomar AHORA:** ¿quedarte con `com.dev.parking` (irreversible) o cambiarlo a algo como `com.beygo.app` o `gt.beygo.app` (si tu empresa registró un dominio)? El paquete `change_app_package_name` ya lo tienes en pubspec, solo corres `dart run change_app_package_name:main com.beygo.app` y commit. Esto también afecta SHA fingerprints — toca regenerar Google Sign-In, App Check y Maps API restriction.
-
----
 
 ## 2) RECOMENDADOS (no bloquean, pero deberías tenerlos)
 flutter analyze
 flutter build appbundle --release --obfuscate --split-debug-info=build/debug-info
 
 
-### 2.3 Restringir Maps API key
-
-`AIzaSyC7FJXBLr_cVkfx_nXXR80zBtk7JUFzBS0` puede ser extraído del APK. En Google Cloud Console → APIs & Services → Credentials, restringe la key a:
-- Application: Android apps
-- Package name: el final (com.dev.parking o com.beygo.app)
-- SHA-1: el de tu keystore de upload Y el de Play App Signing (después de subir el primer AAB)
-
-Sin restricciones, cualquiera puede usarla y te puede generar cargos.
 
 
 ### 2.6 Pre-launch report

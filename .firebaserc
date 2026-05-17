@@ -1,6 +1,6 @@
 {
   "projects": {
-    "default": "parkingappprod",
+    "default": "beygo-app-prod",
     "beygo-app-prod-alias": "beygo-app-prod"
   },
   "targets": {},
