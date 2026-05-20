@@ -333,6 +333,7 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
   @override
   Widget build(BuildContext context) {
     final screen = MediaQuery.of(context).size;
+    final pendingRequestAsync = ref.watch(myPendingProviderRequestProvider);
     final headerGradient = LinearGradient(
       begin: Alignment.topCenter,
       end: Alignment.bottomCenter,
@@ -445,30 +446,50 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
                     ),
                     child: SingleChildScrollView(
                       padding: const EdgeInsets.fromLTRB(24, 28, 24, 40),
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Text(
-                              'Solicitud de proveedor',
-                              style: TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.w800,
-                                color: context.appBrandTextColor,
-                                letterSpacing: -0.5,
+                      child: pendingRequestAsync.when(
+                        loading:
+                            () => const Padding(
+                              padding: EdgeInsets.only(top: 80),
+                              child: Center(child: CircularProgressIndicator()),
+                            ),
+                        error:
+                            (error, _) => Center(
+                              child: Padding(
+                                padding: const EdgeInsets.only(top: 80),
+                                child: Text('No se pudo cargar la solicitud: $error'),
                               ),
                             ),
-                            const SizedBox(height: 4),
+                        data:
+                            (pendingRequest) =>
+                                pendingRequest != null
+                                    ? _PendingProviderRequestView(
+                                      data: pendingRequest,
+                                    )
+                                    : Form(
+                                      key: _formKey,
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.stretch,
+                                        children: [
+                                          Text(
+                                            'Solicitud de proveedor',
+                                            style: TextStyle(
+                                              fontSize: 22,
+                                              fontWeight: FontWeight.w800,
+                                              color: context.appBrandTextColor,
+                                              letterSpacing: -0.5,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
 
-                            const SizedBox(height: 24),
+                                          const SizedBox(height: 24),
 
-                            // ── Sección 1: Empresa ──
-                            _SectionHeader(
-                              icon: Icons.business_outlined,
-                              title: 'Datos de la empresa',
-                            ),
-                            const SizedBox(height: 14),
+                                          // ── Sección 1: Empresa ──
+                                          _SectionHeader(
+                                            icon: Icons.business_outlined,
+                                            title: 'Datos de la empresa',
+                                          ),
+                                          const SizedBox(height: 14),
 
                             _FieldLabel(label: 'Empresa o encargado', hint: ''),
                             const SizedBox(height: 4),
@@ -868,17 +889,18 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
 
                             const SizedBox(height: 24),
 
-                            MyButton(
-                              text:
-                                  _sending
-                                      ? 'Enviando solicitud...'
-                                      : 'Enviar solicitud',
-                              loading: _sending,
-                              onTap: _sending ? null : _submit,
-                              margin: EdgeInsets.zero,
-                            ),
-                          ],
-                        ),
+                                          MyButton(
+                                            text:
+                                                _sending
+                                                    ? 'Enviando solicitud...'
+                                                    : 'Enviar solicitud',
+                                            loading: _sending,
+                                            onTap: _sending ? null : _submit,
+                                            margin: EdgeInsets.zero,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                       ),
                     ),
                   ),
@@ -976,6 +998,239 @@ class _SectionHeader extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _PendingProviderRequestView extends StatelessWidget {
+  final Map<String, dynamic> data;
+
+  const _PendingProviderRequestView({required this.data});
+
+  String _safe(dynamic value, {String fallback = '—'}) {
+    final text = '${value ?? ''}'.trim();
+    return text.isEmpty ? fallback : text;
+  }
+
+  String _formatCreatedAt(dynamic value) {
+    final date = value is Timestamp ? value.toDate() : null;
+    if (date == null) return 'En proceso';
+    final d = date.day.toString().padLeft(2, '0');
+    final m = date.month.toString().padLeft(2, '0');
+    final y = date.year.toString();
+    final h = date.hour.toString().padLeft(2, '0');
+    final min = date.minute.toString().padLeft(2, '0');
+    return '$d/$m/$y $h:$min';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Tienes una solicitud en curso',
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.w800,
+            color: context.appBrandTextColor,
+            letterSpacing: -0.5,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Ya recibimos tu solicitud y el equipo de soporte dará seguimiento. '
+          'Mientras esté en revisión no necesitas volver a llenar el formulario.',
+          style: TextStyle(
+            fontSize: 13,
+            height: 1.45,
+            color: context.appTextSecondaryColor,
+          ),
+        ),
+        const SizedBox(height: 24),
+        Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: context.appCardBackground,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: context.appBorderColor),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(
+                  alpha: context.isDarkMode ? 0.18 : 0.06,
+                ),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: AppColors.headerBottom.withValues(alpha: 0.10),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.pending_actions_rounded,
+                      color: context.appBrandIconColor,
+                      size: 26,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _safe(data['requestNumber'], fallback: 'Solicitud en revisión'),
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: context.appTextPrimaryColor,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF59E0B).withValues(alpha: 0.14),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: const Text(
+                            'EN REVISIÓN',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFFD97706),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              _PendingInfoRow(
+                icon: Icons.local_parking_outlined,
+                label: 'Parqueo',
+                value: _safe(data['parkingName']),
+              ),
+              _PendingInfoRow(
+                icon: Icons.business_outlined,
+                label: 'Empresa o encargado',
+                value: _safe(data['companyName']),
+              ),
+              _PendingInfoRow(
+                icon: Icons.mail_outline_rounded,
+                label: 'Correo',
+                value: _safe(data['email']),
+              ),
+              _PendingInfoRow(
+                icon: Icons.phone_outlined,
+                label: 'Teléfono',
+                value: _safe(data['phone']),
+              ),
+              _PendingInfoRow(
+                icon: Icons.place_outlined,
+                label: 'Dirección',
+                value: _safe(data['address']),
+              ),
+              _PendingInfoRow(
+                icon: Icons.schedule_outlined,
+                label: 'Enviada el',
+                value: _formatCreatedAt(data['createdAt']),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: context.appInputBackgroundActive,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: context.appBorderColor),
+                ),
+                child: Text(
+                  'Nuestro equipo revisará tu información y te contactará para el seguimiento del proceso. '
+                  'Si necesitas actualizar algo, puedes comunicarte con soporte.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    height: 1.45,
+                    color: context.appTextPrimaryColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PendingInfoRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const _PendingInfoRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: context.appIconCircleColor,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, size: 16, color: context.appBrandIconColor),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: context.appTextSecondaryColor,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: context.appTextPrimaryColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

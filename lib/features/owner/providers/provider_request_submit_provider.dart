@@ -107,6 +107,26 @@ final submitProviderRequestProvider = Provider<
     try {
       debugPrint('START submitProviderRequest');
       final userRef = db.collection('users').doc(uid);
+      final pendingRequestSnap =
+          await db
+              .collection('provider_requests')
+              .where('uid', isEqualTo: uid)
+              .where('status', isEqualTo: 'pending')
+              .limit(1)
+              .get();
+
+      if (pendingRequestSnap.docs.isNotEmpty) {
+        final current = pendingRequestSnap.docs.first.data();
+        final currentNumber =
+            (current['requestNumber'] as String?)?.trim().isNotEmpty == true
+                ? (current['requestNumber'] as String).trim()
+                : 'en curso';
+        throw ProviderRequestSubmitException(
+          'Ya tienes una solicitud en revisión ($currentNumber). '
+          'Espera la respuesta del equipo de soporte antes de enviar otra.',
+        );
+      }
+
       final requestRef = db.collection('provider_requests').doc();
       final requestId = requestRef.id;
       final requestNumber = 'OWN-${requestId.substring(0, 6).toUpperCase()}';

@@ -40,6 +40,12 @@ service firebase.storage {
       allow delete: if signedIn();
     }
 
+    match /support_reports/{uid}/{reportId}/{rest=**} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow create, update: if (isOwner(uid) || isAdmin()) && isImage() && under10MB();
+      allow delete: if isOwner(uid) || isAdmin();
+    }
+
     match /parkings/{pid}/{rest=**} {
       allow read: if true;
       allow create, update: if signedIn() && isImage() && under10MB();

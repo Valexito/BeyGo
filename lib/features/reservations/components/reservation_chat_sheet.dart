@@ -92,7 +92,9 @@ class _ReservationChatSheetState extends ConsumerState<ReservationChatSheet> {
     final auth = ref.watch(firebaseAuthProvider);
     final currentUid = auth.currentUser?.uid ?? '';
     final peerLabel =
-        currentUid == widget.reservation.ownerId ? 'usuario' : 'dueño';
+        currentUid == widget.reservation.ownerId
+            ? _userDisplayName(widget.reservation)
+            : _ownerDisplayName(widget.reservation);
     final blockState = blockStateAsync.valueOrNull;
     final isConversationBlocked = blockState?.isConversationBlocked ?? false;
     final blockedByMe = blockState?.blockedByMe ?? false;
@@ -207,7 +209,7 @@ class _ReservationChatSheetState extends ConsumerState<ReservationChatSheet> {
                             ? blockedByMe
                                 ? 'Bloqueaste a este participante. No recibirás sus notificaciones y no se podrán enviar nuevos mensajes.'
                                 : 'La otra persona bloqueó la conversación. Ya no se podrán enviar nuevos mensajes.'
-                            : 'Conversación directa con el $peerLabel mientras la reservación esté activa.'
+                            : 'Conversación directa con $peerLabel mientras la reservación esté activa.'
                         ,
                         style: TextStyle(
                           color: context.appTextSecondaryColor,
@@ -573,6 +575,17 @@ class _ReservationChatSheetState extends ConsumerState<ReservationChatSheet> {
   }
 }
 
+String _userDisplayName(Reservation reservation) {
+  final raw = (reservation.userName ?? '').trim();
+  if (raw.isEmpty) return 'Usuario';
+  return raw.split(RegExp(r'\s+')).first;
+}
+
+String _ownerDisplayName(Reservation reservation) {
+  final raw = reservation.parkingName.trim();
+  return raw.isEmpty ? 'Parqueo' : raw;
+}
+
 class _ChatBubble extends StatelessWidget {
   final ReservationChatMessage message;
   final bool isMine;
@@ -601,7 +614,9 @@ class _ChatBubble extends StatelessWidget {
         isMine ? Colors.white : context.appTextPrimaryColor;
 
     final senderLabel =
-        message.senderId == reservation.ownerId ? 'Dueño' : 'Usuario';
+        message.senderId == reservation.ownerId
+            ? _ownerDisplayName(reservation)
+            : _userDisplayName(reservation);
 
     return Align(
       alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,

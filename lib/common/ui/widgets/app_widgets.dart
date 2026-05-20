@@ -200,7 +200,7 @@ class AppDialog extends StatelessWidget {
                                 cancelText,
                                 style: TextStyle(
                                   fontWeight: FontWeight.w700,
-                                  color: AppColors.headerBottom,
+                                  color: context.appTextPrimaryColor,
                                   fontSize: 14,
                                 ),
                               ),

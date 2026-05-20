@@ -19,18 +19,30 @@ service cloud.firestore {
         && get(/databases/$(db)/documents/parkings/$(pid)).data.ownerID == request.auth.uid;
     }
 
+    function reservationOwnerUidFromData(reservation) {
+      return
+        reservation.ownerId is string && reservation.ownerId != ''
+          ? reservation.ownerId
+          : (
+              reservation.ownerID is string && reservation.ownerID != ''
+                ? reservation.ownerID
+                : get(/databases/$(db)/documents/parkings/$(reservation.parkingId)).data.ownerID
+            );
+    }
+
     function isSelf(uid) {
       return signedIn() && request.auth.uid == uid;
     }
 
     function isReservationOwner() {
-      return signedIn() && resource.data.ownerId == request.auth.uid;
+      return signedIn() && reservationOwnerUidFromData(resource.data) == request.auth.uid;
     }
 
     function reservationParticipant(resId) {
+      let reservation = get(/databases/$(db)/documents/reservations/$(resId)).data;
       return signedIn() && (
-        get(/databases/$(db)/documents/reservations/$(resId)).data.userId == request.auth.uid ||
-        get(/databases/$(db)/documents/reservations/$(resId)).data.ownerId == request.auth.uid
+        reservation.userId == request.auth.uid ||
+        reservationOwnerUidFromData(reservation) == request.auth.uid
       );
     }
 
@@ -97,11 +109,51 @@ service cloud.firestore {
     match /support_reports/{reportId} {
       allow create: if signedIn()
         && request.resource.data.userId == request.auth.uid
+        && request.resource.data.keys().hasOnly([
+          'reportId',
+          'reportNumber',
+          'userId',
+          'userEmail',
+          'reportType',
+          'subject',
+          'message',
+          'reservationId',
+          'messageId',
+          'reportedUid',
+          'screenshotUrls',
+          'screenshotCount',
+          'createdAt'
+        ])
         && request.resource.data.reportId is string
         && request.resource.data.reportNumber is string
         && request.resource.data.reportType is string
+        && (
+          !request.resource.data.keys().hasAny(['userEmail']) ||
+          request.resource.data.userEmail == null ||
+          request.resource.data.userEmail is string
+        )
         && request.resource.data.subject is string
-        && request.resource.data.message is string;
+        && request.resource.data.message is string
+        && (
+          !request.resource.data.keys().hasAny(['reservationId']) ||
+          request.resource.data.reservationId is string
+        )
+        && (
+          !request.resource.data.keys().hasAny(['messageId']) ||
+          request.resource.data.messageId is string
+        )
+        && (
+          !request.resource.data.keys().hasAny(['reportedUid']) ||
+          request.resource.data.reportedUid is string
+        )
+        && (
+          !request.resource.data.keys().hasAny(['screenshotUrls']) ||
+          request.resource.data.screenshotUrls is list
+        )
+        && (
+          !request.resource.data.keys().hasAny(['screenshotCount']) ||
+          request.resource.data.screenshotCount is int
+        );
 
       allow read: if signedIn()
         && (
@@ -449,13 +501,13 @@ service cloud.firestore {
             (request.resource.data.senderRole == 'user' &&
               get(/databases/$(db)/documents/reservations/$(resId)).data.userId == request.auth.uid &&
               (
-                !exists(/databases/$(db)/documents/reservations/$(resId)/chat_blocks/$(get(/databases/$(db)/documents/reservations/$(resId)).data.ownerId))
+                !exists(/databases/$(db)/documents/reservations/$(resId)/chat_blocks/$(reservationOwnerUidFromData(get(/databases/$(db)/documents/reservations/$(resId)).data)))
                 ||
-                get(/databases/$(db)/documents/reservations/$(resId)/chat_blocks/$(get(/databases/$(db)/documents/reservations/$(resId)).data.ownerId)).data.blockedUid != request.auth.uid
+                get(/databases/$(db)/documents/reservations/$(resId)/chat_blocks/$(reservationOwnerUidFromData(get(/databases/$(db)/documents/reservations/$(resId)).data))).data.blockedUid != request.auth.uid
               ))
             ||
             (request.resource.data.senderRole == 'owner' &&
-              get(/databases/$(db)/documents/reservations/$(resId)).data.ownerId == request.auth.uid &&
+              reservationOwnerUidFromData(get(/databases/$(db)/documents/reservations/$(resId)).data) == request.auth.uid &&
               (
                 !exists(/databases/$(db)/documents/reservations/$(resId)/chat_blocks/$(get(/databases/$(db)/documents/reservations/$(resId)).data.userId))
                 ||
@@ -485,11 +537,11 @@ service cloud.firestore {
           && (
             (
               get(/databases/$(db)/documents/reservations/$(resId)).data.userId == request.auth.uid
-              && request.resource.data.blockedUid == get(/databases/$(db)/documents/reservations/$(resId)).data.ownerId
+              && request.resource.data.blockedUid == reservationOwnerUidFromData(get(/databases/$(db)/documents/reservations/$(resId)).data)
             )
             ||
             (
-              get(/databases/$(db)/documents/reservations/$(resId)).data.ownerId == request.auth.uid
+              reservationOwnerUidFromData(get(/databases/$(db)/documents/reservations/$(resId)).data) == request.auth.uid
               && request.resource.data.blockedUid == get(/databases/$(db)/documents/reservations/$(resId)).data.userId
             )
           );

@@ -22,6 +22,46 @@ final providerRequestsProvider = StreamProvider<List<Map<String, dynamic>>>((
       });
 });
 
+final myPendingProviderRequestProvider =
+    StreamProvider<Map<String, dynamic>?>((ref) {
+      final db = ref.watch(firestoreProvider);
+      final auth = ref.watch(firebaseAuthProvider);
+      final uid = auth.currentUser?.uid;
+
+      if (uid == null) {
+        return Stream.value(null);
+      }
+
+      return db
+          .collection('provider_requests')
+          .where('uid', isEqualTo: uid)
+          .limit(10)
+          .snapshots()
+          .map((snapshot) {
+            final pending =
+                snapshot.docs
+                    .map((doc) => {'id': doc.id, ...doc.data()})
+                    .where(
+                      (data) =>
+                          '${data['status'] ?? ''}'.trim().toLowerCase() ==
+                          'pending',
+                    )
+                    .toList();
+
+            if (pending.isEmpty) return null;
+
+            pending.sort((a, b) {
+              final aTs = a['createdAt'] as Timestamp?;
+              final bTs = b['createdAt'] as Timestamp?;
+              final aMs = aTs?.millisecondsSinceEpoch ?? 0;
+              final bMs = bTs?.millisecondsSinceEpoch ?? 0;
+              return bMs.compareTo(aMs);
+            });
+
+            return pending.first;
+          });
+    });
+
 /// ===============================
 /// APPROVE PROVIDER REQUEST
 /// ===============================

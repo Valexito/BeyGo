@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:beygo/common/common.dart';
 import 'package:beygo/features/core/core.dart';
 
@@ -22,9 +24,11 @@ class _ReportProblemPageState extends ConsumerState<ReportProblemPage> {
   final _email = TextEditingController();
   final _subject = TextEditingController();
   final _message = TextEditingController();
+  final _picker = ImagePicker();
 
   String? _selectedReportType;
   bool _sending = false;
+  final List<Uint8List> _screenshots = [];
 
   final List<String> _reportTypes = const [
     'Usuario bloqueado',
@@ -80,6 +84,7 @@ class _ReportProblemPageState extends ConsumerState<ReportProblemPage> {
         subject: _subject.text.trim(),
         message: _message.text.trim(),
         email: _email.text.trim().isEmpty ? null : _email.text.trim(),
+        screenshots: _screenshots,
       );
 
       if (!mounted) return;
@@ -101,12 +106,35 @@ class _ReportProblemPageState extends ConsumerState<ReportProblemPage> {
     } catch (e) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      ).showSnackBar(SnackBar(content: Text('$e')));
     } finally {
       if (mounted) {
         setState(() => _sending = false);
       }
     }
+  }
+
+  Future<void> _pickScreenshots() async {
+    final remaining = 3 - _screenshots.length;
+    if (remaining <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Solo puedes adjuntar hasta 3 capturas.')),
+      );
+      return;
+    }
+
+    final picked = await _picker.pickMultiImage(
+      imageQuality: 85,
+      maxWidth: 1920,
+    );
+    if (picked.isEmpty) return;
+
+    final bytes = await Future.wait(
+      picked.take(remaining).map((image) => image.readAsBytes()),
+    );
+
+    if (!mounted) return;
+    setState(() => _screenshots.addAll(bytes));
   }
 
   @override
@@ -380,6 +408,130 @@ class _ReportProblemPageState extends ConsumerState<ReportProblemPage> {
                                                 v == null || v.isEmpty
                                                     ? 'Requerido'
                                                     : null,
+                                      ),
+
+                                      const SizedBox(height: 16),
+
+                                      Container(
+                                        padding: const EdgeInsets.all(14),
+                                        decoration: BoxDecoration(
+                                          color: context.appInputBackground,
+                                          borderRadius: BorderRadius.circular(18),
+                                          border: Border.all(
+                                            color: context.appBorderColor,
+                                          ),
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            MyText(
+                                              text: 'Capturas opcionales',
+                                              variant: MyTextVariant.bodyBold,
+                                              fontSize: 14,
+                                              customColor:
+                                                  context.appTextPrimaryColor,
+                                            ),
+                                            const SizedBox(height: 4),
+                                            MyText(
+                                              text:
+                                                  'Puedes adjuntar hasta 3 screenshots para ayudar al equipo de soporte.',
+                                              variant: MyTextVariant.bodyMuted,
+                                              fontSize: 12,
+                                            ),
+                                            const SizedBox(height: 12),
+                                            Wrap(
+                                              spacing: 10,
+                                              runSpacing: 10,
+                                              children: [
+                                                for (var i = 0;
+                                                    i < _screenshots.length;
+                                                    i++)
+                                                  Stack(
+                                                    children: [
+                                                      ClipRRect(
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              14,
+                                                            ),
+                                                        child: Image.memory(
+                                                          _screenshots[i],
+                                                          width: 88,
+                                                          height: 88,
+                                                          fit: BoxFit.cover,
+                                                        ),
+                                                      ),
+                                                      Positioned(
+                                                        top: 6,
+                                                        right: 6,
+                                                        child: GestureDetector(
+                                                          onTap:
+                                                              _sending
+                                                                  ? null
+                                                                  : () => setState(
+                                                                    () => _screenshots
+                                                                        .removeAt(i),
+                                                                  ),
+                                                          child: Container(
+                                                            width: 24,
+                                                            height: 24,
+                                                            decoration:
+                                                                const BoxDecoration(
+                                                                  color:
+                                                                      Colors.black54,
+                                                                  shape:
+                                                                      BoxShape.circle,
+                                                                ),
+                                                            child: const Icon(
+                                                              Icons.close_rounded,
+                                                              size: 16,
+                                                              color: Colors.white,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                if (_screenshots.length < 3)
+                                                  InkWell(
+                                                    onTap:
+                                                        _sending
+                                                            ? null
+                                                            : _pickScreenshots,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          14,
+                                                        ),
+                                                    child: Container(
+                                                      width: 88,
+                                                      height: 88,
+                                                      decoration: BoxDecoration(
+                                                        color:
+                                                            context
+                                                                .appCardBackground,
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              14,
+                                                            ),
+                                                        border: Border.all(
+                                                          color:
+                                                              context
+                                                                  .appBorderColor,
+                                                        ),
+                                                      ),
+                                                      child: Icon(
+                                                        Icons
+                                                            .add_photo_alternate_outlined,
+                                                        color:
+                                                            context
+                                                                .appBrandIconColor,
+                                                        size: 28,
+                                                      ),
+                                                    ),
+                                                  ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
                                       ),
 
                                       const SizedBox(height: 18),

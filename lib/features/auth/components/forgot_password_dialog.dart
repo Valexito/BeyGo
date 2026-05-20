@@ -63,7 +63,6 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
   @override
   Widget build(BuildContext context) {
     final isDark = context.isDarkMode;
-    final cardColor = context.appCardBackground;
     final headerGradient =
         _sent
             ? [const Color(0xFF16A34A), const Color(0xFF15803D)]
@@ -76,7 +75,7 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
       insetPadding: const EdgeInsets.symmetric(horizontal: 24),
       child: Container(
         decoration: BoxDecoration(
-          color: cardColor,
+          color: context.appCardBackground,
           borderRadius: BorderRadius.circular(28),
           border: Border.all(color: context.appBorderColor),
           boxShadow: [
@@ -159,6 +158,47 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: context.appCardBackgroundSoft,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: context.appBorderColor),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          _sent
+                              ? Icons.verified_user_outlined
+                              : Icons.info_outline_rounded,
+                          size: 18,
+                          color:
+                              _sent
+                                  ? const Color(0xFF16A34A)
+                                  : context.appBrandTextColor,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            _sent
+                                ? 'Si tu cuenta existe, ya enviamos el enlace de recuperación al correo indicado.'
+                                : 'Usaremos el correo de tu cuenta para enviarte un enlace seguro de recuperación.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: context.appTextSecondaryColor,
+                              height: 1.45,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                   if (!_sent) ...[
                     Text(
                       'Correo electrónico',

@@ -724,7 +724,6 @@ async function assertReservationOwnerAction(uid, reservationId) {
 }
 
 exports.requestOwnerRevenuePinOtp = onCall({
-    enforceAppCheck: true,
     secrets: [ownerSecurityEmail, ownerSecurityEmailPassword],
 }, async (request) => {
     if (!request.auth?.uid) {
@@ -809,7 +808,6 @@ exports.requestOwnerRevenuePinOtp = onCall({
 });
 
 exports.verifyOwnerRevenuePinOtp = onCall({
-    enforceAppCheck: true,
 }, async (request) => {
     if (!request.auth?.uid) {
         throw new HttpsError("unauthenticated", "Debes iniciar sesión.");
@@ -1005,7 +1003,7 @@ exports.ownerForceFinalizeReservation = onCall({
 });
 
 exports.sendOwnerHistoryReport = onCall({
-    enforceAppCheck: true,
+    enforceAppCheck: false,
     secrets: [ownerSecurityEmail, ownerSecurityEmailPassword],
 }, async (request) => {
     if (!request.auth?.uid) {
@@ -1151,32 +1149,77 @@ exports.onProviderRequestCreated = onDocumentCreated({
     const data = event.data?.data();
     if (!data) return;
 
-    const to = `${data.email || ""}`.trim();
-    if (!to) return;
+    const requestId = event.params.requestId;
+    const requestRef = db.collection("provider_requests").doc(requestId);
+    let to = `${data.email || ""}`.trim();
+
+    if (!to && data.uid) {
+        const userSnap = await db.collection("users").doc(`${data.uid}`).get();
+        const userEmail = `${userSnap.data()?.email || ""}`.trim();
+        if (userEmail) {
+            to = userEmail;
+        }
+    }
+
+    if (!to) {
+        console.log(
+            `[provider-request-email] Skipping request ${requestId}: no recipient email found`
+        );
+        await requestRef.set({
+            confirmationEmailStatus: "missing_email",
+            confirmationEmailError: "No recipient email found in request or user profile.",
+            confirmationEmailUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        }, { merge: true });
+        return;
+    }
 
     const requestNumber = `${data.requestNumber || data.requestId || "N/A"}`;
     const parkingName = `${data.parkingName || "tu parqueo"}`;
 
-    await sendMailSafe({
-        to,
-        subject: `BeyGo: recibimos tu solicitud ${requestNumber}`,
-        text:
-            `Hola,\n\n` +
-            `Tu solicitud para convertirte en propietario de ${parkingName} fue enviada correctamente.\n\n` +
-            `Número de solicitud: ${requestNumber}\n` +
-            `Parqueo: ${parkingName}\n\n` +
-            `Nuestro equipo de soporte revisará tu información y se pondrá en contacto contigo para continuar el proceso.\n\n` +
-            `Gracias por confiar en BeyGo.`,
-        html:
-            `<div style="font-family:Arial,sans-serif;padding:16px">` +
-            `<h2>Solicitud recibida</h2>` +
-            `<p>Tu solicitud para convertirte en <strong>propietario de ${parkingName}</strong> fue enviada correctamente.</p>` +
-            `<p><strong>Número de solicitud:</strong> ${requestNumber}</p>` +
-            `<p><strong>Parqueo:</strong> ${parkingName}</p>` +
-            `<p>Nuestro equipo de soporte revisará tu información y se pondrá en contacto contigo para continuar el proceso.</p>` +
-            `<p>Gracias por confiar en BeyGo.</p>` +
-            `</div>`,
-    });
+    try {
+        await sendMailSafe({
+            to,
+            subject: `BeyGo: recibimos tu solicitud ${requestNumber}`,
+            text:
+                `Hola,\n\n` +
+                `Tu solicitud para convertirte en propietario de ${parkingName} fue enviada correctamente.\n\n` +
+                `Número de solicitud: ${requestNumber}\n` +
+                `Parqueo: ${parkingName}\n\n` +
+                `Nuestro equipo de soporte revisará tu información y se pondrá en contacto contigo para continuar el proceso.\n\n` +
+                `Gracias por confiar en BeyGo.`,
+            html:
+                `<div style="font-family:Arial,sans-serif;padding:16px">` +
+                `<h2>Solicitud recibida</h2>` +
+                `<p>Tu solicitud para convertirte en <strong>propietario de ${parkingName}</strong> fue enviada correctamente.</p>` +
+                `<p><strong>Número de solicitud:</strong> ${requestNumber}</p>` +
+                `<p><strong>Parqueo:</strong> ${parkingName}</p>` +
+                `<p>Nuestro equipo de soporte revisará tu información y se pondrá en contacto contigo para continuar el proceso.</p>` +
+                `<p>Gracias por confiar en BeyGo.</p>` +
+                `</div>`,
+        });
+
+        console.log(
+            `[provider-request-email] Confirmation email sent for request ${requestId} to ${to}`
+        );
+        await requestRef.set({
+            confirmationEmailStatus: "sent",
+            confirmationEmailSentTo: to,
+            confirmationEmailUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            confirmationEmailError: admin.firestore.FieldValue.delete(),
+        }, { merge: true });
+    } catch (error) {
+        const message = error instanceof Error ? error.message : `${error}`;
+        console.error(
+            `[provider-request-email] Failed for request ${requestId} to ${to}: ${message}`
+        );
+        await requestRef.set({
+            confirmationEmailStatus: "failed",
+            confirmationEmailSentTo: to,
+            confirmationEmailError: message,
+            confirmationEmailUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        }, { merge: true });
+        throw error;
+    }
 });
 
 // ─── Helper: get FCM token for a user ──────────────────────────────────────

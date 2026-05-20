@@ -12,6 +12,13 @@ import 'package:beygo/features/reservations/reservations.dart';
 
 enum OwnerReservationsTab { active, pending }
 
+String _ownerUiError(Object error) {
+  final raw = error.toString().trim();
+  return raw
+      .replaceFirst('Bad state: ', '')
+      .replaceFirst('Exception: ', '');
+}
+
 class OwnerReservationsPage extends ConsumerStatefulWidget {
   final String? initialReservationId;
   final OwnerReservationsTab initialTab;
@@ -325,7 +332,9 @@ class _ActiveCard extends ConsumerWidget {
                   if (context.mounted)
                     ScaffoldMessenger.of(
                       context,
-                    ).showSnackBar(SnackBar(content: Text('$e')));
+                    ).showSnackBar(
+                      SnackBar(content: Text(_ownerUiError(e))),
+                    );
                 }
               },
             ),

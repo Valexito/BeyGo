@@ -32,24 +32,21 @@ Future<void> main() async {
     return true;
   };
 
-  // In debug/emulator we skip App Check so auth/profile validation flows
-  // don't get blocked by local attestation noise during development.
-  if (!kDebugMode) {
-    try {
-      await FirebaseAppCheck.instance.activate(
-        androidProvider: AndroidProvider.playIntegrity,
-        appleProvider: AppleProvider.appAttest,
-      );
-      await FirebaseAppCheck.instance.setTokenAutoRefreshEnabled(true);
-    } catch (error, stack) {
-      appStartupWarning.value =
-          'No se pudo validar la seguridad del dispositivo. Algunas funciones pueden no estar disponibles.';
-      await FirebaseCrashlytics.instance.recordError(
-        error,
-        stack,
-        reason: 'Firebase App Check initialization failed during startup',
-      );
-    }
+  try {
+    await FirebaseAppCheck.instance.activate(
+      androidProvider:
+          kDebugMode ? AndroidProvider.debug : AndroidProvider.playIntegrity,
+      appleProvider: kDebugMode ? AppleProvider.debug : AppleProvider.appAttest,
+    );
+    await FirebaseAppCheck.instance.setTokenAutoRefreshEnabled(true);
+  } catch (error, stack) {
+    appStartupWarning.value =
+        'No se pudo validar la seguridad del dispositivo. Algunas funciones pueden no estar disponibles.';
+    await FirebaseCrashlytics.instance.recordError(
+      error,
+      stack,
+      reason: 'Firebase App Check initialization failed during startup',
+    );
   }
 
   await AppPreferencesService.instance.init();
@@ -71,44 +68,46 @@ class MyApp extends ConsumerWidget {
     return MaterialApp(
       navigatorKey: AppNavigator.key,
       title: 'BeyGo',
+
       debugShowCheckedModeBanner: false,
       theme: AppTheme.buildLight(),
       darkTheme: AppTheme.buildDark(),
       themeMode: preferences.themeMode,
-      builder: (context, child) => Stack(
-        children: [
-          SafeArea(child: child!),
-          ValueListenableBuilder<String?>(
-            valueListenable: appStartupWarning,
-            builder: (context, warning, _) {
-              if (warning == null) return const SizedBox.shrink();
-              return SafeArea(
-                child: Align(
-                  alignment: Alignment.topCenter,
-                  child: Container(
-                    width: double.infinity,
-                    margin: const EdgeInsets.all(12),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.amber.shade100,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.amber.shade700),
-                    ),
-                    child: Text(
-                      warning,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.amber.shade900,
-                        fontWeight: FontWeight.w600,
+      builder:
+          (context, child) => Stack(
+            children: [
+              SafeArea(child: child!),
+              ValueListenableBuilder<String?>(
+                valueListenable: appStartupWarning,
+                builder: (context, warning, _) {
+                  if (warning == null) return const SizedBox.shrink();
+                  return SafeArea(
+                    child: Align(
+                      alignment: Alignment.topCenter,
+                      child: Container(
+                        width: double.infinity,
+                        margin: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.amber.shade100,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.amber.shade700),
+                        ),
+                        child: Text(
+                          warning,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.amber.shade900,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ),
-              );
-            },
+                  );
+                },
+              ),
+            ],
           ),
-        ],
-      ),
       home: const LaunchSplashPage(),
       routes: {
         '/auth': (_) => const AuthGate(),
