@@ -560,6 +560,45 @@ service cloud.firestore {
       allow delete: if request.auth != null;
     }
 
+    match /account_deletion_requests/{requestId} {
+      allow create: if request.resource.data.keys().hasOnly([
+          'email',
+          'fullName',
+          'phone',
+          'reason',
+          'details',
+          'confirm',
+          'status',
+          'source',
+          'createdAt',
+          'updatedAt'
+        ])
+        && request.resource.data.email is string
+        && request.resource.data.email.size() > 3
+        && request.resource.data.fullName is string
+        && request.resource.data.fullName.size() > 1
+        && (
+          !request.resource.data.keys().hasAny(['phone']) ||
+          request.resource.data.phone is string
+        )
+        && (
+          !request.resource.data.keys().hasAny(['reason']) ||
+          request.resource.data.reason is string
+        )
+        && (
+          !request.resource.data.keys().hasAny(['details']) ||
+          request.resource.data.details is string
+        )
+        && request.resource.data.confirm == true
+        && request.resource.data.status == 'pending'
+        && request.resource.data.source == 'web'
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.updatedAt is timestamp;
+
+      allow read, update: if isAdmin();
+      allow delete: if false;
+    }
+
     match /provider_applications/{appId} {
       allow create: if signedIn() && request.resource.data.uid == request.auth.uid;
       allow read: if signedIn() && (

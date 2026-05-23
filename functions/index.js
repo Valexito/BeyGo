@@ -1552,6 +1552,182 @@ exports.onParkingReviewWritten = onDocumentWritten(
     }
 );
 
+function normalizeString(value) {
+    return `${value || ""}`.trim();
+}
+
+function ensureCallableAuth(request) {
+    if (!request.auth?.uid) {
+        throw new HttpsError(
+            "unauthenticated",
+            "Debes iniciar sesión para realizar esta operación."
+        );
+    }
+    return request.auth.uid;
+}
+
+function ensureAdminCallable(request) {
+    ensureCallableAuth(request);
+    if (request.auth?.token?.admin !== true) {
+        throw new HttpsError(
+            "permission-denied",
+            "Solo un administrador puede realizar esta operación."
+        );
+    }
+}
+
+async function deleteDocsFromQuery(querySnap, { recursive = false } = {}) {
+    for (const docSnap of querySnap.docs) {
+        if (recursive) {
+            await db.recursiveDelete(docSnap.ref);
+        } else {
+            await docSnap.ref.delete();
+        }
+    }
+    return querySnap.size;
+}
+
+async function deleteStoragePrefixSafe(prefix) {
+    if (!prefix) return 0;
+    try {
+        await admin.storage().bucket().deleteFiles({ prefix });
+        return 1;
+    } catch (error) {
+        if (error?.code === 404 || error?.code === "storage/object-not-found") {
+            return 0;
+        }
+        throw error;
+    }
+}
+
+async function deleteUserAccountData(uid) {
+    const normalizedUid = normalizeString(uid);
+    if (!normalizedUid) {
+        throw new HttpsError("invalid-argument", "Debes indicar un uid válido.");
+    }
+
+    const summary = {
+        favoritesDeleted: 0,
+        reservationsDeleted: 0,
+        providerRequestsDeleted: 0,
+        providerApplicationsDeleted: 0,
+        reviewsDeleted: 0,
+        supportReportsDeleted: 0,
+        userDocumentDeleted: false,
+        authDeleted: false,
+    };
+
+    const reservationsSnap = await db
+        .collection("reservations")
+        .where("userId", "==", normalizedUid)
+        .get();
+    const hasActiveReservations = reservationsSnap.docs.some((docSnap) => {
+        const state = normalizeString(docSnap.data()?.state).toLowerCase();
+        return ["pending", "active", "cancellation_requested"].includes(state);
+    });
+    if (hasActiveReservations) {
+        throw new HttpsError(
+            "failed-precondition",
+            "La cuenta tiene reservaciones activas o pendientes."
+        );
+    }
+    summary.reservationsDeleted = await deleteDocsFromQuery(reservationsSnap, {
+        recursive: true,
+    });
+
+    const favoritesSnap = await db
+        .collection("favorites")
+        .where("userId", "==", normalizedUid)
+        .get();
+    summary.favoritesDeleted = await deleteDocsFromQuery(favoritesSnap);
+
+    const supportReportsSnap = await db
+        .collection("support_reports")
+        .where("userId", "==", normalizedUid)
+        .get();
+    summary.supportReportsDeleted = await deleteDocsFromQuery(supportReportsSnap);
+
+    const providerRequestsSnap = await db
+        .collection("provider_requests")
+        .where("uid", "==", normalizedUid)
+        .get();
+    for (const docSnap of providerRequestsSnap.docs) {
+        await deleteStoragePrefixSafe(`provider_requests/${docSnap.id}/`);
+        await db.recursiveDelete(docSnap.ref);
+    }
+    summary.providerRequestsDeleted = providerRequestsSnap.size;
+
+    const providerApplicationsSnap = await db
+        .collection("provider_applications")
+        .where("uid", "==", normalizedUid)
+        .get();
+    summary.providerApplicationsDeleted = await deleteDocsFromQuery(
+        providerApplicationsSnap,
+        { recursive: true }
+    );
+
+    const reviewsSnap = await db
+        .collectionGroup("reviews")
+        .where("uid", "==", normalizedUid)
+        .get();
+    summary.reviewsDeleted = await deleteDocsFromQuery(reviewsSnap);
+
+    await deleteStoragePrefixSafe(`users/${normalizedUid}/`);
+
+    const userRef = db.collection("users").doc(normalizedUid);
+    const userSnap = await userRef.get();
+    if (userSnap.exists) {
+        await db.recursiveDelete(userRef);
+        summary.userDocumentDeleted = true;
+    }
+
+    try {
+        await admin.auth().deleteUser(normalizedUid);
+        summary.authDeleted = true;
+    } catch (error) {
+        if (error?.code !== "auth/user-not-found") {
+            throw error;
+        }
+    }
+
+    return summary;
+}
+
+exports.deleteMyAccount = onCall(
+    { enforceAppCheck: true },
+    async (request) => {
+        const uid = ensureCallableAuth(request);
+        const summary = await deleteUserAccountData(uid);
+        return {
+            success: true,
+            uid,
+            summary,
+        };
+    }
+);
+
+exports.deleteAccountByUid = onCall(
+    { enforceAppCheck: false },
+    async (request) => {
+        ensureAdminCallable(request);
+
+        const uid = normalizeString(request.data?.uid);
+        if (!uid) {
+            throw new HttpsError(
+                "invalid-argument",
+                "Debes indicar el uid de la cuenta a eliminar."
+            );
+        }
+
+        const summary = await deleteUserAccountData(uid);
+        return {
+            success: true,
+            uid,
+            summary,
+        };
+    }
+);
+
 // ─── package.json reminder ─────────────────────────────────────────────────
 // {
 //   "name": "functions",

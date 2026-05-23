@@ -1,6 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:beygo/common/common.dart';
 import 'package:beygo/features/auth/auth.dart';
 
@@ -14,6 +16,10 @@ class SignUpPage extends ConsumerStatefulWidget {
 
 class _SignUpPageState extends ConsumerState<SignUpPage>
     with SingleTickerProviderStateMixin {
+  static final Uri _privacyPolicyUri = Uri.parse(
+    'https://beygo-app-prod.web.app/privacy',
+  );
+
   final _email = TextEditingController();
   final _password = TextEditingController();
   final _confirm = TextEditingController();
@@ -124,6 +130,16 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
         duration: const Duration(seconds: 4),
       ),
     );
+  }
+
+  Future<void> _openPrivacyPolicy() async {
+    final opened = await launchUrl(
+      _privacyPolicyUri,
+      mode: LaunchMode.externalApplication,
+    );
+    if (!opened && mounted) {
+      _showError('No se pudo abrir la Política de privacidad.');
+    }
   }
 
   Future<void> _showPasswordRequirements() async {
@@ -438,6 +454,37 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
                               loading: _loading,
                               onTap: _loading ? null : _signUp,
                               margin: EdgeInsets.zero,
+                            ),
+                            const SizedBox(height: 14),
+
+                            Text.rich(
+                              TextSpan(
+                                style: TextStyle(
+                                  fontSize: 12.5,
+                                  height: 1.45,
+                                  color: context.appTextSecondaryColor,
+                                ),
+                                children: [
+                                  const TextSpan(
+                                    text: 'Al registrarte aceptas nuestra ',
+                                  ),
+                                  TextSpan(
+                                    text: 'Política de privacidad',
+                                    style: const TextStyle(
+                                      color: AppColors.headerBottom,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                    recognizer:
+                                        TapGestureRecognizer()
+                                          ..onTap =
+                                              _loading
+                                                  ? null
+                                                  : _openPrivacyPolicy,
+                                  ),
+                                  const TextSpan(text: '.'),
+                                ],
+                              ),
+                              textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 16),
 
