@@ -28,3 +28,14 @@ App móvil Flutter para encontrar y reservar parqueos cercanos en tiempo real.
 ## Build de release
 
 Ver instrucciones en `android/key.properties.template`.
+
+## Deploy y separación de proyectos
+
+- Este proyecto `BeyGo` usa el proyecto Firebase `beygo-app-prod` para app y backend.
+- La web pública y Firebase Hosting se administran desde el proyecto separado `beygo-site`.
+- No hagas deploy de hosting desde `BeyGo`.
+
+Flujo recomendado:
+
+- Backend/app desde `BeyGo`: `firebase deploy --only functions,firestore,storage`
+- Web pública desde `beygo-site`: `npm run deploy:hosting`
