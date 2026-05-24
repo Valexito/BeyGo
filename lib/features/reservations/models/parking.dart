@@ -21,6 +21,7 @@ class Parking {
   final int freeCancellationMinutes;
   final bool autoApproveReservations;
   final bool requirePlateOnEntry;
+  final bool showPhoneNumber;
 
   const Parking({
     required this.id,
@@ -43,6 +44,7 @@ class Parking {
     this.freeCancellationMinutes = 0,
     this.autoApproveReservations = false,
     this.requirePlateOnEntry = true,
+    this.showPhoneNumber = false,
   });
 
   static double _toDouble(dynamic value) {
@@ -111,6 +113,7 @@ class Parking {
       autoApproveReservations:
           (data['autoApproveReservations'] as bool?) ?? false,
       requirePlateOnEntry: (data['requirePlateOnEntry'] as bool?) ?? true,
+      showPhoneNumber: (data['showPhoneNumber'] as bool?) ?? false,
     );
   }
 
@@ -133,6 +136,7 @@ class Parking {
     'freeCancellationMinutes': freeCancellationMinutes,
     'autoApproveReservations': autoApproveReservations,
     'requirePlateOnEntry': requirePlateOnEntry,
+    'showPhoneNumber': showPhoneNumber,
   };
 
   Parking copyWith({
@@ -156,6 +160,7 @@ class Parking {
     int? freeCancellationMinutes,
     bool? autoApproveReservations,
     bool? requirePlateOnEntry,
+    bool? showPhoneNumber,
   }) {
     return Parking(
       id: id ?? this.id,
@@ -180,6 +185,7 @@ class Parking {
       autoApproveReservations:
           autoApproveReservations ?? this.autoApproveReservations,
       requirePlateOnEntry: requirePlateOnEntry ?? this.requirePlateOnEntry,
+      showPhoneNumber: showPhoneNumber ?? this.showPhoneNumber,
     );
   }
 }

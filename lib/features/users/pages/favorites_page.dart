@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:beygo/features/core/core.dart';
 import 'package:beygo/common/common.dart';
@@ -269,9 +270,18 @@ class _FavoriteCard extends ConsumerWidget {
   final FavoriteItem item;
   const _FavoriteCard({required this.item});
 
+  Future<void> _openPhoneDialer(String phone) async {
+    final uri = Uri(scheme: 'tel', path: phone.trim());
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     const accentBlue = Color(0xFF2563EB);
+    final cardSoft =
+        context.isDarkMode
+            ? context.appCardBackgroundSoft
+            : const Color(0xFFF5F8FE);
 
     final heroImg =
         item.heroImage ?? 'https://via.placeholder.com/800x450?text=Parqueo';
@@ -300,223 +310,320 @@ class _FavoriteCard extends ConsumerWidget {
             border: Border.all(color: context.appBorderColor),
           ),
           child: Column(
-          children: [
-            Stack(
-              children: [
-                ClipRRect(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(18),
-                  ),
-                  child: AspectRatio(
-                    aspectRatio: 16 / 9,
-                    child: Image.network(
-                      heroImg,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => const _ImageFallback(),
-                      loadingBuilder:
-                          (c, child, p) =>
-                              p == null ? child : const _ImageShimmer(),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  right: 10,
-                  top: 10,
-                  child: Consumer(
-                    builder: (_, r, __) {
-                      final favStream = r.watch(
-                        isFavoriteStreamProvider(item.parkingId),
-                      );
-                      final isFav = favStream.maybeWhen(
-                        data: (v) => v,
-                        orElse: () => false,
-                      );
-
-                      return Material(
-                        color: context.appCardBackground,
-                        shape: const CircleBorder(),
-                        elevation: 2,
-                        child: IconButton(
-                          icon: Icon(
-                            isFav ? Icons.favorite : Icons.favorite_border,
-                            color:
-                                isFav
-                                    ? Colors.red
-                                    : context.appTextPrimaryColor,
-                          ),
-                          onPressed:
-                              favStream.isLoading
-                                  ? null
-                                  : () async {
-                                    try {
-                                      await r.read(toggleFavoriteProvider)(
-                                        toFav: !isFav,
-                                        p: item.toParking(),
-                                      );
-                                    } catch (_) {
-                                      if (context.mounted) {
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                              'No se pudo actualizar favorito',
-                                            ),
-                                          ),
-                                        );
-                                      }
-                                    }
-                                  },
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Stack(
                 children: [
-                  MyText(
-                    text: item.name,
-                    variant: MyTextVariant.bodyBold,
-                    fontSize: 15,
-                  ),
-                  if ((item.descripcion ?? '').isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    MyText(
-                      text: item.descripcion!,
-                      variant: MyTextVariant.bodyMuted,
-                      fontSize: 12,
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(18),
                     ),
-                  ],
-                  const SizedBox(height: 10),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          children: [
-                            Column(
-                              children: [
-                                StreamBuilder<DocumentSnapshot>(
-                                  stream:
-                                      FirebaseFirestore.instance
-                                          .collection('parkings')
-                                          .doc(item.parkingId)
-                                          .snapshots(),
-                                  builder: (context, snapshot) {
-                                    final data =
-                                        snapshot.data?.data()
-                                            as Map<String, dynamic>?;
-                                    final rating =
-                                        (data?['rating'] is num)
-                                            ? (data!['rating'] as num)
-                                                .toDouble()
-                                            : item.rating;
-
-                                    final hasRating = rating > 0;
-
-                                    return _InfoPill(
-                                      icon:
-                                          hasRating
-                                              ? Icons.star_rounded
-                                              : Icons.fiber_new_rounded,
-                                      text:
-                                          hasRating
-                                              ? rating.toStringAsFixed(1)
-                                              : 'Nuevo',
-                                      iconColor:
-                                          hasRating
-                                              ? Colors.amber.shade700
-                                              : accentBlue,
-                                    );
-                                  },
-                                ),
-                                const SizedBox(height: 8),
-                                spacesAsync.when(
-                                  data:
-                                      (spaces) => _InfoPill(
-                                        icon: Icons.local_parking_rounded,
-                                        text: '$spaces disponibles',
-                                        iconColor: accentBlue,
-                                      ),
-                                  loading:
-                                      () => const _InfoPill(
-                                        icon: Icons.local_parking_rounded,
-                                        text: '...',
-                                      ),
-                                  error:
-                                      (_, __) => _InfoPill(
-                                        icon: Icons.local_parking_rounded,
-                                        text: '${item.spaces} disponibles',
-                                        iconColor: accentBlue,
-                                      ),
-                                ),
-                              ],
+                    child: AspectRatio(
+                      aspectRatio: 16 / 9,
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          Image.network(
+                            heroImg,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => const _ImageFallback(),
+                            loadingBuilder:
+                                (c, child, p) =>
+                                    p == null ? child : const _ImageShimmer(),
+                          ),
+                          const DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Colors.transparent,
+                                  Colors.transparent,
+                                  Colors.black54,
+                                ],
+                              ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: StreamBuilder<DocumentSnapshot>(
-                          stream:
-                              FirebaseFirestore.instance
-                                  .collection('parkings')
-                                  .doc(item.parkingId)
-                                  .snapshots(),
-                          builder: (context, snapshot) {
-                            final data =
-                                snapshot.data?.data() as Map<String, dynamic>?;
-
-                            final pricePerHour =
-                                (data?['pricePerHour'] is num)
-                                    ? (data!['pricePerHour'] as num).toInt()
-                                    : ((data?['price'] is num)
-                                        ? (data!['price'] as num).toInt()
-                                        : 0);
-
-                            final hours =
-                                data?['businessHours'] as Map<String, dynamic>?;
-                            final open = hours?['open']?.toString();
-                            final close = hours?['close']?.toString();
-
-                            final schedule =
-                                (open != null &&
-                                        open.isNotEmpty &&
-                                        close != null &&
-                                        close.isNotEmpty)
-                                    ? '$open - $close'
-                                    : 'Horario no disponible';
-
-                            return Column(
-                              children: [
-                                _InfoPill(
-                                  icon: Icons.attach_money_rounded,
-                                  text: 'Q$pricePerHour por hora',
-                                  iconColor: accentBlue,
-                                ),
-                                const SizedBox(height: 8),
-                                _InfoPill(
-                                  icon: Icons.access_time_rounded,
-                                  text: schedule,
-                                  iconColor: accentBlue,
-                                ),
-                              ],
-                            );
-                          },
-                        ),
+                    ),
+                  ),
+                  Positioned(
+                    left: 12,
+                    top: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
                       ),
-                    ],
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.92),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.auto_awesome_rounded,
+                            size: 13,
+                            color: accentBlue,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Favorito',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              color: accentBlue,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    right: 10,
+                    top: 10,
+                    child: Consumer(
+                      builder: (_, r, __) {
+                        final favStream = r.watch(
+                          isFavoriteStreamProvider(item.parkingId),
+                        );
+                        final isFav = favStream.maybeWhen(
+                          data: (v) => v,
+                          orElse: () => false,
+                        );
+
+                        return Material(
+                          color: context.appCardBackground,
+                          shape: const CircleBorder(),
+                          elevation: 2,
+                          child: IconButton(
+                            icon: Icon(
+                              isFav ? Icons.favorite : Icons.favorite_border,
+                              color:
+                                  isFav
+                                      ? Colors.red
+                                      : context.appTextPrimaryColor,
+                            ),
+                            onPressed:
+                                favStream.isLoading
+                                    ? null
+                                    : () async {
+                                      try {
+                                        await r.read(toggleFavoriteProvider)(
+                                          toFav: !isFav,
+                                          p: item.toParking(),
+                                        );
+                                      } catch (_) {
+                                        if (context.mounted) {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                'No se pudo actualizar favorito',
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                      }
+                                    },
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  Positioned(
+                    left: 14,
+                    right: 14,
+                    bottom: 12,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.name,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                            height: 1.15,
+                          ),
+                        ),
+                        if ((item.descripcion ?? '').isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            item.descripcion!,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.white70,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
                 ],
               ),
-            ),
-          ],
-        ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: cardSoft,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: context.appBorderColor),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              children: [
+                                Column(
+                                  children: [
+                                    StreamBuilder<DocumentSnapshot>(
+                                      stream:
+                                          FirebaseFirestore.instance
+                                              .collection('parkings')
+                                              .doc(item.parkingId)
+                                              .snapshots(),
+                                      builder: (context, snapshot) {
+                                        final data =
+                                            snapshot.data?.data()
+                                                as Map<String, dynamic>?;
+                                        final rating =
+                                            (data?['rating'] is num)
+                                                ? (data!['rating'] as num)
+                                                    .toDouble()
+                                                : item.rating;
+
+                                        final hasRating = rating > 0;
+
+                                        return _InfoPill(
+                                          icon:
+                                              hasRating
+                                                  ? Icons.star_rounded
+                                                  : Icons.fiber_new_rounded,
+                                          text:
+                                              hasRating
+                                                  ? rating.toStringAsFixed(1)
+                                                  : 'Nuevo',
+                                          iconColor:
+                                              hasRating
+                                                  ? Colors.amber.shade700
+                                                  : accentBlue,
+                                        );
+                                      },
+                                    ),
+                                    const SizedBox(height: 10),
+                                    spacesAsync.when(
+                                      data:
+                                          (spaces) => _InfoPill(
+                                            icon: Icons.local_parking_rounded,
+                                            text: '$spaces disponibles',
+                                            iconColor: accentBlue,
+                                          ),
+                                      loading:
+                                          () => const _InfoPill(
+                                            icon: Icons.local_parking_rounded,
+                                            text: '...',
+                                          ),
+                                      error:
+                                          (_, __) => _InfoPill(
+                                            icon: Icons.local_parking_rounded,
+                                            text: '${item.spaces} disponibles',
+                                            iconColor: accentBlue,
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: StreamBuilder<DocumentSnapshot>(
+                              stream:
+                                  FirebaseFirestore.instance
+                                      .collection('parkings')
+                                      .doc(item.parkingId)
+                                      .snapshots(),
+                              builder: (context, snapshot) {
+                                final data =
+                                    snapshot.data?.data()
+                                        as Map<String, dynamic>?;
+
+                                final pricePerHour =
+                                    (data?['pricePerHour'] is num)
+                                        ? (data!['pricePerHour'] as num).toInt()
+                                        : ((data?['price'] is num)
+                                            ? (data!['price'] as num).toInt()
+                                            : 0);
+
+                                final hours =
+                                    data?['businessHours']
+                                        as Map<String, dynamic>?;
+                                final open = hours?['open']?.toString();
+                                final close = hours?['close']?.toString();
+                                final phone =
+                                    (data?['phone'] as String? ?? '').trim();
+                                final showPhone =
+                                    (data?['showPhoneNumber'] as bool?) ?? false;
+
+                                final schedule =
+                                    (open != null &&
+                                            open.isNotEmpty &&
+                                            close != null &&
+                                            close.isNotEmpty)
+                                        ? '$open - $close'
+                                        : 'Horario no disponible';
+
+                                return Column(
+                                  children: [
+                                    _InfoPill(
+                                      icon: Icons.attach_money_rounded,
+                                      text: 'Q$pricePerHour por hora',
+                                      iconColor: accentBlue,
+                                    ),
+                                    const SizedBox(height: 10),
+                                    _InfoPill(
+                                      icon: Icons.access_time_rounded,
+                                      text: schedule,
+                                      iconColor: accentBlue,
+                                    ),
+                                    if (showPhone && phone.isNotEmpty) ...[
+                                      const SizedBox(height: 10),
+                                      InkWell(
+                                        onTap: () => _openPhoneDialer(phone),
+                                        borderRadius: BorderRadius.circular(10),
+                                        child: _InfoPill(
+                                          icon: Icons.phone_outlined,
+                                          text: phone,
+                                          iconColor: accentBlue,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -106,11 +106,17 @@ class RouteBottomInfoCard extends StatelessWidget {
     );
 
     if (await canLaunchUrl(googleMapsApp)) {
-      await launchUrl(googleMapsApp, mode: LaunchMode.externalApplication);
+      await launchUrl(
+        googleMapsApp,
+        mode: LaunchMode.externalNonBrowserApplication,
+      );
       return;
     }
 
-    await launchUrl(googleMapsWeb, mode: LaunchMode.externalApplication);
+    await launchUrl(
+      googleMapsWeb,
+      mode: LaunchMode.externalNonBrowserApplication,
+    );
   }
 
   Future<void> _openWaze() async {
@@ -121,11 +127,17 @@ class RouteBottomInfoCard extends StatelessWidget {
     final wazeWeb = Uri.parse('https://waze.com/ul?ll=$lat,$lng&navigate=yes');
 
     if (await canLaunchUrl(wazeUri)) {
-      await launchUrl(wazeUri, mode: LaunchMode.externalApplication);
+      await launchUrl(
+        wazeUri,
+        mode: LaunchMode.externalNonBrowserApplication,
+      );
       return;
     }
 
-    await launchUrl(wazeWeb, mode: LaunchMode.externalApplication);
+    await launchUrl(
+      wazeWeb,
+      mode: LaunchMode.externalNonBrowserApplication,
+    );
   }
 
   @override
@@ -171,9 +183,12 @@ class RouteBottomInfoCard extends StatelessWidget {
                         color: context.appIconCircleColor,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.directions_car_rounded,
-                        color: Colors.white,
+                        color:
+                            context.isDarkMode
+                                ? Colors.white
+                                : AppColors.headerBottom,
                         size: 22,
                       ),
                     ),

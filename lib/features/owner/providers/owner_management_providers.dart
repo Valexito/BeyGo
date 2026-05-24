@@ -37,6 +37,7 @@ class OwnerParkingDocument {
       (data['autoApproveReservations'] as bool?) ?? false;
   bool get requirePlateOnEntry =>
       (data['requirePlateOnEntry'] as bool?) ?? true;
+  bool get showPhoneNumber => (data['showPhoneNumber'] as bool?) ?? false;
 
   Map<String, String> get businessHours {
     final raw = data['businessHours'];

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:beygo/common/common.dart';
 import 'package:beygo/features/core/core.dart';
 import 'package:beygo/features/reservations/reservations.dart';
@@ -58,6 +59,13 @@ class _HomeParkingDetailBottomSheetState
 
   String _money(num v) => 'Q${v.toStringAsFixed(v % 1 == 0 ? 0 : 2)}';
 
+  Future<void> _openPhoneDialer(String phone) async {
+    final cleaned = phone.trim();
+    if (cleaned.isEmpty) return;
+    final uri = Uri(scheme: 'tel', path: cleaned);
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
   Future<void> _toggleFavorite(bool toFav) async {
     if (_isToggling) return;
 
@@ -91,6 +99,9 @@ class _HomeParkingDetailBottomSheetState
     final isFav = favAsync.maybeWhen(data: (v) => v, orElse: () => false);
     final rating = (currentParking.rating ?? 0).toDouble();
     final hasRating = rating > 0;
+    final canShowPhone =
+        currentParking.showPhoneNumber &&
+        ((currentParking.phone ?? '').trim().isNotEmpty);
 
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
@@ -372,6 +383,44 @@ class _HomeParkingDetailBottomSheetState
                             ),
                           ),
                         ),
+                        if (canShowPhone) ...[
+                          const SizedBox(height: 12),
+                          _InfoTile(
+                            icon: Icons.phone_outlined,
+                            iconColor: const Color(0xFF2563EB),
+                            label: 'Teléfono',
+                            valueWidget: Flexible(
+                              child: Align(
+                                alignment: Alignment.centerRight,
+                                child: InkWell(
+                                  onTap:
+                                      () => _openPhoneDialer(
+                                        currentParking.phone!,
+                                      ),
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 4,
+                                      vertical: 2,
+                                    ),
+                                    child: Text(
+                                      currentParking.phone!,
+                                      textAlign: TextAlign.right,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w700,
+                                        color: context.appBrandTextColor,
+                                        decoration: TextDecoration.underline,
+                                        decorationColor:
+                                            context.appBrandTextColor,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),

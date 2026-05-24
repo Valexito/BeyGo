@@ -76,7 +76,9 @@ class MapWidgetState extends ConsumerState<MapWidget> {
   }
 
   Future<BitmapDescriptor> _buildParkingMarkerIcon() async {
-    const size = 96.0;
+    const size = 116.0;
+    const outerRadius = 26.0;
+    const innerRadius = 23.0;
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder);
     final center = const Offset(size / 2, size / 2);
@@ -84,8 +86,8 @@ class MapWidgetState extends ConsumerState<MapWidget> {
     final shadowPaint =
         Paint()
           ..color = Colors.black.withValues(alpha: 0.18)
-          ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 8);
-    canvas.drawCircle(center + const Offset(0, 6), 24, shadowPaint);
+          ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 12);
+    canvas.drawCircle(center + const Offset(0, 7), outerRadius, shadowPaint);
 
     final gradientPaint =
         Paint()
@@ -93,21 +95,29 @@ class MapWidgetState extends ConsumerState<MapWidget> {
             colors: [AppColors.headerTop, AppColors.headerBottom],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-          ).createShader(const Rect.fromLTWH(18, 14, 60, 60));
-    canvas.drawCircle(center, 24, gradientPaint);
+          ).createShader(
+            Rect.fromCircle(center: center, radius: outerRadius),
+          );
+    canvas.drawCircle(center, outerRadius, gradientPaint);
 
     final borderPaint =
         Paint()
           ..color = Colors.white.withValues(alpha: 0.92)
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 3;
-    canvas.drawCircle(center, 24, borderPaint);
+          ..strokeWidth = 5;
+    canvas.drawCircle(center, outerRadius, borderPaint);
+
+    final highlightPaint =
+        Paint()
+          ..color = Colors.white.withValues(alpha: 0.10)
+          ..style = PaintingStyle.fill;
+    canvas.drawCircle(center + const Offset(0, -2), innerRadius, highlightPaint);
 
     final carPainter = TextPainter(textDirection: TextDirection.ltr);
     carPainter.text = TextSpan(
       text: String.fromCharCode(Icons.directions_car_filled_rounded.codePoint),
       style: TextStyle(
-        fontSize: 22,
+        fontSize: 24,
         fontFamily: Icons.directions_car_filled_rounded.fontFamily,
         package: Icons.directions_car_filled_rounded.fontPackage,
         color: Colors.white.withValues(alpha: 0.96),
@@ -116,14 +126,14 @@ class MapWidgetState extends ConsumerState<MapWidget> {
     carPainter.layout();
     carPainter.paint(
       canvas,
-      Offset(center.dx - carPainter.width / 2, center.dy - 11),
+      Offset(center.dx - carPainter.width / 2, center.dy - 12),
     );
 
     final pointer =
         Path()
-          ..moveTo(center.dx - 11, size - 28)
-          ..lineTo(center.dx + 11, size - 28)
-          ..lineTo(center.dx, size - 8)
+          ..moveTo(center.dx - 11, size - 32)
+          ..lineTo(center.dx + 11, size - 32)
+          ..lineTo(center.dx, size - 10)
           ..close();
     canvas.drawPath(pointer, gradientPaint);
 

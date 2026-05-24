@@ -46,6 +46,7 @@ class _OwnerSettingsPageState extends ConsumerState<OwnerSettingsPage> {
           final autoApproveReservations =
               parking?.autoApproveReservations ?? false;
           final requirePlateOnEntry = parking?.requirePlateOnEntry ?? true;
+          final showPhoneNumber = parking?.showPhoneNumber ?? false;
           final ownerRevenueVisible = preferences.ownerRevenueVisible;
           final ownerRevenuePin = preferences.ownerRevenuePin;
 
@@ -158,6 +159,23 @@ class _OwnerSettingsPageState extends ConsumerState<OwnerSettingsPage> {
                                   : (v) => _saveParkingBehavior(parking.id, {
                                     'requirePlateOnEntry': v,
                                   }),
+                        ),
+                        _Divider(),
+                        _SwitchRow(
+                          icon: Icons.phone_enabled_outlined,
+                          iconColor: const Color(0xFF2563EB),
+                          label: 'Mostrar número de teléfono',
+                          sublabel:
+                              'Permite que los clientes lo vean en detalles y favoritos',
+                          value: showPhoneNumber,
+                          onChanged:
+                              parking == null
+                                  ? null
+                                  : (v) => _saveParkingBehavior(parking.id, {
+                                    'showPhoneNumber': v,
+                                  }),
+                          badge: showPhoneNumber ? 'VISIBLE' : null,
+                          badgeColor: const Color(0xFF2563EB),
                         ),
                         _Divider(),
                         _SwitchRow(

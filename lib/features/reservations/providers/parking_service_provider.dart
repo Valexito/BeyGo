@@ -43,6 +43,7 @@ class ParkingService {
       'lng': lng,
       'spaces': spaces,
       'pricePerHour': price,
+      'showPhoneNumber': false,
       'descripcion': descripcion,
       'imageUrl': imageUrl,
       'localImagePath': localImagePath,
@@ -81,6 +82,7 @@ class ParkingService {
       'lng': lng,
       'spaces': spaces,
       'pricePerHour': price,
+      'showPhoneNumber': false,
       'descripcion':
           (descripcion == null || descripcion.isEmpty) ? null : descripcion,
       'createdAt': FieldValue.serverTimestamp(),
