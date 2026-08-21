@@ -5,7 +5,7 @@ publish_to: 'none'
 # version: <semver>+<buildNumber>
 # Cada subida nueva a Play Store debe incrementar el buildNumber (después del +).
 # El versionName (1.0.0) puede repetirse; el versionCode (buildNumber) NO.
-version: 1.0.0+5
+version: 1.0.0+8
 
 environment:
   sdk: ^3.7.2

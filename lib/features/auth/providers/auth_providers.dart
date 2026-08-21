@@ -13,8 +13,13 @@ final authUserStreamProvider = StreamProvider<User?>((ref) {
   return auth.userChanges();
 });
 
+// Web OAuth client from Firebase config. Passing it explicitly helps
+// Google Sign-In resolve the correct OAuth setup on Play-distributed builds.
+const _googleServerClientId =
+    '102949234278-ktoqboaffipnlsilm28qsefriuefon3q.apps.googleusercontent.com';
+
 final googleSignInInstanceProvider = Provider<GoogleSignIn>((_) {
-  return GoogleSignIn();
+  return GoogleSignIn(serverClientId: _googleServerClientId);
 });
 
 final signInWithGoogleProvider = Provider<Future<UserCredential> Function()>((
@@ -146,9 +151,10 @@ class _AuthActions {
     } catch (_) {}
 
     try {
-      await _auth.authStateChanges().firstWhere((user) => user == null).timeout(
-        const Duration(seconds: 4),
-      );
+      await _auth
+          .authStateChanges()
+          .firstWhere((user) => user == null)
+          .timeout(const Duration(seconds: 4));
     } catch (_) {}
 
     if (uid != null) {

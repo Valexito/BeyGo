@@ -1,4 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -75,10 +77,26 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
           builder: (_) => VerifyEmailPage(user: user, autoSendOnOpen: true),
         ),
       );
-    } on FirebaseAuthException catch (e) {
+    } on FirebaseAuthException catch (e, stack) {
+      // TEMP DEBUG LOGGING — quitar una vez identificado el bug de registro en prod.
+      debugPrint('[SignUp] FirebaseAuthException code=${e.code} message=${e.message}');
+      FirebaseCrashlytics.instance.recordError(
+        e,
+        stack,
+        reason: 'SignUp failed: ${e.code} | ${e.message}',
+        fatal: false,
+      );
       if (!mounted) return;
       _showError(_mapError(e.code));
-    } catch (e) {
+    } catch (e, stack) {
+      // TEMP DEBUG LOGGING — quitar una vez identificado el bug de registro en prod.
+      debugPrint('[SignUp] Unexpected error: $e');
+      FirebaseCrashlytics.instance.recordError(
+        e,
+        stack,
+        reason: 'SignUp unexpected error',
+        fatal: false,
+      );
       if (!mounted) return;
       final msg = e.toString().toLowerCase();
       if (msg.contains('network') || msg.contains('socket')) {

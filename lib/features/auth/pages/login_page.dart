@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:beygo/common/common.dart';
 import 'package:beygo/features/auth/auth.dart';
 
@@ -79,8 +81,47 @@ class _LoginPageState extends ConsumerState<LoginPage>
       final user = cred.user;
       if (!mounted || user == null) return;
       await _routeAfterAuth(user);
-    } catch (e) {
+    } on PlatformException catch (e, stack) {
+      debugPrint(
+        '[GoogleSignIn] PlatformException code=${e.code} message=${e.message} details=${e.details}',
+      );
+      FirebaseCrashlytics.instance.recordError(
+        e,
+        stack,
+        reason:
+            'GoogleSignIn PlatformException: code=${e.code} message=${e.message} details=${e.details}',
+        fatal: false,
+      );
+      if (!mounted) return;
+      final raw =
+          '${e.code} ${e.message ?? ''} ${e.details ?? ''}'.toLowerCase();
+      final cancelled =
+          raw.contains('cancel') ||
+          raw.contains('cancelled') ||
+          raw.contains('cancelado') ||
+          raw.contains('sign-in cancelled');
+      if (!cancelled) {
+        if (raw.contains('10') ||
+            raw.contains('developer_error') ||
+            raw.contains('api_exception')) {
+          _showError(
+            'Google Sign-In no está autorizado para la app publicada. Revisa SHA-1/SHA-256 de Play App Signing y el package name com.beygo.app.',
+          );
+        } else if (raw.contains('network') || raw.contains('socket')) {
+          _showError('Sin conexión a internet. Revisa tu red.');
+        } else {
+          _showError('Error al iniciar sesión con Google. Intenta de nuevo.');
+        }
+      }
+    } catch (e, stack) {
       debugPrint('[GoogleSignIn] Login failed: $e');
+      // TEMP DEBUG LOGGING — quitar una vez identificado el bug de login en prod.
+      FirebaseCrashlytics.instance.recordError(
+        e,
+        stack,
+        reason: 'GoogleSignIn failed: $e',
+        fatal: false,
+      );
       if (!mounted) return;
       final msg = e.toString().toLowerCase();
       final cancelled =
@@ -126,10 +167,28 @@ class _LoginPageState extends ConsumerState<LoginPage>
       );
       if (!mounted || cred.user == null) return;
       await _routeAfterAuth(cred.user!);
-    } on FirebaseAuthException catch (e) {
+    } on FirebaseAuthException catch (e, stack) {
+      // TEMP DEBUG LOGGING — quitar una vez identificado el bug de login en prod.
+      debugPrint(
+        '[Login] FirebaseAuthException code=${e.code} message=${e.message}',
+      );
+      FirebaseCrashlytics.instance.recordError(
+        e,
+        stack,
+        reason: 'Login failed: ${e.code} | ${e.message}',
+        fatal: false,
+      );
       if (!mounted) return;
       _showError(_mapFirebaseError(e.code));
-    } catch (e) {
+    } catch (e, stack) {
+      // TEMP DEBUG LOGGING — quitar una vez identificado el bug de login en prod.
+      debugPrint('[Login] Unexpected error: $e');
+      FirebaseCrashlytics.instance.recordError(
+        e,
+        stack,
+        reason: 'Login unexpected error',
+        fatal: false,
+      );
       if (!mounted) return;
       final msg = e.toString().toLowerCase();
       if (msg.contains('network') || msg.contains('socket')) {
@@ -237,14 +296,45 @@ class _LoginPageState extends ConsumerState<LoginPage>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Text(
-                            'Iniciar sesión',
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w800,
-                              color: context.appBrandTextColor,
-                              letterSpacing: -0.5,
-                            ),
+                          Row(
+                            children: [
+                              Text(
+                                'Iniciar sesión',
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w800,
+                                  color: context.appBrandTextColor,
+                                  letterSpacing: -0.5,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: context.appBrandColor.withValues(
+                                    alpha: 0.12,
+                                  ),
+                                  borderRadius: BorderRadius.circular(999),
+                                  border: Border.all(
+                                    color: context.appBrandColor.withValues(
+                                      alpha: 0.22,
+                                    ),
+                                  ),
+                                ),
+                                child: Text(
+                                  'v8',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                    color: context.appBrandTextColor,
+                                    letterSpacing: 0.3,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 4),
 
