@@ -314,12 +314,12 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                   vertical: 4,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: context.appBrandColor.withValues(
+                                  color: context.appBrandTextColor.withValues(
                                     alpha: 0.12,
                                   ),
                                   borderRadius: BorderRadius.circular(999),
                                   border: Border.all(
-                                    color: context.appBrandColor.withValues(
+                                    color: context.appBrandTextColor.withValues(
                                       alpha: 0.22,
                                     ),
                                   ),
