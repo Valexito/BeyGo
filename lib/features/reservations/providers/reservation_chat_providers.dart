@@ -6,7 +6,7 @@ import 'package:beygo/features/reservations/models/reservation_chat_message.dart
 import 'package:uuid/uuid.dart';
 
 final reservationChatMessagesProvider =
-    StreamProvider.family<List<ReservationChatMessage>, String>((
+    StreamProvider.autoDispose.family<List<ReservationChatMessage>, String>((
       ref,
       reservationId,
     ) {
@@ -108,7 +108,7 @@ class ReservationChatBlockState {
 }
 
 final reservationChatBlockStateProvider =
-    StreamProvider.family<ReservationChatBlockState, Reservation>((
+    StreamProvider.autoDispose.family<ReservationChatBlockState, Reservation>((
       ref,
       reservation,
     ) {

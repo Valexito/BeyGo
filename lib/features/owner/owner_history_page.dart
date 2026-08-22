@@ -161,7 +161,10 @@ class _HistoryRecord {
 }
 
 final ownerWalkInHistoryProvider =
-    StreamProvider.family<List<_HistoryRecord>, String>((ref, parkingId) {
+    StreamProvider.autoDispose.family<List<_HistoryRecord>, String>((
+      ref,
+      parkingId,
+    ) {
       return FirebaseFirestore.instance
           .collection('parkings')
           .doc(parkingId)

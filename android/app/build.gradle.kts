@@ -38,6 +38,9 @@ android {
 
     defaultConfig {
         applicationId = "com.beygo.app"
+        // Pinned explicitly: Shorebird's forked Flutter build defaults
+        // flutter.minSdkVersion to 21, which conflicts with
+        // com.google.android.libraries.places (requires minSdk 23).
         minSdk = 23
         targetSdk = 35
         versionCode = flutter.versionCode
