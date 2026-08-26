@@ -32,9 +32,9 @@ val isReleaseBuildRequested = gradle.startParameter.taskNames.any { taskName ->
 android {
     namespace = "com.beygo.app"
 
-    // Play Store exige targetSdk >= 35 para apps nuevas (desde Ago/2025).
+    // Play Store exige targetSdk >= 36 (Android 16) a partir de Ago/2026.
     // Lo explicitamos en lugar de heredar de Flutter por si el SDK local va atrás.
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.beygo.app"
@@ -42,7 +42,7 @@ android {
         // flutter.minSdkVersion to 21, which conflicts with
         // com.google.android.libraries.places (requires minSdk 23).
         minSdk = 23
-        targetSdk = 35
+        targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         multiDexEnabled = true

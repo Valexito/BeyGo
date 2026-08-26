@@ -308,7 +308,7 @@ class _OwnerSettingsPageState extends ConsumerState<OwnerSettingsPage> {
                           iconColor: context.appBrandIconColor,
                           label: 'Versión de la app',
                           trailing: const Text(
-                            'v1.0.0+12 (GT)',
+                            'v1.0.0+13 (GT)',
                             style: TextStyle(
                               fontSize: 12,
                               color: Color(0xFF9CA3AF),
