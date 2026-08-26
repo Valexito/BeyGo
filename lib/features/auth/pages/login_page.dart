@@ -325,7 +325,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                   ),
                                 ),
                                 child: Text(
-                                  'v8',
+                                  '(GT)',
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w800,
