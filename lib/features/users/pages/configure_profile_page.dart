@@ -69,6 +69,7 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage>
 
   File? _imageFile;
   String _existingPhotoUrl = '';
+  bool _pickingImage = false;
 
   final List<_VehicleEditEntry> _vehicles = [];
 
@@ -216,12 +217,20 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage>
   }
 
   Future<void> _pickImage() async {
-    final picked = await ImagePicker().pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 80,
-    );
-    if (picked != null && mounted) {
-      setState(() => _imageFile = File(picked.path));
+    if (_pickingImage) return; // guard: image_picker throws "already_active"
+    _pickingImage = true;
+    try {
+      final picked = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 80,
+      );
+      if (picked != null && mounted) {
+        setState(() => _imageFile = File(picked.path));
+      }
+    } on PlatformException catch (e) {
+      debugPrint('[ConfigureProfile] pickImage failed: ${e.code} ${e.message}');
+    } finally {
+      _pickingImage = false;
     }
   }
 

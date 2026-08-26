@@ -56,11 +56,10 @@ class NotificationService {
 
   // ── Save with retry (fixes first-run failures) ────────────────────────────
   Future<void> _saveTokenWithRetry(String uid, {int retries = 3}) async {
-    final token = await _fcm.getToken();
-    if (token == null) return;
-
     for (int attempt = 1; attempt <= retries; attempt++) {
       try {
+        final token = await _fcm.getToken();
+        if (token == null) return;
         await FirebaseFirestore.instance.collection('users').doc(uid).set({
           'fcmToken': token,
           'updatedAt': FieldValue.serverTimestamp(),
@@ -68,6 +67,10 @@ class NotificationService {
         debugPrint('[FCM] Token saved for $uid (attempt $attempt)');
         return;
       } catch (e) {
+        // getToken() can throw (e.g. FIS_AUTH_ERROR from a transient Firebase
+        // Installations hiccup) just like the Firestore write can — both must
+        // be retried instead of left to escape this async stream callback,
+        // where an uncaught error surfaces to Crashlytics as a fatal crash.
         debugPrint('[FCM] Attempt $attempt failed for $uid: $e');
         if (attempt < retries) {
           await Future.delayed(Duration(seconds: attempt * 2));

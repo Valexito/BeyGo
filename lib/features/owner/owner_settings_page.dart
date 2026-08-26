@@ -308,7 +308,7 @@ class _OwnerSettingsPageState extends ConsumerState<OwnerSettingsPage> {
                           iconColor: context.appBrandIconColor,
                           label: 'Versión de la app',
                           trailing: const Text(
-                            'v1.0.0',
+                            'v1.0.0+12 (GT)',
                             style: TextStyle(
                               fontSize: 12,
                               color: Color(0xFF9CA3AF),
@@ -527,7 +527,8 @@ class _OwnerSettingsPageState extends ConsumerState<OwnerSettingsPage> {
 
   Future<void> _shareApp() async {
     const message =
-        'Te recomiendo BeyGo para encontrar, reservar y administrar parqueos de forma rápida.';
+        'Te recomiendo BeyGo para encontrar, reservar y administrar parqueos de forma rápida.\n'
+        'https://play.google.com/apps/testing/com.beygo.app';
     await Clipboard.setData(const ClipboardData(text: message));
     if (!mounted) return;
     _toast('Mensaje copiado para compartir.');

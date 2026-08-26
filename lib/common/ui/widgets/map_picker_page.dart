@@ -204,6 +204,12 @@ class _MapPickerPageState extends State<MapPickerPage> {
                         ),
                       );
                     }
+                    // Works around a cold-start Android Maps renderer race
+                    // where POI icons/labels stay missing until the app is
+                    // relaunched — re-apply the style once ready.
+                    c.setMapStyle(
+                      GoogleMapStyles.forBrightness(Theme.of(context).brightness),
+                    );
                   },
                   initialCameraPosition: CameraPosition(
                     target: initial,

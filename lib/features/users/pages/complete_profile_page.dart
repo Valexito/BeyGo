@@ -729,10 +729,20 @@ class _VehicleCard extends StatefulWidget {
 }
 
 class _VehicleCardState extends State<_VehicleCard> {
+  void _onPlateChanged() {
+    if (mounted) setState(() {});
+  }
+
   @override
   void initState() {
     super.initState();
-    widget.entry.correlativeController.addListener(() => setState(() {}));
+    widget.entry.correlativeController.addListener(_onPlateChanged);
+  }
+
+  @override
+  void dispose() {
+    widget.entry.correlativeController.removeListener(_onPlateChanged);
+    super.dispose();
   }
 
   String get _platePreview {

@@ -176,6 +176,14 @@ class _RouteViewPageState extends ConsumerState<RouteViewPage> {
                     GoogleMap(
                       onMapCreated: (ctrl) {
                         _mapController = ctrl;
+                        // Works around a cold-start Android Maps renderer
+                        // race where POI icons/labels stay missing until the
+                        // app is relaunched — re-apply the style once ready.
+                        ctrl.setMapStyle(
+                          GoogleMapStyles.forBrightness(
+                            Theme.of(context).brightness,
+                          ),
+                        );
                         // Fit both markers
                         Future.delayed(
                           const Duration(milliseconds: 300),

@@ -414,7 +414,7 @@ class _SettingsBody extends ConsumerWidget {
                   iconColor: const Color(0xFF0EA5E9),
                   label: 'Versión de la app',
                   trailing: const Text(
-                    'v1.0.0+11 (GT)',
+                    'v1.0.0+12 (GT)',
                     style: TextStyle(
                       fontSize: 12,
                       color: Color(0xFF9CA3AF),
@@ -674,7 +674,8 @@ class _SettingsBody extends ConsumerWidget {
 
   Future<void> _shareApp(BuildContext context) async {
     const message =
-        'Te recomiendo BeyGo para encontrar y reservar parqueos de forma rápida.';
+        'Te recomiendo BeyGo para encontrar y reservar parqueos de forma rápida.\n'
+        'https://play.google.com/apps/testing/com.beygo.app';
     await Clipboard.setData(const ClipboardData(text: message));
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(

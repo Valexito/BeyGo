@@ -285,6 +285,11 @@ class MapWidgetState extends ConsumerState<MapWidget> {
             ),
           );
         }
+        // On a cold start (fresh install) the Android Maps renderer can still
+        // be initializing when the `style` param below is applied, leaving
+        // POI icons/labels missing until the app is relaunched. Re-applying
+        // the style once the controller is actually ready works around it.
+        ctrl.setMapStyle(GoogleMapStyles.forBrightness(brightness));
       },
       initialCameraPosition: CameraPosition(
         target: _currentPosition!,

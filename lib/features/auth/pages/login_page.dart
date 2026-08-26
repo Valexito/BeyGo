@@ -85,14 +85,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
       debugPrint(
         '[GoogleSignIn] PlatformException code=${e.code} message=${e.message} details=${e.details}',
       );
-      FirebaseCrashlytics.instance.recordError(
-        e,
-        stack,
-        reason:
-            'GoogleSignIn PlatformException: code=${e.code} message=${e.message} details=${e.details}',
-        fatal: false,
-      );
-      if (!mounted) return;
       final raw =
           '${e.code} ${e.message ?? ''} ${e.details ?? ''}'.toLowerCase();
       final cancelled =
@@ -100,10 +92,23 @@ class _LoginPageState extends ConsumerState<LoginPage>
           raw.contains('cancelled') ||
           raw.contains('cancelado') ||
           raw.contains('sign-in cancelled');
+      // Cancelling the Google account picker is normal user behavior, not a
+      // bug — don't flood Crashlytics with it.
+      if (!cancelled) {
+        FirebaseCrashlytics.instance.recordError(
+          e,
+          stack,
+          reason:
+              'GoogleSignIn PlatformException: code=${e.code} message=${e.message} details=${e.details}',
+          fatal: false,
+        );
+      }
+      if (!mounted) return;
       if (!cancelled) {
         if (raw.contains('10') ||
             raw.contains('developer_error') ||
-            raw.contains('api_exception')) {
+            raw.contains('api_exception') ||
+            raw.contains('blocked')) {
           _showError(
             'Google Sign-In no está autorizado para la app publicada. Revisa SHA-1/SHA-256 de Play App Signing y el package name com.beygo.app.',
           );
@@ -115,20 +120,23 @@ class _LoginPageState extends ConsumerState<LoginPage>
       }
     } catch (e, stack) {
       debugPrint('[GoogleSignIn] Login failed: $e');
-      // TEMP DEBUG LOGGING — quitar una vez identificado el bug de login en prod.
-      FirebaseCrashlytics.instance.recordError(
-        e,
-        stack,
-        reason: 'GoogleSignIn failed: $e',
-        fatal: false,
-      );
-      if (!mounted) return;
       final msg = e.toString().toLowerCase();
       final cancelled =
           msg.contains('cancel') ||
           msg.contains('cancelled') ||
           msg.contains('cancelado') ||
           msg.contains('sign-in cancelled');
+      // Cancelling the Google account picker is normal user behavior, not a
+      // bug — don't flood Crashlytics with it.
+      if (!cancelled) {
+        FirebaseCrashlytics.instance.recordError(
+          e,
+          stack,
+          reason: 'GoogleSignIn failed: $e',
+          fatal: false,
+        );
+      }
+      if (!mounted) return;
       if (!cancelled) {
         if (msg.contains('apiexception: 10') ||
             msg.contains('developer_error')) {

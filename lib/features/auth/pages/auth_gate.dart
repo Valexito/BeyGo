@@ -58,7 +58,20 @@ class _AuthGateState extends ConsumerState<AuthGate> {
 
         // ── Email not verified ──────────────────────────────────────────────
         if (_isPasswordUser(user) && !user.emailVerified) {
-          return VerifyEmailPage(user: user);
+          // AuthGate reacts to the auth-state stream as soon as sign-up
+          // creates the account, which usually wins the race against
+          // SignUpPage's own Navigator.pushReplacement to VerifyEmailPage
+          // (that push becomes a no-op because `mounted` is already false
+          // by the time it runs). That meant the page instance actually
+          // shown never had autoSendOnOpen set, so the very first
+          // verification email was silently never sent — only the manual
+          // "reenviar" button worked. Detect a just-created account here
+          // instead of depending on which widget instance wins the race.
+          final createdAt = user.metadata.creationTime;
+          final justCreated =
+              createdAt != null &&
+              DateTime.now().difference(createdAt) < const Duration(minutes: 2);
+          return VerifyEmailPage(user: user, autoSendOnOpen: justCreated);
         }
 
         // ── User switched accounts ──────────────────────────────────────────
