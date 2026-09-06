@@ -203,7 +203,11 @@ class _ConfigureProfilePageState extends ConsumerState<ConfigureProfilePage>
       helpText: 'Fecha de nacimiento',
       builder:
           (ctx, child) => Theme(
-            data: Theme.of(ctx).copyWith(
+            // Base this on ThemeData.light() instead of Theme.of(ctx): the
+            // picker is always meant to render with light colors, but
+            // copyWith-ing only colorScheme onto a dark ambient theme left
+            // textTheme (e.g. the year-picker's text) dark-on-dark/unreadable.
+            data: ThemeData.light().copyWith(
               colorScheme: ColorScheme.light(primary: AppColors.headerBottom),
             ),
             child: child!,

@@ -42,6 +42,7 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
 
   bool _accept = false;
   bool _sending = false;
+  bool _pickingImage = false;
   LatLng? _picked;
   TimeOfDay _openingHour = const TimeOfDay(hour: 8, minute: 0);
   TimeOfDay _closingHour = const TimeOfDay(hour: 18, minute: 0);
@@ -137,27 +138,43 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
       return;
     }
 
-    final picked = await _picker.pickMultiImage(
-      imageQuality: 85,
-      maxWidth: 1920,
-    );
-    if (picked.isNotEmpty) {
-      final bytes = await Future.wait(
-        picked.take(remaining).map((i) => i.readAsBytes()),
+    if (_pickingImage) return; // guard: image_picker throws "already_active"
+    _pickingImage = true;
+    try {
+      final picked = await _picker.pickMultiImage(
+        imageQuality: 85,
+        maxWidth: 1920,
       );
-      setState(() => _parkingImages.addAll(bytes));
+      if (picked.isNotEmpty && mounted) {
+        final bytes = await Future.wait(
+          picked.take(remaining).map((i) => i.readAsBytes()),
+        );
+        if (mounted) setState(() => _parkingImages.addAll(bytes));
+      }
+    } on PlatformException catch (e) {
+      debugPrint('[BecomeOwner] pickParkingImages failed: ${e.code} ${e.message}');
+    } finally {
+      _pickingImage = false;
     }
   }
 
   Future<void> _pickSingle(void Function(Uint8List) onPicked) async {
-    final img = await _picker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 85,
-      maxWidth: 1920,
-    );
-    if (img != null) {
-      final bytes = await img.readAsBytes();
-      setState(() => onPicked(bytes));
+    if (_pickingImage) return; // guard: image_picker throws "already_active"
+    _pickingImage = true;
+    try {
+      final img = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+        maxWidth: 1920,
+      );
+      if (img != null) {
+        final bytes = await img.readAsBytes();
+        if (mounted) setState(() => onPicked(bytes));
+      }
+    } on PlatformException catch (e) {
+      debugPrint('[BecomeOwner] pickSingle failed: ${e.code} ${e.message}');
+    } finally {
+      _pickingImage = false;
     }
   }
 

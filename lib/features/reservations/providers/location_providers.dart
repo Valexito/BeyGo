@@ -20,15 +20,16 @@ import 'package:beygo/common/services/geolocator.dart' as helper;
 //    import 'package:beygo/common/services/geolocator.dart' as helper;
 
 /// One-shot current location (used for initial map position and route origin).
-/// Falls back to Xela coords if GPS fails or permission is denied.
+///
+/// Deliberately does NOT fall back to a fixed default coordinate on error:
+/// route_view_page.dart uses this to compute the route distance/duration to
+/// a parking, so silently substituting e.g. Xela's coordinates for a user
+/// whose GPS/permission failed made the route look like a real (and very
+/// wrong) few-minutes-away result instead of surfacing the failure. Letting
+/// the error propagate lets the UI show its retry screen instead.
 final currentLocationProvider = FutureProvider<LatLng>((ref) async {
-  try {
-    final loc = await helper.getCurrentLocation();
-    debugPrint('[LOCATION] success: ${loc.latitude}, ${loc.longitude}');
-    return loc;
-  } catch (e) {
-    debugPrint('[LOCATION] error: $e → using Xela fallback');
-    return const LatLng(14.834999, -91.518669);
-  }
+  final loc = await helper.getCurrentLocation();
+  debugPrint('[LOCATION] success: ${loc.latitude}, ${loc.longitude}');
+  return loc;
 });
 

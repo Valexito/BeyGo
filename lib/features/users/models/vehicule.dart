@@ -1,9 +1,21 @@
 // lib/features/users/models/vehicle.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 
 enum VehicleType { car, motorcycle, other }
 
 extension VehicleTypeExt on VehicleType {
+  IconData get icon {
+    switch (this) {
+      case VehicleType.car:
+        return Icons.directions_car_rounded;
+      case VehicleType.motorcycle:
+        return Icons.two_wheeler_rounded;
+      case VehicleType.other:
+        return Icons.commute_rounded;
+    }
+  }
+
   String get value {
     switch (this) {
       case VehicleType.car:

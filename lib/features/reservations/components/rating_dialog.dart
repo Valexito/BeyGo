@@ -131,16 +131,15 @@ class _RatingDialogState extends State<_RatingDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-
     return Dialog(
       backgroundColor: Colors.transparent,
+      // Dialog already shifts its child above the keyboard using
+      // MediaQuery.viewInsets internally (added on top of insetPadding) —
+      // wrapping the child in a second, manual keyboard-inset AnimatedPadding
+      // here double-compensated and squashed the dialog when the keyboard
+      // opened for the comment field.
       insetPadding: const EdgeInsets.symmetric(horizontal: 20),
-      child: AnimatedPadding(
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOut,
-        padding: EdgeInsets.only(bottom: bottomInset),
-        child: ConstrainedBox(
+      child: ConstrainedBox(
           constraints: BoxConstraints(
             maxHeight: MediaQuery.of(context).size.height * 0.86,
           ),
@@ -408,7 +407,6 @@ class _RatingDialogState extends State<_RatingDialog> {
             ),
           ),
         ),
-      ),
     );
   }
 

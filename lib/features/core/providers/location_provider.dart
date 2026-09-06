@@ -19,16 +19,14 @@ import 'package:beygo/common/services/geolocator.dart' as helper;
 // import 'package:beygo/features/reservations/services/geolocator.dart' as helper;
 
 /// One-shot current location — used for map initial position and route origin.
-/// Falls back to Xela, Guatemala if GPS is unavailable.
+///
+/// Deliberately does NOT fall back to a fixed default coordinate on error —
+/// see the identical currentLocationProvider in
+/// features/reservations/providers/location_providers.dart for why.
 final currentLocationProvider = FutureProvider<LatLng>((ref) async {
-  try {
-    final loc = await helper.getCurrentLocation();
-    debugPrint('[LOCATION] success: ${loc.latitude}, ${loc.longitude}');
-    return loc;
-  } catch (e) {
-    debugPrint('[LOCATION] error: $e → using Xela fallback');
-    return const LatLng(14.834999, -91.518669);
-  }
+  final loc = await helper.getCurrentLocation();
+  debugPrint('[LOCATION] success: ${loc.latitude}, ${loc.longitude}');
+  return loc;
 });
 
 /// Continuous position stream — for live tracking in route view.

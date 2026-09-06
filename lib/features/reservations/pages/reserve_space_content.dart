@@ -220,7 +220,9 @@ class _ReserveSpaceContentState extends ConsumerState<ReserveSpaceContent> {
                                               : '${selected.plate} • ${selected.type.label}';
 
                                       return _VehicleSelectorCard(
-                                        icon: Icons.directions_car_rounded,
+                                        icon:
+                                            selected?.type.icon ??
+                                            Icons.directions_car_rounded,
                                         title: 'Vehículo para esta reserva',
                                         subtitle: subtitle,
                                         onTap:

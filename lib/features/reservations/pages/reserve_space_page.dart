@@ -173,11 +173,7 @@ class _ReserveSpacePageState extends ConsumerState<ReserveSpacePage> {
                           ? sheetContext.appCardBackgroundSoft
                           : Colors.transparent,
                   leading: Icon(
-                    switch (vehicle.type) {
-                      VehicleType.car => Icons.directions_car_rounded,
-                      VehicleType.motorcycle => Icons.two_wheeler_rounded,
-                      VehicleType.other => Icons.commute_rounded,
-                    },
+                    vehicle.type.icon,
                     color:
                         selected
                             ? sheetContext.appBrandIconColor

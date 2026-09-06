@@ -185,9 +185,13 @@ class _RouteViewPageState extends ConsumerState<RouteViewPage> {
                           ),
                         );
                         // Fit both markers
-                        Future.delayed(
-                          const Duration(milliseconds: 300),
-                          () => ctrl.animateCamera(
+                        Future.delayed(const Duration(milliseconds: 300), () {
+                          // The page can be popped (e.g. user taps back)
+                          // before this delayed callback fires, leaving the
+                          // controller's widget disposed — animateCamera on
+                          // it then throws a fatal "used after disposed".
+                          if (!mounted) return;
+                          ctrl.animateCamera(
                             CameraUpdate.newLatLngBounds(
                               LatLngBounds(
                                 southwest: LatLng(
@@ -209,8 +213,8 @@ class _RouteViewPageState extends ConsumerState<RouteViewPage> {
                               ),
                               120, // padding
                             ),
-                          ),
-                        );
+                          );
+                        });
                       },
                       initialCameraPosition: CameraPosition(
                         target: origin,
