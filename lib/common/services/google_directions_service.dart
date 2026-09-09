@@ -1,16 +1,9 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:http/http.dart' as http;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-import 'package:beygo/common/common.dart';
-
 class GoogleDirectionsService {
-  GoogleDirectionsService({String? apiKey})
-    : _keyOverride = apiKey;
-
-  final String? _keyOverride;
-
   // ── Public API ─────────────────────────────────────────────────────────────
 
   Future<List<LatLng>> getRoutePoints(LatLng origin, LatLng dest) async {
@@ -31,62 +24,37 @@ class GoogleDirectionsService {
   // ── Internal ───────────────────────────────────────────────────────────────
 
   Future<_RouteData> _fetch(LatLng o, LatLng d) async {
-    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-      print('[DIRECTIONS] Android client -> using OSRM');
+    try {
+      return await _fetchGoogle(o, d);
+    } catch (e) {
+      print('[DIRECTIONS] Google failed → OSRM fallback: $e');
       return _fetchOsrm(o, d);
     }
-
-    final key = (_keyOverride?.trim().isNotEmpty ?? false)
-        ? _keyOverride!.trim()
-        : await Env.resolveGoogleMapsKey();
-
-    if (key.isNotEmpty) {
-      try {
-        return await _fetchGoogle(o, d, key);
-      } catch (e) {
-        print('[DIRECTIONS] Google failed → OSRM fallback: $e');
-        return _fetchOsrm(o, d);
-      }
-    }
-    print('[DIRECTIONS] No API key → using OSRM');
-    return _fetchOsrm(o, d);
   }
 
-  /// Google Directions API — returns encoded polyline
-  Future<_RouteData> _fetchGoogle(LatLng o, LatLng d, String key) async {
-    final uri = Uri.https('maps.googleapis.com', '/maps/api/directions/json', {
-      'origin': '${o.latitude},${o.longitude}',
-      'destination': '${d.latitude},${d.longitude}',
-      'mode': 'driving',
-      'language': 'es',
-      'key': key,
-    });
+  /// Google Routes API, called through the `getRoute` Cloud Function instead
+  /// of directly: the Maps API key baked into the app is restricted to
+  /// "Android apps" so the native Maps/Places SDKs can use it, but that same
+  /// restriction makes Google reject a raw HTTP call straight from the app
+  /// ("client application blocked") — there's no native routing SDK to
+  /// attach that app identity for us the way Places has. The Cloud Function
+  /// holds a second, unrestricted key server-side only. Uses TRAFFIC_AWARE
+  /// so the ETA matches what the Google Maps app itself shows.
+  Future<_RouteData> _fetchGoogle(LatLng o, LatLng d) async {
+    final result = await FirebaseFunctions.instance
+        .httpsCallable('getRoute')
+        .call<Map<String, dynamic>>({
+          'originLat': o.latitude,
+          'originLng': o.longitude,
+          'destLat': d.latitude,
+          'destLng': d.longitude,
+        });
 
-    final resp = await http.get(uri).timeout(const Duration(seconds: 8));
-    if (resp.statusCode != 200) {
-      throw StateError('Google Directions ${resp.statusCode}: ${resp.body}');
-    }
-
-    final json = jsonDecode(resp.body) as Map<String, dynamic>;
-    final status = json['status'] as String;
-    if (status != 'OK') {
-      throw StateError('Google Directions status: $status');
-    }
-
-    final routes = (json['routes'] as List?) ?? [];
-    if (routes.isEmpty) throw StateError('No routes returned');
-
-    final route = routes.first as Map<String, dynamic>;
-    final leg = (route['legs'] as List).first as Map<String, dynamic>;
-
-    final distanceMeters =
-        ((leg['distance'] as Map)['value'] as num).toDouble();
-    final durationSeconds =
-        ((leg['duration'] as Map)['value'] as num).toDouble();
-
-    // Decode the overview polyline
-    final encoded = (route['overview_polyline'] as Map)['points'] as String;
-    final points = _decodePolyline(encoded);
+    final data = result.data;
+    final distanceMeters = (data['distanceMeters'] as num).toDouble();
+    final durationSeconds = (data['durationSeconds'] as num).toDouble();
+    final encoded = data['encodedPolyline'] as String? ?? '';
+    final points = encoded.isEmpty ? <LatLng>[] : _decodePolyline(encoded);
 
     return _RouteData(
       points: points,

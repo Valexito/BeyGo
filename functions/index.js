@@ -28,6 +28,7 @@ const OTP_TTL_MINUTES = 10;
 const OTP_COLLECTION = "owner_security_otp";
 const ownerSecurityEmail = defineSecret("OWNER_SECURITY_EMAIL");
 const ownerSecurityEmailPassword = defineSecret("OWNER_SECURITY_EMAIL_PASSWORD");
+const googleRoutesApiKey = defineSecret("GOOGLE_ROUTES_API_KEY");
 
 function getMailTransport() {
     const user = ownerSecurityEmail.value();
@@ -722,6 +723,76 @@ async function assertReservationOwnerAction(uid, reservationId) {
 
     return { reservationRef };
 }
+
+// Server-side proxy for Google Routes API. The Maps API key baked into the
+// Android app is restricted to "Android apps" (package + SHA-1) so the
+// native Maps/Places SDKs can use it, but that means a raw HTTP call to
+// Directions/Routes from the app is always rejected ("client application
+// blocked") — there's no native routing SDK to attach that identity for us
+// the way Places has. Calling Google from here instead keeps a second,
+// unrestricted key server-side only (never shipped in the APK).
+exports.getRoute = onCall({
+    secrets: [googleRoutesApiKey],
+}, async (request) => {
+    if (!request.auth?.uid) {
+        throw new HttpsError("unauthenticated", "Debes iniciar sesión.");
+    }
+
+    const { originLat, originLng, destLat, destLng } = request.data || {};
+    const coords = [originLat, originLng, destLat, destLng];
+    if (coords.some((v) => typeof v !== "number" || Number.isNaN(v))) {
+        throw new HttpsError(
+            "invalid-argument",
+            "originLat, originLng, destLat y destLng son requeridos como números."
+        );
+    }
+
+    try {
+        const resp = await fetch(
+            "https://routes.googleapis.com/directions/v2:computeRoutes",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Goog-Api-Key": googleRoutesApiKey.value(),
+                    "X-Goog-FieldMask":
+                        "routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline",
+                },
+                body: JSON.stringify({
+                    origin: { location: { latLng: { latitude: originLat, longitude: originLng } } },
+                    destination: { location: { latLng: { latitude: destLat, longitude: destLng } } },
+                    travelMode: "DRIVE",
+                    routingPreference: "TRAFFIC_AWARE",
+                    languageCode: "es",
+                }),
+            }
+        );
+
+        const data = await resp.json();
+
+        if (!resp.ok) {
+            console.error("[getRoute] Routes API error", resp.status, data);
+            throw new HttpsError("unavailable", "No se pudo calcular la ruta con Google.");
+        }
+
+        const route = (data.routes || [])[0];
+        if (!route) {
+            throw new HttpsError("not-found", "Google no devolvió ninguna ruta.");
+        }
+
+        const durationSeconds = Number.parseInt(`${route.duration}`.replace("s", ""), 10);
+
+        return {
+            distanceMeters: route.distanceMeters,
+            durationSeconds,
+            encodedPolyline: route.polyline?.encodedPolyline || "",
+        };
+    } catch (error) {
+        if (error instanceof HttpsError) throw error;
+        console.error("[getRoute] Unexpected error", error);
+        throw new HttpsError("internal", "No se pudo calcular la ruta en este momento.");
+    }
+});
 
 exports.requestOwnerRevenuePinOtp = onCall({
     secrets: [ownerSecurityEmail, ownerSecurityEmailPassword],

@@ -47,7 +47,9 @@ class _RouteViewPageState extends ConsumerState<RouteViewPage> {
         polylineId: const PolylineId('route'),
         points: points,
         width: 5,
-        color: AppColors.headerBottom,
+        // The brand blue blends into the dark map style's own dark road
+        // colors — use a light/white line in dark mode so it stays visible.
+        color: context.isDarkMode ? Colors.white : AppColors.headerBottom,
         startCap: Cap.roundCap,
         endCap: Cap.roundCap,
         jointType: JointType.round,
