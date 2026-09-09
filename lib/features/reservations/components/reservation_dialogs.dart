@@ -187,7 +187,9 @@ class ReservationDialogs {
                                     width: 1.4,
                                   ),
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(18),
+                                    borderRadius: BorderRadius.circular(
+                                      AppDims.radiusLg,
+                                    ),
                                   ),
                                   backgroundColor: context.appCardBackground,
                                 ),
@@ -547,6 +549,12 @@ class _Row extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
+      // Some values here (e.g. a long parking name) wrap to a second line;
+      // the default center alignment then centers the icon/label against
+      // the *whole* wrapped height, so the first line no longer lines up
+      // with them. Top-aligning keeps everything flush with line one,
+      // matching the row style used in ReservationDetailsSheet.
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
           width: 30,

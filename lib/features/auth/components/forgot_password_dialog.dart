@@ -314,7 +314,9 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
                                   ),
                                 ),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
+                                  borderRadius: BorderRadius.circular(
+                                    AppDims.radiusLg,
+                                  ),
                                 ),
                                 backgroundColor: context.appCardBackgroundSoft,
                               ),

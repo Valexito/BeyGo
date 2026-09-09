@@ -413,6 +413,7 @@ class _SettingsBody extends ConsumerWidget {
                   icon: Icons.info_outline_rounded,
                   iconColor: const Color(0xFF0EA5E9),
                   label: 'Versión de la app',
+                  subtitle: 'Toca para ver las notas de la versión',
                   trailing: const Text(
                     'v1.0.0+13 (GT)',
                     style: TextStyle(
@@ -421,7 +422,7 @@ class _SettingsBody extends ConsumerWidget {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  onTap: () {},
+                  onTap: () => _showVersionNotes(context),
                 ),
               ],
             ),
@@ -689,6 +690,37 @@ class _SettingsBody extends ConsumerWidget {
       MaterialPageRoute(
         builder: (_) => LegalInformationPage(initialSection: section),
       ),
+    );
+  }
+
+  // Shorebird ships Dart-only fixes as patches on top of this same version
+  // number, so the build number alone doesn't tell users (or support) which
+  // fixes they actually have — this is a manually-maintained changelog for
+  // the latest patch, not derived from git/pubspec automatically.
+  Future<void> _showVersionNotes(BuildContext context) {
+    return AppDialog.show(
+      context,
+      icon: Icons.new_releases_outlined,
+      title: 'Notas de la versión',
+      subtitle: 'v1.0.0+13 · Patch 5',
+      message:
+          '• Iconos de categoría legibles en modo oscuro y el panel de '
+          'inicio ahora sube solo al buscar.\n'
+          '• Selección de espacio corregida: ya no se abre la galería de '
+          'fotos al tocar espacios cerca del borde.\n'
+          '• Calendarios (rango de reservaciones y fecha de nacimiento) '
+          'en español.\n'
+          '• Al agregar un vehículo nuevo, ahora aparece primero.\n'
+          '• Botones más consistentes en toda la app.\n'
+          '• Filtro "Esta semana" ahora sí muestra lo completado hoy.\n'
+          '• Se quitó el símbolo "\$"; todo usa "Q" de quetzales.\n'
+          '• Punto de mensaje sin leer en el chat de reservaciones.\n'
+          '• El nombre en tu perfil ya no aparece todo en mayúsculas.\n'
+          '• Aviso único al aprobarse tu reserva con la política de '
+          'cancelación gratuita.\n'
+          '• Varias correcciones de estabilidad reportadas en Crashlytics.',
+      confirmText: 'Entendido',
+      showCancel: false,
     );
   }
 }

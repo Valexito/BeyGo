@@ -353,7 +353,6 @@ class _HomeParkingDetailBottomSheetState
                         ),
                         const SizedBox(height: 12),
                         _InfoTile(
-                          icon: Icons.attach_money_rounded,
                           iconColor: const Color(0xFF2563EB),
                           label: 'Precio',
                           valueWidget: MyText(
@@ -537,13 +536,13 @@ class _HomeParkingDetailBottomSheetState
 }
 
 class _InfoTile extends StatelessWidget {
-  final IconData icon;
+  final IconData? icon;
   final Color iconColor;
   final String label;
   final Widget valueWidget;
 
   const _InfoTile({
-    required this.icon,
+    this.icon,
     required this.iconColor,
     required this.label,
     required this.valueWidget,
@@ -554,16 +553,18 @@ class _InfoTile extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Container(
-          width: 38,
-          height: 38,
-          decoration: BoxDecoration(
-            color: iconColor.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(12),
+        if (icon != null) ...[
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: iconColor.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, size: 18, color: iconColor),
           ),
-          child: Icon(icon, size: 18, color: iconColor),
-        ),
-        const SizedBox(width: 12),
+          const SizedBox(width: 12),
+        ],
         Expanded(
           child: MyText(
             text: label,

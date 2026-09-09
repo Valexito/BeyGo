@@ -433,7 +433,8 @@ service cloud.firestore {
             'ratingPromptHandled',
             'ratingSubmitted',
             'ratingSubmittedAt',
-            'ratingSkippedAt'
+            'ratingSkippedAt',
+            'approvalNoticeHandled'
           ])
         )
 
@@ -548,6 +549,20 @@ service cloud.firestore {
 
         allow delete: if signedIn() && blockerUid == request.auth.uid || isAdmin();
         allow update: if false;
+      }
+
+      // Per-participant "last read" marker, used to show an unread-message
+      // dot on the chat icon. Doc id is the reading participant's own uid.
+      match /chat_reads/{uid} {
+        allow read: if reservationParticipant(resId) || isAdmin();
+
+        allow create, update: if signedIn()
+          && uid == request.auth.uid
+          && reservationParticipant(resId)
+          && request.resource.data.keys().hasOnly(['lastReadAt'])
+          && request.resource.data.lastReadAt is timestamp;
+
+        allow delete: if false;
       }
     }
 

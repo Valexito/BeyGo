@@ -186,6 +186,7 @@ class _HomeBottomPanelState extends State<HomeBottomPanel> {
     setState(() => _activeCategory = cat);
     _searchController.text = cat.label;
     _fetchSuggestions(cat.label);
+    _animateTo(_focusSize);
   }
 
   Future<void> _selectSuggestion(_PlaceSuggestion suggestion) async {
@@ -270,6 +271,13 @@ class _HomeBottomPanelState extends State<HomeBottomPanel> {
     return context.isDarkMode
         ? Colors.white.withValues(alpha: 0.72)
         : AppColors.headerBottom.withValues(alpha: 0.7);
+  }
+
+  // The active chip background is white in dark mode (see _panelAccent),
+  // so a white icon/label on top of it would be invisible — use a dark
+  // brand color there instead of the usual white-on-accent foreground.
+  Color _panelActiveForeground(BuildContext context) {
+    return context.isDarkMode ? AppColors.headerBottom : Colors.white;
   }
 
   @override
@@ -578,7 +586,9 @@ class _HomeBottomPanelState extends State<HomeBottomPanel> {
                                               size: 13,
                                               color:
                                                   active
-                                                      ? Colors.white
+                                                      ? _panelActiveForeground(
+                                                        context,
+                                                      )
                                                       : context
                                                           .appTextSecondaryColor,
                                             ),
@@ -590,7 +600,9 @@ class _HomeBottomPanelState extends State<HomeBottomPanel> {
                                                 fontWeight: FontWeight.w700,
                                                 color:
                                                     active
-                                                        ? Colors.white
+                                                        ? _panelActiveForeground(
+                                                          context,
+                                                        )
                                                         : context
                                                             .appTextPrimaryColor,
                                               ),

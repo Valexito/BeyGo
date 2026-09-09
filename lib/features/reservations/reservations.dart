@@ -4,6 +4,7 @@
 // los consumidores hagan: import 'package:beygo/features/reservations/reservations.dart';
 library;
 
+export 'components/approval_notice_dialog.dart';
 export 'components/elapsed_badge.dart';
 export 'components/rating_dialog.dart';
 export 'components/reservation_card.dart';

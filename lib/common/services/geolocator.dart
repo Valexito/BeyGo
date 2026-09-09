@@ -175,7 +175,9 @@ class _LocationServiceDisabledDialog extends StatelessWidget {
                                 ),
                               ),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
+                                borderRadius: BorderRadius.circular(
+                                  AppDims.radiusLg,
+                                ),
                               ),
                               backgroundColor: context.appCardBackgroundSoft,
                             ),
@@ -390,7 +392,9 @@ class _LocationDisclosureDialog extends StatelessWidget {
                                 ),
                               ),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
+                                borderRadius: BorderRadius.circular(
+                                  AppDims.radiusLg,
+                                ),
                               ),
                               backgroundColor: context.appCardBackgroundSoft,
                             ),

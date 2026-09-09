@@ -637,7 +637,6 @@ class _BecomeOwnerPageState extends ConsumerState<BecomeOwnerPage>
                                       _FormField(
                                         controller: _pricePerHour,
                                         hint: '',
-                                        icon: Icons.attach_money_outlined,
                                         keyboardType: TextInputType.number,
                                         inputFormatters: [
                                           FilteringTextInputFormatter
@@ -1286,7 +1285,7 @@ class _FieldLabel extends StatelessWidget {
 class _FormField extends StatelessWidget {
   final TextEditingController controller;
   final String hint;
-  final IconData icon;
+  final IconData? icon;
   final TextInputType? keyboardType;
   final String? Function(String?)? validator;
   final List<TextInputFormatter>? inputFormatters;
@@ -1294,7 +1293,7 @@ class _FormField extends StatelessWidget {
   const _FormField({
     required this.controller,
     required this.hint,
-    required this.icon,
+    this.icon,
     this.keyboardType,
     this.validator,
     this.inputFormatters,
@@ -1318,7 +1317,10 @@ class _FormField extends StatelessWidget {
           fontSize: 13,
           color: context.appTextSecondaryColor,
         ),
-        prefixIcon: Icon(icon, size: 18, color: context.appBrandIconColor),
+        prefixIcon:
+            icon != null
+                ? Icon(icon, size: 18, color: context.appBrandIconColor)
+                : null,
         filled: true,
         fillColor: context.appInputBackgroundActive,
         contentPadding: const EdgeInsets.symmetric(

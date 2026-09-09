@@ -271,16 +271,28 @@ class _ReservationCardShell extends StatelessWidget {
                                     borderRadius: BorderRadius.circular(16),
                                   ),
                                 ),
-                                child: const Row(
+                                child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Icon(
-                                      Icons.chat_bubble_outline_rounded,
-                                      size: 14,
-                                      color: Colors.white,
+                                    Stack(
+                                      clipBehavior: Clip.none,
+                                      children: [
+                                        const Icon(
+                                          Icons.chat_bubble_outline_rounded,
+                                          size: 14,
+                                          color: Colors.white,
+                                        ),
+                                        Positioned(
+                                          right: -3,
+                                          top: -3,
+                                          child: ReservationChatUnreadDot(
+                                            reservation: reservation,
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                    SizedBox(width: 5),
-                                    Text(
+                                    const SizedBox(width: 5),
+                                    const Text(
                                       'Chat',
                                       style: TextStyle(
                                         color: Colors.white,

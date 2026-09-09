@@ -596,7 +596,9 @@ class _OwnerWalkInPageState extends ConsumerState<OwnerWalkInPage>
                                     color: brand.withValues(alpha: 0.35),
                                   ),
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(14),
+                                    borderRadius: BorderRadius.circular(
+                                      AppDims.radiusLg,
+                                    ),
                                   ),
                                   backgroundColor: ctx.appCardBackgroundSoft,
                                 ),
@@ -1526,7 +1528,6 @@ class _StatsBanner extends StatelessWidget {
                 label: 'Por hora',
                 value: 'Q${pricePerHour!.toStringAsFixed(0)}',
                 color: const Color(0xFF7C3AED),
-                icon: Icons.attach_money_rounded,
               ),
             ),
           ],
@@ -1540,21 +1541,23 @@ class _BannerStat extends StatelessWidget {
   final String label;
   final String value;
   final Color color;
-  final IconData icon;
+  final IconData? icon;
 
   const _BannerStat({
     required this.label,
     required this.value,
     required this.color,
-    required this.icon,
+    this.icon,
   });
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Icon(icon, size: 18, color: color),
-        const SizedBox(height: 6),
+        if (icon != null) ...[
+          Icon(icon, size: 18, color: color),
+          const SizedBox(height: 6),
+        ],
         Text(
           value,
           style: TextStyle(

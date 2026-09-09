@@ -62,12 +62,16 @@ class _ReserveSpaceContentState extends ConsumerState<ReserveSpaceContent> {
     final screenHeight = MediaQuery.of(context).size.height;
     final safeTop = MediaQuery.of(context).padding.top;
     const headerActionHeight = 54.0;
-    final heroVisibleHeight = screenHeight * 0.25;
+    // The sheet below sits at initialChildSize 0.84 of the screen, so its
+    // visible top edge is at 16% of screenHeight. The gallery tap zone must
+    // stop there — using a fixed 25% (independent of the sheet's actual
+    // position) used to bleed a few rows into the sheet's own content
+    // (e.g. the space grid), so taps near its top edge opened the gallery
+    // instead of selecting a space.
+    const sheetInitialSize = 0.84;
+    final sheetTopY = screenHeight * (1 - sheetInitialSize);
     final galleryTapTop = safeTop + headerActionHeight;
-    final galleryTapHeight = (heroVisibleHeight - galleryTapTop).clamp(
-      0.0,
-      260.0,
-    );
+    final galleryTapHeight = (sheetTopY - galleryTapTop).clamp(0.0, 260.0);
 
     final cross =
         w >= 520
@@ -364,7 +368,9 @@ class _ReserveSpaceContentState extends ConsumerState<ReserveSpaceContent> {
                                           alpha: 0.12,
                                         )
                                         : context.appInputBackground,
-                                borderRadius: BorderRadius.circular(14),
+                                borderRadius: BorderRadius.circular(
+                                  AppDims.radiusLg,
+                                ),
                                 border: Border.all(
                                   color: AppColors.headerBottom.withValues(
                                     alpha: 0.15,
@@ -758,6 +764,15 @@ class _ReservationHeaderState extends State<_ReservationHeader> {
                     fit: BoxFit.cover,
                     width: double.infinity,
                     height: double.infinity,
+                    errorBuilder:
+                        (_, __, ___) => Container(
+                          color: context.appInputBackground,
+                          alignment: Alignment.center,
+                          child: Icon(
+                            Icons.broken_image_outlined,
+                            color: context.appTextSecondaryColor,
+                          ),
+                        ),
                   ),
                 );
               },
@@ -902,6 +917,12 @@ class _FullscreenGalleryDialogState extends State<_FullscreenGalleryDialog> {
                   child: Image.network(
                     widget.gallery[index],
                     fit: BoxFit.contain,
+                    errorBuilder:
+                        (_, __, ___) => const Icon(
+                          Icons.broken_image_outlined,
+                          color: Colors.white54,
+                          size: 48,
+                        ),
                   ),
                 ),
               );
@@ -965,10 +986,10 @@ class _FullscreenGalleryDialogState extends State<_FullscreenGalleryDialog> {
 }
 
 class _InfoChip extends StatelessWidget {
-  final IconData icon;
+  final IconData? icon;
   final String label;
 
-  const _InfoChip({required this.icon, required this.label});
+  const _InfoChip({this.icon, required this.label});
 
   @override
   Widget build(BuildContext context) {
@@ -993,13 +1014,15 @@ class _InfoChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            size: 18,
-            color:
-                context.isDarkMode ? Colors.white : AppColors.headerBottom,
-          ),
-          const SizedBox(width: 8),
+          if (icon != null) ...[
+            Icon(
+              icon,
+              size: 18,
+              color:
+                  context.isDarkMode ? Colors.white : AppColors.headerBottom,
+            ),
+            const SizedBox(width: 8),
+          ],
           MyText(text: label, variant: MyTextVariant.body, fontSize: 12),
         ],
       ),

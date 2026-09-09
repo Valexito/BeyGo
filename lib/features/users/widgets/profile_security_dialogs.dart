@@ -525,7 +525,7 @@ class ProfileSecurityDialogs {
                   backgroundColor: context.appCardBackgroundSoft,
                   side: BorderSide(color: context.appBorderColor),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(AppDims.radiusLg),
                   ),
                 ),
                 child: const Text(

@@ -62,6 +62,10 @@ class Reservation {
   final DateTime? ratingSubmittedAt;
   final DateTime? ratingSkippedAt;
 
+  /// Whether the one-time "solicitud aprobada / política de cancelación"
+  /// notice has already been shown for this reservation's approval.
+  final bool approvalNoticeHandled;
+
   /// Restricción futura para nuevas reservas.
   final DateTime? restrictedUntil;
 
@@ -102,6 +106,7 @@ class Reservation {
     this.ratingSubmitted = false,
     this.ratingSubmittedAt,
     this.ratingSkippedAt,
+    this.approvalNoticeHandled = false,
     this.restrictedUntil,
   });
 
@@ -130,6 +135,15 @@ class Reservation {
       state == 'completed' &&
       exitStatus == 'approved' &&
       !ratingPromptHandled;
+
+  /// Show the one-time cancellation-policy notice while the provider's
+  /// approval is still current (gated on `state == 'active'` so this never
+  /// retroactively fires for reservations that were already completed
+  /// before this field existed).
+  bool get needsApprovalNotice =>
+      state == 'active' &&
+      providerApprovalStatus == 'approved' &&
+      !approvalNoticeHandled;
   bool get isPending => state == 'pending';
   bool get isRejected => state == 'rejected';
   bool get isActive => state == 'active';
@@ -188,6 +202,8 @@ class Reservation {
       ratingSubmitted: data['ratingSubmitted'] as bool? ?? false,
       ratingSubmittedAt: parseTimestamp(data['ratingSubmittedAt']),
       ratingSkippedAt: parseTimestamp(data['ratingSkippedAt']),
+      approvalNoticeHandled:
+          data['approvalNoticeHandled'] as bool? ?? false,
       restrictedUntil: parseTimestamp(data['restrictedUntil']),
     );
   }
@@ -243,6 +259,7 @@ class Reservation {
               : null,
       'ratingSkippedAt':
           ratingSkippedAt != null ? Timestamp.fromDate(ratingSkippedAt!) : null,
+      'approvalNoticeHandled': approvalNoticeHandled,
       'restrictedUntil':
           restrictedUntil != null ? Timestamp.fromDate(restrictedUntil!) : null,
     };
@@ -285,6 +302,7 @@ class Reservation {
     bool? ratingSubmitted,
     DateTime? ratingSubmittedAt,
     DateTime? ratingSkippedAt,
+    bool? approvalNoticeHandled,
     DateTime? restrictedUntil,
   }) {
     return Reservation(
@@ -329,6 +347,8 @@ class Reservation {
       ratingSubmitted: ratingSubmitted ?? this.ratingSubmitted,
       ratingSubmittedAt: ratingSubmittedAt ?? this.ratingSubmittedAt,
       ratingSkippedAt: ratingSkippedAt ?? this.ratingSkippedAt,
+      approvalNoticeHandled:
+          approvalNoticeHandled ?? this.approvalNoticeHandled,
       restrictedUntil: restrictedUntil ?? this.restrictedUntil,
     );
   }

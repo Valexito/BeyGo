@@ -255,10 +255,7 @@ class _OwnerDashboardView extends ConsumerWidget {
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
-                        child: _SectionTitle(
-                          icon: Icons.attach_money_rounded,
-                          title: 'Ingresos',
-                        ),
+                        child: _SectionTitle(title: 'Ingresos'),
                       ),
                     ),
                     SliverToBoxAdapter(
@@ -1271,18 +1268,20 @@ class _StatCard extends StatelessWidget {
 
 // ─── Section title ─────────────────────────────────────────────────────────────
 class _SectionTitle extends StatelessWidget {
-  final IconData icon;
+  final IconData? icon;
   final String title;
   final Widget? trailing;
 
-  const _SectionTitle({required this.icon, required this.title, this.trailing});
+  const _SectionTitle({this.icon, required this.title, this.trailing});
 
   @override
   Widget build(BuildContext context) {
     return Row(
         children: [
-        Icon(icon, size: 16, color: context.appBrandIconColor),
-        const SizedBox(width: 7),
+        if (icon != null) ...[
+          Icon(icon, size: 16, color: context.appBrandIconColor),
+          const SizedBox(width: 7),
+        ],
         Text(
           title,
           style: TextStyle(

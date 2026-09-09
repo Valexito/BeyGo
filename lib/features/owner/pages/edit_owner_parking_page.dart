@@ -790,7 +790,12 @@ class _NetworkImageChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return _PhotoFrame(
       onRemove: onRemove,
-      child: Image.network(url, fit: BoxFit.cover),
+      child: Image.network(
+        url,
+        fit: BoxFit.cover,
+        errorBuilder:
+            (_, __, ___) => const Icon(Icons.broken_image_outlined, size: 28),
+      ),
     );
   }
 }

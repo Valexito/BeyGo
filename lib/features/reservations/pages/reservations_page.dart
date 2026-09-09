@@ -39,6 +39,7 @@ class _ReservationsPageState extends ConsumerState<ReservationsPage>
     with SingleTickerProviderStateMixin {
   late final TabController _tab = TabController(length: 3, vsync: this);
   final Set<String> _ratingPromptInFlight = <String>{};
+  final Set<String> _approvalNoticeInFlight = <String>{};
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   String _searchQuery = '';
@@ -218,23 +219,31 @@ class _ReservationsPageState extends ConsumerState<ReservationsPage>
     final startOfWeek = _startOfWeek(now);
     final startOfMonth = DateTime(now.year, now.month, 1);
 
+    // Completed/cancelled reservations should be filtered by *when they
+    // finished* (endedAt), not by when they were originally reserved — a
+    // reservation started last week but completed today must still show up
+    // under "Esta semana".
+    DateTime filterDate(Reservation r) => r.endedAt ?? r.reservedAt;
+
     if (_periodFilter == _ReservationsPeriodFilter.week) {
       filtered =
-          filtered.where((r) => !r.reservedAt.isBefore(startOfWeek)).toList();
+          filtered.where((r) => !filterDate(r).isBefore(startOfWeek)).toList();
     } else if (_periodFilter == _ReservationsPeriodFilter.month) {
       filtered =
-          filtered.where((r) => !r.reservedAt.isBefore(startOfMonth)).toList();
+          filtered
+              .where((r) => !filterDate(r).isBefore(startOfMonth))
+              .toList();
     } else if (_periodFilter == _ReservationsPeriodFilter.custom &&
         _dateRange != null) {
       filtered =
           filtered.where((r) {
-            final d = r.reservedAt;
+            final d = filterDate(r);
             return !d.isBefore(_dateRange!.start) &&
                 !d.isAfter(_dateRange!.end.add(const Duration(days: 1)));
           }).toList();
     }
 
-    filtered.sort((a, b) => b.reservedAt.compareTo(a.reservedAt));
+    filtered.sort((a, b) => filterDate(b).compareTo(filterDate(a)));
     return filtered;
   }
 
@@ -289,15 +298,33 @@ class _ReservationsPageState extends ConsumerState<ReservationsPage>
         orElse: () => null,
       );
 
-      if (pendingPrompt == null) return;
-      if (_ratingPromptInFlight.contains(pendingPrompt.id)) return;
+      if (pendingPrompt != null &&
+          !_ratingPromptInFlight.contains(pendingPrompt.id)) {
+        _ratingPromptInFlight.add(pendingPrompt.id);
+        WidgetsBinding.instance.addPostFrameCallback((_) async {
+          if (!mounted) return;
+          await showRatingDialog(context, reservation: pendingPrompt);
+          _ratingPromptInFlight.remove(pendingPrompt.id);
+        });
+      }
 
-      _ratingPromptInFlight.add(pendingPrompt.id);
-      WidgetsBinding.instance.addPostFrameCallback((_) async {
-        if (!mounted) return;
-        await showRatingDialog(context, reservation: pendingPrompt);
-        _ratingPromptInFlight.remove(pendingPrompt.id);
-      });
+      final pendingApproval = all.cast<Reservation?>().firstWhere(
+        (reservation) => reservation?.needsApprovalNotice == true,
+        orElse: () => null,
+      );
+
+      if (pendingApproval != null &&
+          !_approvalNoticeInFlight.contains(pendingApproval.id)) {
+        _approvalNoticeInFlight.add(pendingApproval.id);
+        WidgetsBinding.instance.addPostFrameCallback((_) async {
+          if (!mounted) return;
+          await showApprovalNoticeDialog(
+            context,
+            reservation: pendingApproval,
+          );
+          _approvalNoticeInFlight.remove(pendingApproval.id);
+        });
+      }
     });
 
     return Scaffold(

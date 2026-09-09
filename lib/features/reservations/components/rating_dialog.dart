@@ -372,7 +372,9 @@ class _RatingDialogState extends State<_RatingDialog> {
                                       width: 1.2,
                                     ),
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(18),
+                                      borderRadius: BorderRadius.circular(
+                                        AppDims.radiusLg,
+                                      ),
                                     ),
                                     backgroundColor: context.appCardBackground,
                                   ),

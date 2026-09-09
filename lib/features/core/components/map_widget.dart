@@ -199,6 +199,13 @@ class MapWidgetState extends ConsumerState<MapWidget> {
                       isFavorite: uiFav,
                       onToggleFavorite: () async {
                         final next = !uiFav;
+                        // This fires from HomeParkingDetailBottomSheet only
+                        // after its own Firestore write already awaited, so
+                        // the user may have dismissed this bottom sheet in
+                        // the meantime — guard every setSheetState with
+                        // context.mounted or it crashes on the disposed
+                        // StatefulBuilder element.
+                        if (!context.mounted) return;
                         setSheetState(() => localFav = next);
                         try {
                           final currentUser = FirebaseAuth.instance.currentUser;
@@ -215,8 +222,8 @@ class MapWidgetState extends ConsumerState<MapWidget> {
                             );
                           }
                         } catch (_) {
-                          setSheetState(() => localFav = !next);
                           if (context.mounted) {
+                            setSheetState(() => localFav = !next);
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                 content: Text(

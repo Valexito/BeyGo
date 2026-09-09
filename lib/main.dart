@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -26,9 +29,32 @@ Future<void> main() async {
   await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(
     !kDebugMode,
   );
-  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+  // Transient connectivity failures (a flaky image download, a dropped TLS
+  // handshake) surface as FlutterError/PlatformDispatcher errors just like
+  // real crashes, but they don't actually take the app down — the widget
+  // that hit them (e.g. an Image) just shows nothing/a broken frame and the
+  // app keeps running. Recording those as `fatal` skews the Crashlytics
+  // crash-free-users metric and buries genuine fatal crashes under network
+  // noise, so only mark an error fatal when it isn't one of these.
+  bool isNetworkGlitch(Object error) =>
+      error is SocketException ||
+      error is HttpException ||
+      error is HandshakeException ||
+      error is TlsException;
+
+  FlutterError.onError = (details) {
+    if (isNetworkGlitch(details.exception)) {
+      FirebaseCrashlytics.instance.recordFlutterError(details);
+    } else {
+      FirebaseCrashlytics.instance.recordFlutterFatalError(details);
+    }
+  };
   PlatformDispatcher.instance.onError = (error, stack) {
-    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    FirebaseCrashlytics.instance.recordError(
+      error,
+      stack,
+      fatal: !isNetworkGlitch(error),
+    );
     return true;
   };
 
@@ -73,6 +99,13 @@ class MyApp extends ConsumerWidget {
       theme: AppTheme.buildLight(),
       darkTheme: AppTheme.buildDark(),
       themeMode: preferences.themeMode,
+      locale: const Locale('es'),
+      supportedLocales: const [Locale('es'), Locale('en')],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       builder:
           (context, child) => Stack(
             children: [

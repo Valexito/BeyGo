@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:rxdart/rxdart.dart';
 import 'package:beygo/features/core/core.dart';
 import 'package:beygo/features/reservations/models/reservation.dart';
 import 'package:beygo/features/reservations/models/reservation_chat_message.dart';
@@ -248,3 +249,71 @@ final reportReservationChatMessageProvider = Provider<
     return reportNumber;
   };
 });
+
+/// Persists "I've seen the chat up to now" for the current user on a
+/// reservation, so `reservationChatUnreadProvider` can tell whether the
+/// peer's latest message is newer than the last time this user opened it.
+final markReservationChatReadProvider = Provider<
+  Future<void> Function({required String reservationId})
+>((ref) {
+  final db = ref.watch(firestoreProvider);
+  final auth = ref.watch(firebaseAuthProvider);
+
+  return ({required String reservationId}) async {
+    final uid = auth.currentUser?.uid;
+    if (uid == null) return;
+
+    await db
+        .collection('reservations')
+        .doc(reservationId)
+        .collection('chat_reads')
+        .doc(uid)
+        .set({
+          'lastReadAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+  };
+});
+
+/// Whether the reservation's chat has a message from the *other*
+/// participant newer than the current user's last-read marker — drives the
+/// unread dot on the chat icon.
+final reservationChatUnreadProvider =
+    StreamProvider.autoDispose.family<bool, Reservation>((ref, reservation) {
+      final db = ref.watch(firestoreProvider);
+      final auth = ref.watch(firebaseAuthProvider);
+      final uid = auth.currentUser?.uid;
+      if (uid == null) return Stream.value(false);
+
+      final lastMessage$ = db
+          .collection('reservations')
+          .doc(reservation.id)
+          .collection('messages')
+          .orderBy('createdAt', descending: true)
+          .limit(1)
+          .snapshots();
+
+      final lastRead$ = db
+          .collection('reservations')
+          .doc(reservation.id)
+          .collection('chat_reads')
+          .doc(uid)
+          .snapshots();
+
+      return Rx.combineLatest2(lastMessage$, lastRead$, (
+        QuerySnapshot<Map<String, dynamic>> messages,
+        DocumentSnapshot<Map<String, dynamic>> readDoc,
+      ) {
+        if (messages.docs.isEmpty) return false;
+        final last = messages.docs.first.data();
+        if (last['senderId'] == uid) return false;
+
+        final sentAt = (last['createdAt'] as Timestamp?)?.toDate();
+        if (sentAt == null) return false;
+
+        final lastReadAt = (readDoc.data()?['lastReadAt'] as Timestamp?)
+            ?.toDate();
+        if (lastReadAt == null) return true;
+
+        return sentAt.isAfter(lastReadAt);
+      });
+    });

@@ -589,7 +589,6 @@ class _FavoriteCard extends ConsumerWidget {
                                 return Column(
                                   children: [
                                     _InfoPill(
-                                      icon: Icons.attach_money_rounded,
                                       text: 'Q$pricePerHour por hora',
                                       iconColor: accentBlue,
                                     ),
@@ -631,12 +630,12 @@ class _FavoriteCard extends ConsumerWidget {
 }
 
 class _InfoPill extends StatelessWidget {
-  final IconData icon;
+  final IconData? icon;
   final String text;
   final Color iconColor;
 
   const _InfoPill({
-    required this.icon,
+    this.icon,
     required this.text,
     this.iconColor = const Color(0xFF2563EB),
   });
@@ -645,8 +644,10 @@ class _InfoPill extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: iconColor),
-        const SizedBox(width: 7),
+        if (icon != null) ...[
+          Icon(icon, size: 16, color: iconColor),
+          const SizedBox(width: 7),
+        ],
         Expanded(
           child: Text(
             text,

@@ -322,7 +322,7 @@ class _NoConnectionSheet extends StatelessWidget {
                         color: AppColors.headerBottom.withValues(alpha: 0.25),
                       ),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(AppDims.radiusLg),
                       ),
                     ),
                     child: Text(

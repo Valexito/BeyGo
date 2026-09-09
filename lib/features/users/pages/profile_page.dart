@@ -28,7 +28,9 @@ class ProfilePage extends ConsumerWidget {
             : (authName?.isNotEmpty ?? false)
             ? authName!
             : 'TU NOMBRE';
-    final name = resolvedName.toUpperCase();
+    // Show the name as the user wrote it / as Google provided it — forcing
+    // toUpperCase() here made every name shout in all caps.
+    final name = resolvedName;
     final isDark = context.isDarkMode;
     final headerGradient =
         isDark
@@ -183,6 +185,17 @@ class ProfilePage extends ConsumerWidget {
                                                   ? Image.network(
                                                     photoUrl,
                                                     fit: BoxFit.cover,
+                                                    errorBuilder:
+                                                        (_, __, ___) => Container(
+                                                          color: Colors.white,
+                                                          child: const Icon(
+                                                            Icons.person,
+                                                            size: 54,
+                                                            color:
+                                                                AppColors
+                                                                    .headerBottom,
+                                                          ),
+                                                        ),
                                                   )
                                                   : Container(
                                                     color: Colors.white,

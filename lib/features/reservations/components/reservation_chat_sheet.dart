@@ -18,6 +18,33 @@ Future<void> showReservationChatSheet(
   );
 }
 
+/// Small red dot to overlay on a chat icon when this reservation has an
+/// unread message from the other participant. Renders nothing otherwise.
+class ReservationChatUnreadDot extends ConsumerWidget {
+  final Reservation reservation;
+
+  const ReservationChatUnreadDot({super.key, required this.reservation});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final hasUnread = ref
+        .watch(reservationChatUnreadProvider(reservation))
+        .maybeWhen(data: (v) => v, orElse: () => false);
+
+    if (!hasUnread) return const SizedBox.shrink();
+
+    return Container(
+      width: 9,
+      height: 9,
+      decoration: BoxDecoration(
+        color: const Color(0xFFDC2626),
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white, width: 1.4),
+      ),
+    );
+  }
+}
+
 class ReservationChatSheet extends ConsumerStatefulWidget {
   final Reservation reservation;
 
@@ -49,6 +76,9 @@ class _ReservationChatSheetState extends ConsumerState<ReservationChatSheet> {
   void initState() {
     super.initState();
     _controller = TextEditingController();
+    ref.read(markReservationChatReadProvider)(
+      reservationId: widget.reservation.id,
+    );
   }
 
   @override

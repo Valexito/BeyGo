@@ -91,25 +91,36 @@ class _MyTextFieldState extends State<MyTextField> {
 
     final color =
         _active ? context.appBrandIconColor : context.appTextSecondaryColor;
+    // A multiline field (e.g. "Describe el problema") is several lines
+    // tall, but InputDecoration centers prefixIcon against that whole
+    // height by default — the icon ends up floating mid-block instead of
+    // sitting next to the first line. Pin it to the top for those fields.
+    final isMultiline = widget.maxLines != 1;
 
-    if (!widget.circularPrefix) {
-      return Padding(
-        padding: const EdgeInsetsDirectional.only(start: 8, end: 4),
-        child: Icon(widget.prefixIcon, color: color),
-      );
-    }
+    final icon =
+        !widget.circularPrefix
+            ? Icon(widget.prefixIcon, color: color)
+            : Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: context.appIconCircleColor,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(widget.prefixIcon, size: 16, color: color),
+            );
+
+    final padding = EdgeInsetsDirectional.only(
+      start: 8,
+      end: widget.circularPrefix ? 6 : 4,
+      top: isMultiline ? 16 : 0,
+    );
+
+    if (!isMultiline) return Padding(padding: padding, child: icon);
 
     return Padding(
-      padding: const EdgeInsetsDirectional.only(start: 8, end: 6),
-      child: Container(
-        width: 28,
-        height: 28,
-        decoration: BoxDecoration(
-          color: context.appIconCircleColor,
-          shape: BoxShape.circle,
-        ),
-        child: Icon(widget.prefixIcon, size: 16, color: color),
-      ),
+      padding: padding,
+      child: Align(alignment: Alignment.topCenter, child: icon),
     );
   }
 
@@ -148,6 +159,10 @@ class _MyTextFieldState extends State<MyTextField> {
               ? context.appInputBackgroundActive
               : context.appInputBackground,
       prefixIcon: _buildPrefix(),
+      prefixIconConstraints:
+          widget.maxLines != 1
+              ? const BoxConstraints(minWidth: 0, minHeight: 0)
+              : null,
       suffixIcon: widget.suffix,
       contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 18),
       border: baseBorder,

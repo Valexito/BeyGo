@@ -85,7 +85,7 @@ class _EditVehiclesPageState extends State<EditVehiclesPage> {
 
   void _addVehicle() {
     if (_vehicles.length >= 4) return;
-    setState(() => _vehicles.add(_VehicleEditEntry()));
+    setState(() => _vehicles.insert(0, _VehicleEditEntry()));
   }
 
   Future<void> _deleteVehicle(int index) async {
@@ -516,6 +516,15 @@ class _EditVehiclesPageState extends State<EditVehiclesPage> {
                                 // ── Vehicle cards ──
                                 ...List.generate(_vehicles.length, (i) {
                                   return _VehicleCard(
+                                    // Without a stable key, inserting/removing
+                                    // entries at a non-last position (e.g. the
+                                    // new "add to front" flow) makes Flutter
+                                    // reuse a _VehicleCardState for a
+                                    // different _VehicleEditEntry by position,
+                                    // leaving its controller listener bound to
+                                    // the wrong (or already-disposed) entry —
+                                    // a crash once that stale listener fires.
+                                    key: ObjectKey(_vehicles[i]),
                                     entry: _vehicles[i],
                                     index: i,
                                     isPrimary: i == 0,
@@ -622,6 +631,7 @@ class _VehicleCard extends StatefulWidget {
   final VoidCallback onChanged;
 
   const _VehicleCard({
+    super.key,
     required this.entry,
     required this.index,
     required this.isPrimary,
@@ -637,7 +647,17 @@ class _VehicleCardState extends State<_VehicleCard> {
   @override
   void initState() {
     super.initState();
-    widget.entry.correlativeController.addListener(() => setState(() {}));
+    widget.entry.correlativeController.addListener(_onPlateChanged);
+  }
+
+  @override
+  void dispose() {
+    widget.entry.correlativeController.removeListener(_onPlateChanged);
+    super.dispose();
+  }
+
+  void _onPlateChanged() {
+    if (mounted) setState(() {});
   }
 
   String get _platePreview {

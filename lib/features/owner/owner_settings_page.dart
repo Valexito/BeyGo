@@ -179,7 +179,6 @@ class _OwnerSettingsPageState extends ConsumerState<OwnerSettingsPage> {
                         ),
                         _Divider(),
                         _SwitchRow(
-                          icon: Icons.attach_money_rounded,
                           iconColor: const Color(0xFF16A34A),
                           label: 'Mostrar ingresos en inicio',
                           sublabel:
@@ -1107,7 +1106,7 @@ class _Divider extends StatelessWidget {
 
 // ─── Switch row ────────────────────────────────────────────────────────────────
 class _SwitchRow extends StatelessWidget {
-  final IconData icon;
+  final IconData? icon;
   final Color iconColor;
   final String label;
   final String? sublabel;
@@ -1117,7 +1116,7 @@ class _SwitchRow extends StatelessWidget {
   final Color? badgeColor;
 
   const _SwitchRow({
-    required this.icon,
+    this.icon,
     required this.iconColor,
     required this.label,
     this.sublabel,
@@ -1134,16 +1133,18 @@ class _SwitchRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: iconColor.withValues(alpha: 0.10),
-              borderRadius: BorderRadius.circular(10),
+          if (icon != null) ...[
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: iconColor.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, size: 18, color: iconColor),
             ),
-            child: Icon(icon, size: 18, color: iconColor),
-          ),
-          const SizedBox(width: 12),
+            const SizedBox(width: 12),
+          ],
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1730,7 +1731,9 @@ class _RevenuePinDialogState extends State<_RevenuePinDialog> {
                               minimumSize: const Size.fromHeight(48),
                               side: BorderSide(color: context.appBorderColor),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(18),
+                                  borderRadius: BorderRadius.circular(
+                                    AppDims.radiusLg,
+                                  ),
                                 ),
                                 backgroundColor: context.appCardBackgroundSoft,
                               ),
@@ -2170,7 +2173,9 @@ class _RevenueOtpDialogState extends State<_RevenueOtpDialog> {
                                     color: context.appBorderColor,
                                   ),
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
+                                    borderRadius: BorderRadius.circular(
+                                      AppDims.radiusLg,
+                                    ),
                                   ),
                                   backgroundColor: context.appCardBackgroundSoft,
                                 ),

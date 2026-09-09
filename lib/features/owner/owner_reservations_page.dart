@@ -295,13 +295,23 @@ class _ActiveCard extends ConsumerWidget {
                           ? context.appCardBackgroundSoft
                           : const Color(0xFFF4F7FB),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(AppDims.radiusLg),
                   ),
                 ),
-                icon: Icon(
-                  Icons.chat_bubble_outline_rounded,
-                  size: 16,
-                  color: context.appBrandIconColor,
+                icon: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Icon(
+                      Icons.chat_bubble_outline_rounded,
+                      size: 16,
+                      color: context.appBrandIconColor,
+                    ),
+                    Positioned(
+                      right: -3,
+                      top: -3,
+                      child: ReservationChatUnreadDot(reservation: reservation),
+                    ),
+                  ],
                 ),
                 label: Text(
                   'Chat',
@@ -511,7 +521,9 @@ class _ForceCancelDialogState extends State<_ForceCancelDialog> {
                                   ),
                                 ),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(18),
+                                  borderRadius: BorderRadius.circular(
+                                    AppDims.radiusLg,
+                                  ),
                                 ),
                                 backgroundColor: context.appCardBackground,
                               ),
@@ -627,7 +639,7 @@ class _ApproveCardState extends ConsumerState<_ApproveCard> {
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: Color(0xFFDC2626), width: 1.2),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(AppDims.radiusLg),
                   ),
                   backgroundColor: const Color(0xFFFEF2F2),
                 ),
@@ -780,7 +792,9 @@ class _ApproveCardState extends ConsumerState<_ApproveCard> {
                                       width: 1.2,
                                     ),
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(18),
+                                      borderRadius: BorderRadius.circular(
+                                        AppDims.radiusLg,
+                                      ),
                                     ),
                                     backgroundColor: ctx.appCardBackground,
                                   ),
