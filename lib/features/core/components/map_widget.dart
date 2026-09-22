@@ -79,8 +79,23 @@ class MapWidgetState extends ConsumerState<MapWidget> {
     const size = 116.0;
     const outerRadius = 26.0;
     const innerRadius = 23.0;
+
+    // Rasterize at the device's real pixel density instead of a flat 1x
+    // canvas — a fixed 116x116 bitmap looks fine on old ~1x screens but
+    // pixelated/blurry once Maps stretches it to the marker size on a
+    // modern 2x-4x screen. `imagePixelRatio` below tells the renderer how
+    // many bitmap pixels correspond to one logical point, so the marker
+    // keeps the same on-screen size but renders crisp (HD).
+    final dpr =
+        ui.PlatformDispatcher.instance.views.isNotEmpty
+            ? ui.PlatformDispatcher.instance.views.first.devicePixelRatio
+            : 3.0;
+    final scale = dpr.clamp(2.0, 4.0);
+    final scaledSize = size * scale;
+
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder);
+    canvas.scale(scale);
     final center = const Offset(size / 2, size / 2);
 
     final shadowPaint =
@@ -138,12 +153,12 @@ class MapWidgetState extends ConsumerState<MapWidget> {
     canvas.drawPath(pointer, gradientPaint);
 
     final image = await recorder.endRecording().toImage(
-      size.toInt(),
-      size.toInt(),
+      scaledSize.toInt(),
+      scaledSize.toInt(),
     );
     final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
     final bytes = byteData!.buffer.asUint8List();
-    return BitmapDescriptor.bytes(bytes);
+    return BitmapDescriptor.bytes(bytes, imagePixelRatio: scale);
   }
 
   // ── Build markers ─────────────────────────────────────────────────────────

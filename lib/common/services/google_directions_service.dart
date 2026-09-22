@@ -38,8 +38,10 @@ class GoogleDirectionsService {
   /// restriction makes Google reject a raw HTTP call straight from the app
   /// ("client application blocked") — there's no native routing SDK to
   /// attach that app identity for us the way Places has. The Cloud Function
-  /// holds a second, unrestricted key server-side only. Uses TRAFFIC_AWARE
-  /// so the ETA matches what the Google Maps app itself shows.
+  /// holds a second, unrestricted key server-side only. Uses
+  /// TRAFFIC_AWARE_OPTIMAL so the ETA matches what the Google Maps/Waze
+  /// apps themselves show (the default TRAFFIC_AWARE preference optimizes
+  /// for latency over precision and can drift noticeably from live traffic).
   Future<_RouteData> _fetchGoogle(LatLng o, LatLng d) async {
     final result = await FirebaseFunctions.instance
         .httpsCallable('getRoute')

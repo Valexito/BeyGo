@@ -4,6 +4,22 @@ import 'package:beygo/common/common.dart';
 import 'package:beygo/features/reservations/reservations.dart';
 import 'package:beygo/features/users/users.dart';
 
+// Collapsed height of the bottom sheet, as a fraction of the screen.
+// This needs to be tall enough to fit the sheet's fixed (non-scrolling)
+// content — title, status badge, subtitle, the 3 info chips (which can wrap
+// to 2 lines on narrower phones) and the vehicle selector card — plus the
+// footer buttons, or Flutter throws a RenderFlex "BOTTOM OVERFLOWED" error,
+// because that fixed content sits outside the scrollable area on purpose
+// (see "Fixed header" below) and never shrinks to make room for itself.
+// 0.6 leaves a comfortable margin for that content on small phones while
+// still keeping the photo a reasonable, non-dominant size (screenHeight *
+// 0.4) — roughly half-and-half between photo and panel, the way it looked
+// before. The photo header's height is always derived from this
+// (screenHeight * (1 - this)) every build, so the photo fills exactly the
+// space above the collapsed sheet with no gap and no overlap, on any screen
+// size.
+const double _kSheetCollapsedSize = 0.6;
+
 class ReserveSpaceContent extends ConsumerStatefulWidget {
   final Parking parking;
   final List<String> gallery;
@@ -62,16 +78,19 @@ class _ReserveSpaceContentState extends ConsumerState<ReserveSpaceContent> {
     final screenHeight = MediaQuery.of(context).size.height;
     final safeTop = MediaQuery.of(context).padding.top;
     const headerActionHeight = 54.0;
-    // The sheet below sits at initialChildSize 0.84 of the screen, so its
-    // visible top edge is at 16% of screenHeight. The gallery tap zone must
-    // stop there — using a fixed 25% (independent of the sheet's actual
-    // position) used to bleed a few rows into the sheet's own content
-    // (e.g. the space grid), so taps near its top edge opened the gallery
-    // instead of selecting a space.
-    const sheetInitialSize = 0.84;
-    final sheetTopY = screenHeight * (1 - sheetInitialSize);
+    // DraggableScrollableSheet.initialChildSize is only ever read on the
+    // sheet's very first build — computing it from MediaQuery is fragile
+    // (a value that isn't settled yet on that first frame gets "frozen" in
+    // permanently). So instead this fraction is a plain constant, and it's
+    // the *photo header* — a normal, safely-recomputed-every-build widget —
+    // that's sized dynamically to fill exactly the space above the
+    // collapsed sheet. That keeps them flush with zero gap by construction,
+    // instead of trying to match a fixed photo height to a sheet fraction.
+    const sheetInitialSize = _kSheetCollapsedSize;
+    final headerHeight = screenHeight * (1 - sheetInitialSize);
+    final sheetTopY = headerHeight;
     final galleryTapTop = safeTop + headerActionHeight;
-    final galleryTapHeight = (sheetTopY - galleryTapTop).clamp(0.0, 260.0);
+    final galleryTapHeight = (sheetTopY - galleryTapTop).clamp(0.0, 600.0);
 
     final cross =
         w >= 520
@@ -91,6 +110,7 @@ class _ReserveSpaceContentState extends ConsumerState<ReserveSpaceContent> {
           Column(
             children: [
               _ReservationHeader(
+                height: headerHeight,
                 gallery: widget.gallery,
                 onBack: () => Navigator.pop(context),
                 onPageChanged: (page) => _headerPage = page,
@@ -100,11 +120,14 @@ class _ReserveSpaceContentState extends ConsumerState<ReserveSpaceContent> {
           ),
 
           DraggableScrollableSheet(
-            initialChildSize: 0.84,
-            minChildSize: 0.84,
-            maxChildSize: 0.86,
+            initialChildSize: sheetInitialSize,
+            minChildSize: sheetInitialSize,
+            maxChildSize: 0.88,
+            snap: true,
+            snapSizes: const [sheetInitialSize, 0.88],
             builder: (context, scrollController) {
               return Container(
+                clipBehavior: Clip.antiAlias,
                 decoration: BoxDecoration(
                   color: context.appSectionBackground,
                   borderRadius: const BorderRadius.only(
@@ -114,245 +137,249 @@ class _ReserveSpaceContentState extends ConsumerState<ReserveSpaceContent> {
                 ),
                 child: Column(
                   children: [
+                    // Fixed header — title, status badge, subtitle, chips
+                    // and the vehicle selector. This never scrolls: it's
+                    // outside the SingleChildScrollView below, so dragging
+                    // or scrolling the space grid can never cover it. When
+                    // the sheet is collapsed, its natural height simply
+                    // exceeds the sheet's visible area and gets clipped
+                    // (via clipBehavior above), showing only the title and
+                    // subtitle — that's the intended "peek" state.
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 18, 20, 10),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: MyText(
+                                  text: 'Reservar espacio',
+                                  variant: MyTextVariant.title,
+                                  customColor:
+                                      context.isDarkMode
+                                          ? Colors.white
+                                          : AppColors.headerBottom,
+                                  fontSize: 22,
+                                ),
+                              ),
+                              _buildOpenStatus(currentParking),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          const MyText(
+                            text:
+                                'Selecciona un espacio disponible para continuar con tu reserva.',
+                            variant: MyTextVariant.bodyMuted,
+                          ),
+                          const SizedBox(height: 16),
+                          Wrap(
+                            spacing: 10,
+                            runSpacing: 10,
+                            children: [
+                              spacesAsync.when(
+                                data: (spacesMap) {
+                                  final available =
+                                      spacesMap.values
+                                          .where(
+                                            (s) =>
+                                                s.status
+                                                    .toLowerCase()
+                                                    .trim() ==
+                                                'free',
+                                          )
+                                          .length;
+                                  return _InfoChip(
+                                    icon: Icons.directions_car_rounded,
+                                    label: '$available disponibles',
+                                  );
+                                },
+                                loading:
+                                    () => const _InfoChip(
+                                      icon: Icons.directions_car_rounded,
+                                      label: 'Cargando...',
+                                    ),
+                                error:
+                                    (_, __) => _InfoChip(
+                                      icon: Icons.directions_car_rounded,
+                                      label:
+                                          '${widget.parking.spaces} espacios',
+                                    ),
+                              ),
+                              _InfoChip(
+                                icon: Icons.attach_money_rounded,
+                                label: 'Q${currentParking.pricePerHour}/h',
+                              ),
+                              _InfoChip(
+                                icon: Icons.access_time_rounded,
+                                label:
+                                    '${currentParking.businessHours?['open'] ?? '--'} - ${currentParking.businessHours?['close'] ?? '--'}',
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          widget.vehiclesAsync.when(
+                            loading:
+                                () => const _VehicleSelectorCard(
+                                  icon: Icons.directions_car_rounded,
+                                  title: 'Vehículo',
+                                  subtitle: 'Cargando vehículos...',
+                                ),
+                            error:
+                                (_, __) => _VehicleSelectorCard(
+                                  icon: Icons.error_outline_rounded,
+                                  title: 'Vehículo',
+                                  subtitle:
+                                      'No se pudieron cargar tus vehículos',
+                                ),
+                            data: (vehicles) {
+                              final selected = widget.selectedVehicle;
+                              final subtitle =
+                                  vehicles.isEmpty
+                                      ? 'Agrega un vehículo para continuar'
+                                      : selected == null
+                                      ? 'Selecciona el vehículo a usar'
+                                      : '${selected.plate} • ${selected.type.label}';
+
+                              return _VehicleSelectorCard(
+                                icon:
+                                    selected?.type.icon ??
+                                    Icons.directions_car_rounded,
+                                title: 'Vehículo para esta reserva',
+                                subtitle: subtitle,
+                                onTap: () => widget.onPickVehicle(vehicles),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Scrollable body — only the "Disponibilidad" card
+                    // (legend + space grid) lives here, tied to
+                    // `scrollController`. This is the ONLY scrollable in
+                    // the sheet now: the grid below no longer gets its own
+                    // copy of that controller (attaching one
+                    // ScrollController to two Scrollables at once made the
+                    // sheet's expand-then-scroll handoff unreliable, which
+                    // is what produced the blank space bug). Dragging up
+                    // grows the sheet until maxChildSize is reached, then
+                    // this scrolls independently to reveal more spaces,
+                    // without the fixed header above ever moving.
                     Expanded(
                       child: SingleChildScrollView(
                         controller: scrollController,
-                        child: Column(
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(
-                                20,
-                                18,
-                                20,
-                                10,
+                        padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: context.appCardBackground,
+                            borderRadius: BorderRadius.circular(22),
+                            border: Border.all(color: context.appBorderColor),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const MyText(
+                                text: 'Disponibilidad',
+                                variant: MyTextVariant.normalBold,
+                                fontSize: 15,
                               ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                              const SizedBox(height: 10),
+                              const Wrap(
+                                spacing: 14,
+                                runSpacing: 10,
                                 children: [
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: MyText(
-                                          text: 'Reservar espacio',
-                                          variant: MyTextVariant.title,
-                                          customColor:
-                                              context.isDarkMode
-                                                  ? Colors.white
-                                                  : AppColors.headerBottom,
-                                          fontSize: 22,
-                                        ),
-                                      ),
-                                      _buildOpenStatus(currentParking),
-                                    ],
+                                  _LegendDot(
+                                    color: Color(0xFF16A34A),
+                                    label: 'Libre',
                                   ),
-                                  const SizedBox(height: 6),
-                                  const MyText(
-                                    text:
-                                        'Selecciona un espacio disponible para continuar con tu reserva.',
-                                    variant: MyTextVariant.bodyMuted,
+                                  _LegendDot(
+                                    color: Color(0xFFCBD5E1),
+                                    label: 'Ocupado',
                                   ),
-                                  const SizedBox(height: 16),
-                                  Wrap(
-                                    spacing: 10,
-                                    runSpacing: 10,
-                                    children: [
-                                      spacesAsync.when(
-                                        data: (spacesMap) {
-                                          final available =
-                                              spacesMap.values
-                                                  .where(
-                                                    (s) =>
-                                                        s.status
-                                                            .toLowerCase()
-                                                            .trim() ==
-                                                        'free',
-                                                  )
-                                                  .length;
-                                          return _InfoChip(
-                                            icon: Icons.directions_car_rounded,
-                                            label: '$available disponibles',
-                                          );
-                                        },
-                                        loading:
-                                            () => const _InfoChip(
-                                              icon:
-                                                  Icons.directions_car_rounded,
-                                              label: 'Cargando...',
-                                            ),
-                                        error:
-                                            (_, __) => _InfoChip(
-                                              icon:
-                                                  Icons.directions_car_rounded,
-                                              label:
-                                                  '${widget.parking.spaces} espacios',
-                                            ),
-                                      ),
-                                      _InfoChip(
-                                        icon: Icons.attach_money_rounded,
-                                        label:
-                                            'Q${currentParking.pricePerHour}/h',
-                                      ),
-                                      _InfoChip(
-                                        icon: Icons.access_time_rounded,
-                                        label:
-                                            '${currentParking.businessHours?['open'] ?? '--'} - ${currentParking.businessHours?['close'] ?? '--'}',
-                                      ),
-                                    ],
+                                  _LegendDot(
+                                    color: AppColors.headerBottom,
+                                    label: 'Seleccionado',
+                                    filled: true,
                                   ),
-                                  const SizedBox(height: 16),
-                                  widget.vehiclesAsync.when(
-                                    loading:
-                                        () => const _VehicleSelectorCard(
-                                          icon: Icons.directions_car_rounded,
-                                          title: 'Vehículo',
-                                          subtitle: 'Cargando vehículos...',
-                                        ),
-                                    error:
-                                        (_, __) => _VehicleSelectorCard(
-                                          icon: Icons.error_outline_rounded,
-                                          title: 'Vehículo',
-                                          subtitle:
-                                              'No se pudieron cargar tus vehículos',
-                                        ),
-                                    data: (vehicles) {
-                                      final selected = widget.selectedVehicle;
-                                      final subtitle =
-                                          vehicles.isEmpty
-                                              ? 'Agrega un vehículo para continuar'
-                                              : selected == null
-                                              ? 'Selecciona el vehículo a usar'
-                                              : '${selected.plate} • ${selected.type.label}';
-
-                                      return _VehicleSelectorCard(
-                                        icon:
-                                            selected?.type.icon ??
-                                            Icons.directions_car_rounded,
-                                        title: 'Vehículo para esta reserva',
-                                        subtitle: subtitle,
-                                        onTap:
-                                            () =>
-                                                widget.onPickVehicle(vehicles),
-                                      );
-                                    },
+                                  _LegendDot(
+                                    color: Color(0xFFF59E0B),
+                                    label: 'Solicitado',
                                   ),
                                 ],
                               ),
-                            ),
+                              const SizedBox(height: 16),
 
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
-                              child: Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: context.appCardBackground,
-                                  borderRadius: BorderRadius.circular(22),
-                                  border: Border.all(
-                                    color: context.appBorderColor,
-                                  ),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const MyText(
-                                      text: 'Disponibilidad',
-                                      variant: MyTextVariant.normalBold,
-                                      fontSize: 15,
+                              spacesAsync.when(
+                                loading:
+                                    () => const Center(
+                                      child: CircularProgressIndicator(),
                                     ),
-                                    const SizedBox(height: 10),
-                                    const Wrap(
-                                      spacing: 14,
-                                      runSpacing: 10,
-                                      children: [
-                                        _LegendDot(
-                                          color: Color(0xFF16A34A),
-                                          label: 'Libre',
+                                error: (e, _) => Center(child: Text('$e')),
+                                data: (spacesMap) {
+                                  final total = widget.parking.spaces;
+                                  return GridView.builder(
+                                    shrinkWrap: true,
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
+                                    itemCount: total,
+                                    gridDelegate:
+                                        SliverGridDelegateWithFixedCrossAxisCount(
+                                          crossAxisCount: cross,
+                                          mainAxisSpacing: 12,
+                                          crossAxisSpacing: 12,
+                                          childAspectRatio: 0.95,
                                         ),
-                                        _LegendDot(
-                                          color: Color(0xFFCBD5E1),
-                                          label: 'Ocupado',
-                                        ),
-                                        _LegendDot(
-                                          color: AppColors.headerBottom,
-                                          label: 'Seleccionado',
-                                          filled: true,
-                                        ),
-                                        _LegendDot(
-                                          color: Color(0xFFF59E0B),
-                                          label: 'Solicitado',
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 16),
+                                    itemBuilder: (_, idx) {
+                                      final num = idx + 1;
+                                      final space = spacesMap[num];
+                                      final status =
+                                          (space?.status ?? 'free')
+                                              .toLowerCase()
+                                              .trim();
+                                      final occupied = status == 'occupied';
+                                      final requested =
+                                          status == 'requested' ||
+                                          status == 'pending' ||
+                                          status == 'solicitado';
+                                      final selectable =
+                                          !occupied &&
+                                          !requested &&
+                                          !widget.isSubmitting;
+                                      final selected =
+                                          selectable &&
+                                          widget.selectedSpace == num;
 
-                                    spacesAsync.when(
-                                      loading:
-                                          () => const Center(
-                                            child: CircularProgressIndicator(),
-                                          ),
-                                      error:
-                                          (e, _) => Center(child: Text('$e')),
-                                      data: (spacesMap) {
-                                        final total = widget.parking.spaces;
-                                        return GridView.builder(
-                                          controller: scrollController,
-                                          shrinkWrap: true,
-                                          physics:
-                                              const NeverScrollableScrollPhysics(),
-                                          itemCount: total,
-                                          gridDelegate:
-                                              SliverGridDelegateWithFixedCrossAxisCount(
-                                                crossAxisCount: cross,
-                                                mainAxisSpacing: 12,
-                                                crossAxisSpacing: 12,
-                                                childAspectRatio: 0.95,
-                                              ),
-                                          itemBuilder: (_, idx) {
-                                            final num = idx + 1;
-                                            final space = spacesMap[num];
-                                            final status =
-                                                (space?.status ?? 'free')
-                                                    .toLowerCase()
-                                                    .trim();
-                                            final occupied =
-                                                status == 'occupied';
-                                            final requested =
-                                                status == 'requested' ||
-                                                status == 'pending' ||
-                                                status == 'solicitado';
-                                            final selectable =
-                                                !occupied &&
-                                                !requested &&
-                                                !widget.isSubmitting;
-                                            final selected =
-                                                selectable &&
-                                                widget.selectedSpace == num;
-
-                                            return _SpaceTile(
-                                              number: num,
-                                              occupied: occupied,
-                                              requested: requested,
-                                              selected: selected,
-                                              onTap:
-                                                  selectable
-                                                      ? () => widget
-                                                          .onSelectSpace(num)
-                                                      : null,
-                                            );
-                                          },
-                                        );
-                                      },
-                                    ),
-                                  ],
-                                ),
+                                      return _SpaceTile(
+                                        number: num,
+                                        occupied: occupied,
+                                        requested: requested,
+                                        selected: selected,
+                                        onTap:
+                                            selectable
+                                                ? () => widget.onSelectSpace(
+                                                  num,
+                                                )
+                                                : null,
+                                      );
+                                    },
+                                  );
+                                },
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
 
                     Container(
-                      padding: const EdgeInsets.all(16),
+                      padding: EdgeInsets.fromLTRB(
+                        16,
+                        16,
+                        16,
+                        16 + MediaQuery.of(context).padding.bottom,
+                      ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -705,12 +732,14 @@ class _VehicleSelectorCard extends StatelessWidget {
 }
 
 class _ReservationHeader extends StatefulWidget {
+  final double height;
   final List<String> gallery;
   final VoidCallback onBack;
   final ValueChanged<int> onPageChanged;
   final ValueChanged<int> onOpenGallery;
 
   const _ReservationHeader({
+    required this.height,
     required this.gallery,
     required this.onBack,
     required this.onPageChanged,
@@ -742,7 +771,7 @@ class _ReservationHeaderState extends State<_ReservationHeader> {
     final hasGallery = widget.gallery.isNotEmpty;
 
     return SizedBox(
-      height: 260,
+      height: widget.height,
       width: double.infinity,
       child: Stack(
         fit: StackFit.expand,

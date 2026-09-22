@@ -762,7 +762,13 @@ exports.getRoute = onCall({
                     origin: { location: { latLng: { latitude: originLat, longitude: originLng } } },
                     destination: { location: { latLng: { latitude: destLat, longitude: destLng } } },
                     travelMode: "DRIVE",
-                    routingPreference: "TRAFFIC_AWARE",
+                    // TRAFFIC_AWARE_OPTIMAL spends more of the request budget
+                    // computing the route with live traffic data, which is
+                    // what makes it track the ETA shown in the Google Maps
+                    // and Waze apps much more closely than the default
+                    // TRAFFIC_AWARE preference (optimized for latency over
+                    // precision, and the likely source of the ETA drift).
+                    routingPreference: "TRAFFIC_AWARE_OPTIMAL",
                     languageCode: "es",
                 }),
             }
@@ -1372,7 +1378,7 @@ exports.onReservationChanged = onDocumentWritten(
             await sendPush({
                 token: userToken,
                 title: "✅ ¡Reserva aprobada!",
-                body: `Tu espacio ${spaceNumber} en ${parkingName} está listo`,
+                body: `Tu espacio ${spaceNumber} en ${parkingName} está listo — No. ${reservationNumber}`,
                 data: {
                     route: "reservations",
                     type: "reservation_approved",

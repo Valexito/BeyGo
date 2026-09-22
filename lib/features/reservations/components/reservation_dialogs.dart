@@ -574,7 +574,11 @@ class _Row extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 12),
-        Flexible(
+        // Expanded (not Flexible) so every row's value column gets the same
+        // fixed width — only then does `textAlign: right` actually have
+        // room to align against, and every row's right edge lines up
+        // regardless of how short or long its own value text is.
+        Expanded(
           child: MyText(
             text: value,
             variant: MyTextVariant.bodyBold,

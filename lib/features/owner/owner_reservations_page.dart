@@ -19,6 +19,11 @@ String _ownerUiError(Object error) {
       .replaceFirst('Exception: ', '');
 }
 
+String _fmtDateTime(DateTime v) {
+  return '${v.day.toString().padLeft(2, '0')}/${v.month.toString().padLeft(2, '0')} '
+      '${v.hour.toString().padLeft(2, '0')}:${v.minute.toString().padLeft(2, '0')}';
+}
+
 class OwnerReservationsPage extends ConsumerStatefulWidget {
   final String? initialReservationId;
   final OwnerReservationsTab initialTab;
@@ -45,10 +50,26 @@ class _OwnerReservationsPageState extends ConsumerState<OwnerReservationsPage>
   );
   bool _handledInitialAction = false;
 
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
   @override
   void dispose() {
     _tab.dispose();
+    _searchController.dispose();
     super.dispose();
+  }
+
+  bool _matchesSearch(Reservation r) {
+    final query = _searchQuery.trim().toLowerCase();
+    if (query.isEmpty) return true;
+    final fields = <String>[
+      r.reservationNumber ?? '',
+      r.userName ?? '',
+      r.plate ?? '',
+      '${r.spaceNumber}',
+    ];
+    return fields.any((f) => f.toLowerCase().contains(query));
   }
 
   @override
@@ -134,6 +155,14 @@ class _OwnerReservationsPageState extends ConsumerState<OwnerReservationsPage>
                     ),
                   ),
                 ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                  child: AppSearchField(
+                    controller: _searchController,
+                    hintText: 'Buscar por No., nombre, placa...',
+                    onChanged: (value) => setState(() => _searchQuery = value),
+                  ),
+                ),
                 Expanded(
                   child: ClipRect(
                     child: TabBarView(
@@ -148,7 +177,13 @@ class _OwnerReservationsPageState extends ConsumerState<OwnerReservationsPage>
                         error: (e, _) => Center(child: Text('$e')),
                         data: (items) {
                           final active =
-                              items.where((r) => r.state == 'active').toList();
+                              items
+                                  .where(
+                                    (r) =>
+                                        r.state == 'active' &&
+                                        _matchesSearch(r),
+                                  )
+                                  .toList();
                           final visible =
                               widget.initialReservationId == null
                                   ? active
@@ -198,7 +233,9 @@ class _OwnerReservationsPageState extends ConsumerState<OwnerReservationsPage>
                                   .where(
                                     (r) =>
                                         r.state == 'pending' &&
-                                        r.providerApprovalStatus == 'pending',
+                                        r.providerApprovalStatus ==
+                                            'pending' &&
+                                        _matchesSearch(r),
                                   )
                                   .toList();
                           final visible =
@@ -262,7 +299,7 @@ class _ActiveCard extends ConsumerWidget {
       highlighted: highlighted,
       rows: [
         _Row(Icons.info_outline, 'Estado', 'Activa'),
-        _Row(Icons.access_time, 'Inicio', _fmt(reservation.reservedAt)),
+        _Row(Icons.access_time, 'Inicio', _fmtDateTime(reservation.reservedAt)),
         _Row(Icons.person_outline, 'Usuario', reservation.userName ?? 'N/A'),
         _Row(
           Icons.directions_car_outlined,
@@ -359,11 +396,6 @@ class _ActiveCard extends ConsumerWidget {
       context: context,
       builder: (ctx) => const _ForceCancelDialog(),
     );
-  }
-
-  String _fmt(DateTime v) {
-    return '${v.day.toString().padLeft(2, '0')}/${v.month.toString().padLeft(2, '0')} '
-        '${v.hour.toString().padLeft(2, '0')}:${v.minute.toString().padLeft(2, '0')}';
   }
 }
 
@@ -588,6 +620,11 @@ class _ApproveCardState extends ConsumerState<_ApproveCard> {
       highlighted: widget.highlighted,
       rows: [
         _Row(Icons.hourglass_top, 'Estado', 'Pendiente'),
+        _Row(
+          Icons.access_time,
+          'Solicitado',
+          _fmtDateTime(widget.reservation.reservedAt),
+        ),
         _Row(
           Icons.person_outline,
           'Usuario',

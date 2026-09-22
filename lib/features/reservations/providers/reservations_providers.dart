@@ -691,6 +691,7 @@ final ownerConfirmCancellationProvider =
             'providerApprovalStatus': 'approved',
             'cancelledBy': 'user',
             'endedAt': Timestamp.fromDate(now),
+            'cancelApprovedAt': Timestamp.fromDate(now),
           });
 
           final currentStatus =

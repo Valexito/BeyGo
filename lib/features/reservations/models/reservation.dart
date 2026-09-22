@@ -40,6 +40,9 @@ class Reservation {
   /// Momento en que el usuario solicitó cancelar.
   final DateTime? cancelRequestedAt;
 
+  /// Momento en que el dueño confirmó/aprobó la cancelación.
+  final DateTime? cancelApprovedAt;
+
   /// Motivo opcional de cancelación.
   final String? cancellationReason;
   final String? cancelledBy;
@@ -92,6 +95,7 @@ class Reservation {
     this.freeCancellationUntil,
     this.freeCancellationMinutes = freeCancellationWindowMinutesLimit,
     this.cancelRequestedAt,
+    this.cancelApprovedAt,
     this.cancellationReason,
     this.cancelledBy,
     this.cancellationPenaltyApplied = false,
@@ -187,6 +191,7 @@ class Reservation {
           (data['freeCancellationMinutes'] as num?)?.toInt() ??
           freeCancellationWindowMinutesLimit,
       cancelRequestedAt: parseTimestamp(data['cancelRequestedAt']),
+      cancelApprovedAt: parseTimestamp(data['cancelApprovedAt']),
       cancellationReason: data['cancellationReason'] as String?,
       cancelledBy: data['cancelledBy'] as String?,
       cancellationPenaltyApplied:
@@ -238,6 +243,10 @@ class Reservation {
           cancelRequestedAt != null
               ? Timestamp.fromDate(cancelRequestedAt!)
               : null,
+      'cancelApprovedAt':
+          cancelApprovedAt != null
+              ? Timestamp.fromDate(cancelApprovedAt!)
+              : null,
       'cancellationReason': cancellationReason,
       'cancelledBy': cancelledBy,
       'cancellationPenaltyApplied': cancellationPenaltyApplied,
@@ -288,6 +297,7 @@ class Reservation {
     DateTime? freeCancellationUntil,
     int? freeCancellationMinutes,
     DateTime? cancelRequestedAt,
+    DateTime? cancelApprovedAt,
     String? cancellationReason,
     String? cancelledBy,
     bool? cancellationPenaltyApplied,
@@ -331,6 +341,7 @@ class Reservation {
       freeCancellationMinutes:
           freeCancellationMinutes ?? this.freeCancellationMinutes,
       cancelRequestedAt: cancelRequestedAt ?? this.cancelRequestedAt,
+      cancelApprovedAt: cancelApprovedAt ?? this.cancelApprovedAt,
       cancellationReason: cancellationReason ?? this.cancellationReason,
       cancelledBy: cancelledBy ?? this.cancelledBy,
       cancellationPenaltyApplied:

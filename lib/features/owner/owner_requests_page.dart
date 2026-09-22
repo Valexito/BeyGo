@@ -79,10 +79,26 @@ class _OwnerRequestsPageState extends ConsumerState<OwnerRequestsPage>
     initialIndex: widget.initialTab == OwnerRequestTab.exits ? 0 : 1,
   );
 
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
   @override
   void dispose() {
     _tabController.dispose();
+    _searchController.dispose();
     super.dispose();
+  }
+
+  bool _matchesSearch(Reservation r) {
+    final query = _searchQuery.trim().toLowerCase();
+    if (query.isEmpty) return true;
+    final fields = <String>[
+      r.reservationNumber ?? '',
+      r.userName ?? '',
+      r.plate ?? '',
+      '${r.spaceNumber}',
+    ];
+    return fields.any((f) => f.toLowerCase().contains(query));
   }
 
   @override
@@ -154,6 +170,15 @@ class _OwnerRequestsPageState extends ConsumerState<OwnerRequestsPage>
                   ),
                 ),
 
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                  child: AppSearchField(
+                    controller: _searchController,
+                    hintText: 'Buscar por No., nombre, placa...',
+                    onChanged: (value) => setState(() => _searchQuery = value),
+                  ),
+                ),
+
                 /// CONTENT
                 Expanded(
                   child: ClipRect(
@@ -167,7 +192,8 @@ class _OwnerRequestsPageState extends ConsumerState<OwnerRequestsPage>
                               child: CircularProgressIndicator(),
                             ),
                         error: (e, _) => Center(child: Text('$e')),
-                        data: (items) {
+                        data: (allItems) {
+                          final items = allItems.where(_matchesSearch).toList();
                           final visible =
                               widget.initialReservationId == null
                                   ? items
@@ -214,7 +240,8 @@ class _OwnerRequestsPageState extends ConsumerState<OwnerRequestsPage>
                               child: CircularProgressIndicator(),
                             ),
                         error: (e, _) => Center(child: Text('$e')),
-                        data: (items) {
+                        data: (allItems) {
+                          final items = allItems.where(_matchesSearch).toList();
                           final visible =
                               widget.initialReservationId == null
                                   ? items
@@ -297,6 +324,13 @@ class _RequestCardState extends ConsumerState<_RequestCard> {
     final hours = totalMinutes ~/ 60;
     final minutes = totalMinutes % 60;
     final durationText = hours > 0 ? '${hours}h ${minutes}m' : '${minutes}m';
+
+    // Timestamp de la solicitud: cuándo el usuario pidió la salida o la
+    // cancelación (independiente del momento en que el dueño la confirme).
+    final requestedAt =
+        widget.isExit
+            ? widget.reservation.exitRequestedAt
+            : widget.reservation.cancelRequestedAt;
 
     return Container(
       decoration: BoxDecoration(
@@ -393,6 +427,12 @@ class _RequestCardState extends ConsumerState<_RequestCard> {
                   icon: Icons.login,
                   label: 'Entrada',
                   value: _format(widget.reservation.reservedAt),
+                ),
+                const SizedBox(height: 10),
+                _InfoRow(
+                  icon: Icons.notifications_active_outlined,
+                  label: widget.isExit ? 'Salida solicitada' : 'Cancelación solicitada',
+                  value: requestedAt != null ? _format(requestedAt) : 'N/A',
                 ),
                 const SizedBox(height: 10),
                 _InfoRow(

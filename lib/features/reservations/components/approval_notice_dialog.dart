@@ -112,6 +112,14 @@ class _ApprovalNoticeDialog extends StatelessWidget {
                   fontSize: 16,
                 ),
               ),
+              if (reservation.reservationNumber != null) ...[
+                const SizedBox(height: 8),
+                MyText(
+                  text: 'Reservación No. ${reservation.reservationNumber}',
+                  variant: MyTextVariant.bodyMuted,
+                  fontSize: 13,
+                ),
+              ],
               const SizedBox(height: 14),
               MyText(
                 text:

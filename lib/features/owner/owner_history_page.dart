@@ -298,52 +298,22 @@ class _OwnerHistoryPageState extends ConsumerState<OwnerHistoryPage> {
   }
 
   Future<void> _pickDateRange() async {
-    final picked = await showDateRangePicker(
+    final picked = await showFormattedDateRangePicker(
       context: context,
       firstDate: DateTime(2023),
       lastDate: DateTime.now(),
       initialDateRange: _dateRange,
-      builder: (ctx, child) {
-        final isDark = Theme.of(ctx).brightness == Brightness.dark;
-        return Theme(
-          data: Theme.of(ctx).copyWith(
-            colorScheme: (isDark
-                    ? const ColorScheme.dark()
-                    : const ColorScheme.light())
-                .copyWith(
-                  primary: AppColors.headerBottom,
-                  onPrimary: Colors.white,
-                  surface: isDark ? const Color(0xFF111827) : Colors.white,
-                ),
-          ),
-          child: child!,
-        );
-      },
+      accentColor: AppColors.headerBottom,
     );
     if (picked != null) setState(() => _dateRange = picked);
   }
 
   Future<DateTimeRange?> _pickReportDateRange() async {
-    final picked = await showDateRangePicker(
+    final picked = await showFormattedDateRangePicker(
       context: context,
       firstDate: DateTime(2023),
       lastDate: DateTime.now(),
-      builder: (ctx, child) {
-        final isDark = Theme.of(ctx).brightness == Brightness.dark;
-        return Theme(
-          data: Theme.of(ctx).copyWith(
-            colorScheme: (isDark
-                    ? const ColorScheme.dark()
-                    : const ColorScheme.light())
-                .copyWith(
-                  primary: AppColors.headerBottom,
-                  onPrimary: Colors.white,
-                  surface: isDark ? const Color(0xFF111827) : Colors.white,
-                ),
-          ),
-          child: child!,
-        );
-      },
+      accentColor: AppColors.headerBottom,
     );
     return picked;
   }
