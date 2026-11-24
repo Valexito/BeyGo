@@ -1,4 +1,4 @@
-// Punto de entrada de DESARROLLO (proyecto Firebase beygo-app-dev).
+// Punto de entrada de DESARROLLO (proyecto Firebase beygo-development).
 //   flutter run --flavor dev -t lib/main_dev.dart
 import 'app_environment.dart';
 import 'firebase_options_dev.dart';

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
+import 'package:beygo/app_environment.dart';
 import 'package:beygo/common/common.dart';
 import 'package:beygo/features/core/providers/firebase_providers.dart'
     show firebaseAuthProvider;
@@ -13,13 +14,20 @@ final authUserStreamProvider = StreamProvider<User?>((ref) {
   return auth.userChanges();
 });
 
-// Web OAuth client from Firebase config. Passing it explicitly helps
-// Google Sign-In resolve the correct OAuth setup on Play-distributed builds.
-const _googleServerClientId =
+// Web OAuth client (client_type 3 en google-services.json) de cada proyecto
+// Firebase. Passing it explicitly helps Google Sign-In resolve the correct
+// OAuth setup on Play-distributed builds. Debe coincidir con el ambiente: si se
+// usa el de producción en DEV, Google responde ApiException 10.
+const _googleServerClientIdProd =
     '102949234278-ktoqboaffipnlsilm28qsefriuefon3q.apps.googleusercontent.com';
+const _googleServerClientIdDev =
+    '694572629413-punh5om919mdm87v2e4s9n89jqf08lu8.apps.googleusercontent.com';
 
 final googleSignInInstanceProvider = Provider<GoogleSignIn>((_) {
-  return GoogleSignIn(serverClientId: _googleServerClientId);
+  return GoogleSignIn(
+    serverClientId:
+        AppEnv.isDev ? _googleServerClientIdDev : _googleServerClientIdProd,
+  );
 });
 
 final signInWithGoogleProvider = Provider<Future<UserCredential> Function()>((

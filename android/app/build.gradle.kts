@@ -57,7 +57,7 @@ android {
     }
 
     // ─── Ambientes (flavors) ──────────────────────────────────────────────────
-    // dev  → com.beygo.app.dev, proyecto Firebase beygo-app-dev, nombre "BeyGo DEV"
+    // dev  → com.beygo.app.dev, proyecto Firebase beygo-development, nombre "BeyGo DEV"
     // prod → com.beygo.app,     proyecto Firebase beygo-app-prod
     // Cada sabor lee su google-services.json de src/<sabor>/ (si no existe,
     // usa android/app/google-services.json). Ver DESARROLLO.md.

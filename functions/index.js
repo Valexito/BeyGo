@@ -1317,7 +1317,7 @@ const jiraBaseUrl = defineString("JIRA_BASE_URL", { default: "https://uvg-team-c
 const jiraServiceDeskId = defineString("JIRA_SERVICE_DESK_ID", { default: "34" });
 const jiraSupportRequestTypeId = defineString("JIRA_SUPPORT_REQUEST_TYPE_ID", { default: "38" });
 const jiraProviderRequestTypeId = defineString("JIRA_PROVIDER_REQUEST_TYPE_ID", { default: "38" });
-// En el ambiente de desarrollo (beygo-app-dev) se apaga con JIRA_ENABLED=false
+// En el ambiente de desarrollo (beygo-development) se apaga con JIRA_ENABLED=false
 // para no crear tickets de prueba en el service desk real.
 const jiraEnabled = defineString("JIRA_ENABLED", { default: "true" });
 

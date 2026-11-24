@@ -5,11 +5,11 @@ BeyGo tiene dos ambientes que comparten el mismo código:
 | | DEV | PROD |
 |---|---|---|
 | Rama de git | `develop` y ramas `feature/...` o `fix/...` | `main` |
-| Proyecto Firebase | `beygo-app-dev` | `beygo-app-prod` |
+| Proyecto Firebase | `beygo-development` | `beygo-app-prod` |
 | App Android | `com.beygo.app.dev` ("BeyGo DEV", con cinta naranja "DEV") | `com.beygo.app` ("BeyGo") |
 | Punto de entrada | `lib/main_dev.dart` | `lib/main_prod.dart` (o `lib/main.dart`) |
 | Configuración Firebase | `lib/firebase_options_dev.dart` + `android/app/src/dev/google-services.json` | `lib/firebase_options.dart` + `android/app/google-services.json` |
-| Funciones (`functions/`) | `.env.beygo-app-dev` (Jira apagado, depuración en simulación) | `.env.beygo-app-prod` |
+| Funciones (`functions/`) | `.env.beygo-development` (Jira apagado, depuración en simulación) | `.env.beygo-app-prod` |
 
 Las dos apps se pueden instalar a la vez en el mismo teléfono o emulador.
 
@@ -28,7 +28,7 @@ git push -u origin develop
 
 ### 2. Proyecto Firebase de desarrollo
 
-1. En https://console.firebase.google.com crea el proyecto **`beygo-app-dev`**.
+1. Proyecto **BeyGo Development** (ID `beygo-development`). Si algún día lo reemplazas, cambia el ID en `.firebaserc`, en este archivo y en el nombre de `functions/.env.<ID>`.
 2. Activa los mismos servicios que en producción:
    - **Authentication**: correo/contraseña y Google.
    - **Firestore** (ubicación `nam5`, igual que producción).
@@ -37,7 +37,7 @@ git push -u origin develop
 3. Registra la app Android y genera la configuración (en la raíz de `BeyGo`):
 
 ```bash
-flutterfire configure --project=beygo-app-dev --platforms=android \
+flutterfire configure --project=beygo-development --platforms=android \
   --android-package-name=com.beygo.app.dev \
   --out=lib/firebase_options_dev.dart \
   --android-out=android/app/src/dev/google-services.json
@@ -58,7 +58,7 @@ Después descarga otra vez el `google-services.json` (o vuelve a correr el `flut
 Elige una de estas dos opciones:
 
 - **Misma clave:** en Google Cloud Console → APIs y servicios → Credenciales, edita la clave de Maps y agrega la app `com.beygo.app.dev` con su SHA-1.
-- **Clave aparte:** crea una clave en el proyecto `beygo-app-dev` y agrégala a `android/local.properties`:
+- **Clave aparte:** crea una clave en el proyecto `beygo-development` y agrégala a `android/local.properties`:
 
 ```properties
 MAPS_API_KEY_DEV=tu_clave_de_desarrollo
@@ -68,7 +68,7 @@ Si `MAPS_API_KEY_DEV` no existe, DEV usa `MAPS_API_KEY`.
 
 ### 4. App Check en DEV
 
-En modo debug la app usa el proveedor de depuración. La primera vez que corras la app, busca en el log una línea como `Enter this debug secret into the allow list`. Copia ese token en la consola de `beygo-app-dev` → App Check → la app → Administrar tokens de depuración.
+En modo debug la app usa el proveedor de depuración. La primera vez que corras la app, busca en el log una línea como `Enter this debug secret into the allow list`. Copia ese token en la consola de `beygo-development` → App Check → la app → Administrar tokens de depuración.
 
 ### 5. Backend de DEV (reglas, índices y funciones)
 
@@ -91,7 +91,7 @@ firebase deploy --only firestore,storage,functions
 firebase use prod   # vuelve a producción al terminar
 ```
 
-Para tener un usuario administrador en DEV, usa `functions/scripts/set_admin_claim.js` contra `beygo-app-dev`.
+Para tener un usuario administrador en DEV, usa `functions/scripts/set_admin_claim.js` contra `beygo-development`.
 
 ---
 
@@ -138,7 +138,7 @@ shorebird release android --flavor prod --target lib/main_prod.dart --flutter-ve
 
 ### Versiones de prueba para otras personas
 
-- **Firebase App Distribution** (proyecto `beygo-app-dev`): `flutter build apk --flavor dev -t lib/main_dev.dart` y sube el APK desde la consola.
+- **Firebase App Distribution** (proyecto `beygo-development`): `flutter build apk --flavor dev -t lib/main_dev.dart` y sube el APK desde la consola.
 - O la **prueba interna** de Google Play, si registras `com.beygo.app.dev` como otra app.
 
 ---
