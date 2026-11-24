@@ -7,6 +7,7 @@ const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const {
     buildSupportReportTicket, buildProviderRequestTicket, createJiraRequest, ensureJiraTicket, CLAIM_STALE_MS,
+    tagTicketForEnvironment,
 } = require("../lib/jira");
 
 // ── Fakes ────────────────────────────────────────────────────────────────
@@ -155,4 +156,16 @@ test("ignora el salto de línea final del correo y del token", async () => {
     const f = fakeFetch([{ status: 201, json: { issueKey: "POP-12" } }]);
     await createJiraRequest({ ...cfg, email: "admin@ejemplo.com\n", token: " t0k3n\n", summary: "S", description: "D", fetchImpl: f });
     assert.equal(f.calls[0].init.headers.Authorization, "Basic " + Buffer.from("admin@ejemplo.com:t0k3n").toString("base64"));
+});
+
+test("en producción el ticket no cambia", () => {
+    const t = { summary: "S", description: "D", labels: ["beygo"] };
+    assert.deepEqual(tagTicketForEnvironment(t, "prod"), t);
+});
+
+test("en desarrollo el ticket se marca con [DEV] y la etiqueta ambiente-dev", () => {
+    const t = tagTicketForEnvironment({ summary: "[REP-1] Error: X", description: "D", labels: ["beygo"] }, "dev");
+    assert.equal(t.summary, "[DEV] [REP-1] Error: X");
+    assert.match(t.description, /ambiente DEV/);
+    assert.deepEqual(t.labels, ["beygo", "ambiente-dev"]);
 });

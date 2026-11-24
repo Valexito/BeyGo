@@ -63,3 +63,6 @@ test_rules/node_modules/
 test_rules/resultados_pruebas_reglas.txt
 test_rules/resultados_pruebas_depuracion.txt
 datos_tesis/
+
+# Configuración local de Claude
+.claude/settings.local.json

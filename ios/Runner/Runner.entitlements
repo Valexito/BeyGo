@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Vacío a propósito: con una cuenta gratuita de Apple (Personal Team) Xcode no
+  permite firmar con Push Notifications ni Sign in with Apple. Cuando la cuenta
+  esté en el Apple Developer Program ($99/año), agrega aquí:
+    <key>aps-environment</key><string>development</string>
+    <key>com.apple.developer.applesignin</key><array><string>Default</string></array>
+  (o actívalas en Xcode → Signing & Capabilities → + Capability).
+-->
+<plist version="1.0">
+<dict/>
+</plist>

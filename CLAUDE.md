@@ -26,7 +26,7 @@ Release signing needs `key.properties` at the repo root (gitignored) — see `an
 
 ### Environments (flavors)
 
-Two Android flavors share one codebase: `dev` (`com.beygo.app.dev`, Firebase `beygo-development`, entry `lib/main_dev.dart`) and `prod` (`com.beygo.app`, Firebase `beygo-app-prod`, entry `lib/main_prod.dart`; `lib/main.dart` also boots prod). Every `flutter run`/`build` and `shorebird` command needs `--flavor` and `-t`. Firebase CLI aliases: `firebase use dev` / `firebase use prod`. Functions config per project lives in `functions/.env.<projectId>` (Jira is off in dev via `JIRA_ENABLED=false`). Full setup and workflow: `DESARROLLO.md`.
+Two Android flavors share one codebase: `dev` (`com.beygo.app.dev`, Firebase `beygo-development`, entry `lib/main_dev.dart`) and `prod` (`com.beygo.app`, Firebase `beygo-app-prod`, entry `lib/main_prod.dart`; `lib/main.dart` also boots prod). Every `flutter run`/`build` and `shorebird` command needs `--flavor` and `-t`. Firebase CLI aliases: `firebase use dev` / `firebase use prod`. Functions config per project lives in `functions/.env.<projectId>` (`APP_ENV=dev` tags dev Jira tickets with "[DEV]" and label `ambiente-dev` in the same service desk). iOS mirrors this with Xcode schemes `dev`/`prod` and configs `Debug-dev`… (bundle `com.beygo.app.dev` / `com.beygo.app`); a build phase copies `ios/config/<flavor>/GoogleService-Info.plist` (gitignored) and Firebase on iOS initializes from that plist, not from `firebase_options*.dart`. iOS Maps key lives in `ios/Flutter/Secrets.xcconfig` (gitignored). Full setup and workflow: `DESARROLLO.md`.
 
 ### Shorebird (code push)
 

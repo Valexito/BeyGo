@@ -9,7 +9,7 @@ BeyGo tiene dos ambientes que comparten el mismo código:
 | App Android | `com.beygo.app.dev` ("BeyGo DEV", con cinta naranja "DEV") | `com.beygo.app` ("BeyGo") |
 | Punto de entrada | `lib/main_dev.dart` | `lib/main_prod.dart` (o `lib/main.dart`) |
 | Configuración Firebase | `lib/firebase_options_dev.dart` + `android/app/src/dev/google-services.json` | `lib/firebase_options.dart` + `android/app/google-services.json` |
-| Funciones (`functions/`) | `.env.beygo-development` (Jira apagado, depuración en simulación) | `.env.beygo-app-prod` |
+| Funciones (`functions/`) | `.env.beygo-development` (`APP_ENV=dev`: tickets de Jira con "[DEV]"; depuración en simulación) | `.env.beygo-app-prod` |
 
 Las dos apps se pueden instalar a la vez en el mismo teléfono o emulador.
 
@@ -75,16 +75,13 @@ En modo debug la app usa el proveedor de depuración. La primera vez que corras 
 ```bash
 firebase use dev
 
-# Las funciones declaran estos secretos: en DEV deben existir aunque no se usen.
-# Jira está apagado (JIRA_ENABLED=false), así que basta un valor de relleno.
-printf '%s' 'no-usar' > /tmp/x.txt
-firebase functions:secrets:set JIRA_EMAIL --data-file /tmp/x.txt
-firebase functions:secrets:set JIRA_API_TOKEN --data-file /tmp/x.txt
-rm /tmp/x.txt
-# Correo de envío y Routes API: usa valores reales si quieres probar esas funciones.
-firebase functions:secrets:set OWNER_SECURITY_EMAIL
-firebase functions:secrets:set OWNER_SECURITY_EMAIL_PASSWORD
-firebase functions:secrets:set GOOGLE_ROUTES_API_KEY
+# Copia los secretos de producción a DEV sin mostrarlos en pantalla
+# (Jira usa el mismo service desk; los tickets de DEV llevan "[DEV]" y la etiqueta "ambiente-dev").
+for s in JIRA_EMAIL JIRA_API_TOKEN OWNER_SECURITY_EMAIL OWNER_SECURITY_EMAIL_PASSWORD GOOGLE_ROUTES_API_KEY; do
+  firebase functions:secrets:access $s --project beygo-app-prod > /tmp/s.txt
+  firebase functions:secrets:set $s --data-file /tmp/s.txt --project beygo-development
+done
+rm /tmp/s.txt
 
 firebase deploy --only firestore,storage,functions
 
@@ -145,4 +142,61 @@ shorebird release android --flavor prod --target lib/main_prod.dart --flutter-ve
 
 ## iOS
 
-Pendiente. Requiere la cuenta Apple Developer ($99 al año). Cuando se active: registrar las apps iOS en ambos proyectos de Firebase, configurar los esquemas de Xcode por ambiente y agregar "Iniciar sesión con Apple".
+El proyecto de Xcode ya tiene los dos ambientes:
+
+| | DEV | PROD |
+|---|---|---|
+| Esquema de Xcode | `dev` | `prod` |
+| Configuraciones | `Debug-dev`, `Release-dev`, `Profile-dev` | `Debug-prod`, `Release-prod`, `Profile-prod` (y `Debug`/`Release`/`Profile`) |
+| Bundle ID | `com.beygo.app.dev` ("BeyGo DEV") | `com.beygo.app` ("BeyGo") |
+| Configuración Firebase | `ios/config/dev/GoogleService-Info.plist` | `ios/config/prod/GoogleService-Info.plist` |
+
+Una fase de compilación ("Copy GoogleService-Info.plist") copia el archivo del ambiente dentro de la app y registra su `REVERSED_CLIENT_ID` como URL scheme para el inicio con Google. En iOS, Firebase se inicializa desde ese archivo (no desde `firebase_options*.dart`).
+
+### Configuración inicial (una sola vez)
+
+> **Cuenta gratuita de Apple:** se puede instalar la app DEV en tu propio iPhone con Xcode (Personal Team), sin pagar. Limitaciones: la instalación caduca a los 7 días (vuelves a correr `flutter run`), no hay notificaciones push ni "Iniciar sesión con Apple" (por eso `Runner.entitlements` está vacío) y no se puede usar TestFlight ni App Store. Los pasos 2 (APNs) y TestFlight requieren el Apple Developer Program ($99/año).
+>
+> **Estado actual:** iOS se prueba solo en **DEV**. Mientras no exista `ios/config/prod/GoogleService-Info.plist`, cualquier compilación iOS de producción se detiene con un error claro; los pasos de `beygo-app-prod` quedan para cuando se publique en App Store.
+
+1. **Apps iOS en Firebase.** En cada proyecto: Configuración del proyecto → Agregar app → iOS.
+   - `beygo-development`: bundle ID `com.beygo.app.dev` → descarga `GoogleService-Info.plist` a `ios/config/dev/`.
+   - `beygo-app-prod`: bundle ID `com.beygo.app` → descarga `GoogleService-Info.plist` a `ios/config/prod/`.
+   - Hazlo con Google ya habilitado en Authentication, para que el archivo traiga `CLIENT_ID` y `REVERSED_CLIENT_ID`.
+2. **Notificaciones push (APNs).** En https://developer.apple.com/account → Certificates, IDs & Profiles → Keys → crea una clave con **Apple Push Notifications service (APNs)** y descarga el `.p8` (solo se puede descargar una vez). Súbela en Firebase → Configuración del proyecto → Cloud Messaging → app iOS → Clave de autenticación de APNs, **en los dos proyectos**, con tu Key ID y Team ID.
+3. **Google Maps.** En Google Cloud Console crea (o reutiliza) una clave restringida a **apps iOS** con los bundle IDs `com.beygo.app` y `com.beygo.app.dev`, con Maps SDK for iOS habilitado. Luego:
+
+```bash
+cp ios/Flutter/Secrets.xcconfig.example ios/Flutter/Secrets.xcconfig
+# edita ios/Flutter/Secrets.xcconfig y pon MAPS_API_KEY_IOS = tu_clave
+```
+
+4. **Firma en Xcode.** `open ios/Runner.xcworkspace` → target **Runner** → Signing & Capabilities → marca *Automatically manage signing* y elige tu **Team** (aplica a todas las configuraciones). Con cuenta gratuita aparece como "Tu Nombre (Personal Team)"; Xcode registra el bundle ID solo. Push Notifications y Sign in with Apple se agregan cuando haya Apple Developer Program.
+5. **Dependencias.**
+
+```bash
+flutter pub get
+cd ios && pod install && cd ..
+```
+
+### Correr en iPhone o simulador
+
+```bash
+flutter run --flavor dev  -t lib/main_dev.dart    # BeyGo DEV
+flutter run --flavor prod -t lib/main_prod.dart   # BeyGo
+```
+
+Para un iPhone físico, conéctalo, confía en la Mac y activa el **Modo desarrollador** (Ajustes → Privacidad y seguridad). Las notificaciones push no llegan al simulador.
+
+### TestFlight
+
+```bash
+flutter build ipa --flavor prod -t lib/main_prod.dart
+```
+
+Sube el `.ipa` con la app **Transporter** o desde Xcode (Organizer). Para probar DEV en TestFlight, crea en App Store Connect una app aparte con el bundle ID `com.beygo.app.dev`.
+
+### Pendiente para publicar en App Store
+
+- **Iniciar sesión con Apple:** Apple lo exige si la app ofrece inicio con Google. La capacidad ya está en `Runner.entitlements`; falta habilitar el proveedor Apple en Firebase Authentication y agregar el botón en la app.
+- **Crashlytics en iOS:** agregar el script de subida de dSYM para ver los errores simbolizados.

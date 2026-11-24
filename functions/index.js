@@ -26,6 +26,7 @@ const {
     buildProviderRequestTicket,
     createJiraRequest,
     ensureJiraTicket,
+    tagTicketForEnvironment,
 } = require("./lib/jira");
 
 admin.initializeApp();
@@ -1317,15 +1318,17 @@ const jiraBaseUrl = defineString("JIRA_BASE_URL", { default: "https://uvg-team-c
 const jiraServiceDeskId = defineString("JIRA_SERVICE_DESK_ID", { default: "34" });
 const jiraSupportRequestTypeId = defineString("JIRA_SUPPORT_REQUEST_TYPE_ID", { default: "38" });
 const jiraProviderRequestTypeId = defineString("JIRA_PROVIDER_REQUEST_TYPE_ID", { default: "38" });
-// En el ambiente de desarrollo (beygo-development) se apaga con JIRA_ENABLED=false
-// para no crear tickets de prueba en el service desk real.
+// JIRA_ENABLED=false apaga la creación de tickets en un ambiente.
 const jiraEnabled = defineString("JIRA_ENABLED", { default: "true" });
+// Ambiente que despliega las funciones ("prod" o "dev"). Fuera de producción,
+// los tickets llevan "[DEV]" y la etiqueta "ambiente-dev" en el mismo service desk.
+const appEnv = defineString("APP_ENV", { default: "prod" });
 
 async function createJiraTicketFor(event, ticket, requestTypeId, logTag) {
     const result = await ensureJiraTicket({
         db,
         ref: event.data.ref,
-        ticket,
+        ticket: tagTicketForEnvironment(ticket, appEnv.value()),
         serverTimestamp: () => admin.firestore.FieldValue.serverTimestamp(),
         create: (t) => createJiraRequest({
             baseUrl: jiraBaseUrl.value(),

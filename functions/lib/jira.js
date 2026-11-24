@@ -158,6 +158,24 @@ function buildProviderRequestTicket(requestId, data = {}) {
     };
 }
 
+/**
+ * Marca el ticket según el ambiente. En producción no cambia nada; en otro
+ * ambiente (p. ej. "dev") antepone "[DEV]" al resumen, lo indica en la
+ * descripción y agrega la etiqueta "ambiente-dev", para distinguir las pruebas
+ * en el mismo service desk.
+ */
+function tagTicketForEnvironment(ticket, env = "prod") {
+    const name = clean(env, "prod").toLowerCase();
+    if (name === "prod") return ticket;
+    const tag = name.toUpperCase();
+    return {
+        ...ticket,
+        summary: truncate(`[${tag}] ${ticket.summary}`, SUMMARY_MAX),
+        description: truncate(`⚠ Ticket de prueba generado desde el ambiente ${tag} de BeyGo.\n\n${ticket.description}`, DESCRIPTION_MAX),
+        labels: [...(ticket.labels || []), `ambiente-${slug(name)}`],
+    };
+}
+
 /** Crea la solicitud en Jira Service Management y devuelve su clave (p. ej. POP-12). */
 async function createJiraRequest({
     baseUrl, email, token, serviceDeskId, requestTypeId,
@@ -252,5 +270,6 @@ module.exports = {
     buildProviderRequestTicket,
     createJiraRequest,
     ensureJiraTicket,
+    tagTicketForEnvironment,
     CLAIM_STALE_MS,
 };

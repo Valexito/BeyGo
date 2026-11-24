@@ -5,6 +5,6 @@ import 'firebase_options.dart';
 import 'main.dart' as app;
 
 Future<void> main() => app.bootstrap(
-  firebaseOptions: DefaultFirebaseOptions.currentPlatform,
+  firebaseOptions: () => DefaultFirebaseOptions.currentPlatform,
   environment: AppEnvironment.prod,
 );

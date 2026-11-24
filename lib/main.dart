@@ -21,21 +21,28 @@ final ValueNotifier<String?> appStartupWarning = ValueNotifier<String?>(null);
 /// Punto de entrada por defecto: producción. Para desarrollo usa
 /// `flutter run --flavor dev -t lib/main_dev.dart` (ver DESARROLLO.md).
 Future<void> main() => bootstrap(
-  firebaseOptions: DefaultFirebaseOptions.currentPlatform,
+  firebaseOptions: () => DefaultFirebaseOptions.currentPlatform,
   environment: AppEnvironment.prod,
 );
 
 /// Inicializa Firebase y los servicios con la configuración del ambiente
 /// indicado y arranca la app.
 Future<void> bootstrap({
-  required FirebaseOptions firebaseOptions,
+  required FirebaseOptions Function() firebaseOptions,
   required AppEnvironment environment,
 }) async {
   WidgetsFlutterBinding.ensureInitialized();
   AppEnv.current = environment;
 
   if (Firebase.apps.isEmpty) {
-    await Firebase.initializeApp(options: firebaseOptions);
+    // En iOS la configuración sale del GoogleService-Info.plist que el build
+    // copia según el ambiente (ios/config/<dev|prod>/); en Android, de las
+    // opciones generadas por flutterfire.
+    final useNativeConfig =
+        !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+    await Firebase.initializeApp(
+      options: useNativeConfig ? null : firebaseOptions(),
+    );
   }
 
   await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(

@@ -1,0 +1,2 @@
+Coloca aquí el GoogleService-Info.plist de la app iOS com.beygo.app.dev
+(proyecto Firebase beygo-development). Está fuera de git. Ver DESARROLLO.md.
