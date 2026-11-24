@@ -56,3 +56,9 @@ ios/Runner/GoogleService-Info.plist
 env_dev.json
 *.jks
 *.keystore
+
+# Pruebas de reglas (emulador)
+test_rules/node_modules/
+test_rules/resultados_pruebas_reglas.txt
+test_rules/resultados_pruebas_depuracion.txt
+datos_tesis/

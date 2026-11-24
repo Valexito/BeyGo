@@ -15,11 +15,18 @@
 const { onDocumentWritten, onDocumentCreated } = require("firebase-functions/v2/firestore");
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
-const { defineSecret } = require("firebase-functions/params");
+const { defineSecret, defineString } = require("firebase-functions/params");
 const admin = require("firebase-admin");
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 const PDFDocument = require("pdfkit");
+const { purgeExpiredReservations } = require("./lib/retention");
+const {
+    buildSupportReportTicket,
+    buildProviderRequestTicket,
+    createJiraRequest,
+    ensureJiraTicket,
+} = require("./lib/jira");
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -1299,6 +1306,79 @@ exports.onProviderRequestCreated = onDocumentCreated({
     }
 });
 
+// ─── Jira Service Management: tickets de reportes y solicitudes ────────────
+// Cada documento nuevo en support_reports y provider_requests crea un ticket en
+// el service desk de Jira (proyecto POP). Son funciones aparte de las de correo
+// para que un fallo de Jira no afecte la confirmación al usuario, y viceversa.
+// El resultado queda en el campo `jira` del documento (status, issueKey, url).
+const jiraEmail = defineSecret("JIRA_EMAIL");
+const jiraApiToken = defineSecret("JIRA_API_TOKEN");
+const jiraBaseUrl = defineString("JIRA_BASE_URL", { default: "https://uvg-team-cuk3d774.atlassian.net" });
+const jiraServiceDeskId = defineString("JIRA_SERVICE_DESK_ID", { default: "34" });
+const jiraSupportRequestTypeId = defineString("JIRA_SUPPORT_REQUEST_TYPE_ID", { default: "38" });
+const jiraProviderRequestTypeId = defineString("JIRA_PROVIDER_REQUEST_TYPE_ID", { default: "38" });
+
+async function createJiraTicketFor(event, ticket, requestTypeId, logTag) {
+    const result = await ensureJiraTicket({
+        db,
+        ref: event.data.ref,
+        ticket,
+        serverTimestamp: () => admin.firestore.FieldValue.serverTimestamp(),
+        create: (t) => createJiraRequest({
+            baseUrl: jiraBaseUrl.value(),
+            email: jiraEmail.value(),
+            token: jiraApiToken.value(),
+            serviceDeskId: jiraServiceDeskId.value(),
+            requestTypeId,
+            summary: t.summary,
+            description: t.description,
+            labels: t.labels,
+        }),
+    });
+    if (result.skipped) {
+        console.log(`[${logTag}] ${event.data.ref.path}: ticket ya creado o en curso`);
+    } else {
+        console.log(`[${logTag}] ${event.data.ref.path} → ${result.issueKey}${result.labelsError ? ` (${result.labelsError})` : ""}`);
+    }
+}
+
+exports.onSupportReportCreatedJira = onDocumentCreated({
+    document: "support_reports/{reportId}",
+    secrets: [jiraEmail, jiraApiToken],
+}, async (event) => {
+    const data = event.data?.data();
+    if (!data) return;
+    try {
+        await createJiraTicketFor(
+            event,
+            buildSupportReportTicket(event.params.reportId, data),
+            jiraSupportRequestTypeId.value(),
+            "jira-support-report"
+        );
+    } catch (error) {
+        // El error queda en jira.status = "failed" del documento.
+        console.error(`[jira-support-report] ${event.params.reportId}: ${error instanceof Error ? error.message : error}`);
+    }
+});
+
+exports.onProviderRequestCreatedJira = onDocumentCreated({
+    document: "provider_requests/{requestId}",
+    secrets: [jiraEmail, jiraApiToken],
+}, async (event) => {
+    const data = event.data?.data();
+    if (!data) return;
+    try {
+        await createJiraTicketFor(
+            event,
+            buildProviderRequestTicket(event.params.requestId, data),
+            jiraProviderRequestTypeId.value(),
+            "jira-provider-request"
+        );
+    } catch (error) {
+        console.error(`[jira-provider-request] ${event.params.requestId}: ${error instanceof Error ? error.message : error}`);
+    }
+});
+
 // ─── Helper: get FCM token for a user ──────────────────────────────────────
 async function getToken(uid) {
     if (!uid) return null;
@@ -1335,6 +1415,30 @@ exports.onReservationChanged = onDocumentWritten(
 
         // Document deleted — ignore
         if (!event.data.after.exists) return;
+
+        // ── 0. Stamp the approval moment (research metric) ────────────────────
+        // approvedAt = commit time of the write that moved the reservation to
+        // providerApprovalStatus "approved" + state "active" (covers both the
+        // owner's manual approval and auto-approval). Written once, server-side
+        // with the Admin SDK, so no Firestore rules change is needed. The write
+        // re-triggers this function, but no state changes, so nothing is resent.
+        if (
+            event.data.before.exists &&
+            before.providerApprovalStatus !== "approved" &&
+            after.providerApprovalStatus === "approved" &&
+            after.state === "active" &&
+            !after.approvedAt
+        ) {
+            try {
+                await event.data.after.ref.update({
+                    approvedAt: event.time
+                        ? admin.firestore.Timestamp.fromDate(new Date(event.time))
+                        : admin.firestore.FieldValue.serverTimestamp(),
+                });
+            } catch (err) {
+                console.error("❌ approvedAt stamp error:", err.message);
+            }
+        }
 
         const userId = after.userId;
         const ownerId = after.ownerId;
@@ -1804,6 +1908,30 @@ exports.deleteAccountByUid = onCall(
         };
     }
 );
+
+// ─── Depuración automática de datos (plazos de la política de privacidad) ───
+// Política: "Historial de reservaciones: hasta 24 meses". Cada mes se eliminan
+// las reservaciones TERMINADAS (completed, cancelled, manual_completed) cuya
+// fecha de reserva supera el plazo. Las reservaciones activas o pendientes no
+// se tocan. Seguridad: por defecto corre en modo SIMULACIÓN (solo registra qué
+// borraría). Para borrar de verdad, definir PURGE_DRY_RUN=false en functions/.env
+// y volver a desplegar. La lógica está en lib/retention.js y se prueba con el
+// emulador (test_rules: npm run test:depuracion).
+const purgeDryRun = defineString("PURGE_DRY_RUN", { default: "true" });
+
+exports.purgeExpiredReservations = onSchedule({
+    schedule: "0 3 2 * *",
+    timeZone: REPORT_TIMEZONE,
+    timeoutSeconds: 540,
+}, async () => {
+    const dryRun = `${purgeDryRun.value()}`.trim().toLowerCase() !== "false";
+    const result = await purgeExpiredReservations(db, { dryRun });
+    console.log(
+        `[retention-purge] mode=${dryRun ? "DRY_RUN" : "DELETE"} ` +
+        `cutoff=${result.cutoff.toISOString()} scanned=${result.scanned} ` +
+        `matched=${result.matched} deleted=${result.deleted}`
+    );
+});
 
 // ─── package.json reminder ─────────────────────────────────────────────────
 // {

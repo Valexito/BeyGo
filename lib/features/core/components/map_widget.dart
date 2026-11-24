@@ -7,6 +7,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:beygo/common/common.dart';
 import 'package:beygo/features/core/core.dart';
 import 'package:beygo/features/reservations/reservations.dart';
+
 class MapWidget extends ConsumerStatefulWidget {
   /// Called when the user taps the map background (not a marker).
   final VoidCallback? onMapTap;
@@ -80,12 +81,6 @@ class MapWidgetState extends ConsumerState<MapWidget> {
     const outerRadius = 26.0;
     const innerRadius = 23.0;
 
-    // Rasterize at the device's real pixel density instead of a flat 1x
-    // canvas — a fixed 116x116 bitmap looks fine on old ~1x screens but
-    // pixelated/blurry once Maps stretches it to the marker size on a
-    // modern 2x-4x screen. `imagePixelRatio` below tells the renderer how
-    // many bitmap pixels correspond to one logical point, so the marker
-    // keeps the same on-screen size but renders crisp (HD).
     final dpr =
         ui.PlatformDispatcher.instance.views.isNotEmpty
             ? ui.PlatformDispatcher.instance.views.first.devicePixelRatio
@@ -110,9 +105,7 @@ class MapWidgetState extends ConsumerState<MapWidget> {
             colors: [AppColors.headerTop, AppColors.headerBottom],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-          ).createShader(
-            Rect.fromCircle(center: center, radius: outerRadius),
-          );
+          ).createShader(Rect.fromCircle(center: center, radius: outerRadius));
     canvas.drawCircle(center, outerRadius, gradientPaint);
 
     final borderPaint =
@@ -126,7 +119,11 @@ class MapWidgetState extends ConsumerState<MapWidget> {
         Paint()
           ..color = Colors.white.withValues(alpha: 0.10)
           ..style = PaintingStyle.fill;
-    canvas.drawCircle(center + const Offset(0, -2), innerRadius, highlightPaint);
+    canvas.drawCircle(
+      center + const Offset(0, -2),
+      innerRadius,
+      highlightPaint,
+    );
 
     final carPainter = TextPainter(textDirection: TextDirection.ltr);
     carPainter.text = TextSpan(

@@ -9,8 +9,8 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
-    <!-- Storage (image_picker en Android 13+ usa READ_MEDIA_IMAGES) -->
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <!-- Storage (image_picker usa el selector de fotos del sistema en Android 13+, sin permisos;
+         esto solo cubre el fallback en dispositivos con Android 12 o anterior) -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32"/>
 
     <!-- FCM: Push notifications -->

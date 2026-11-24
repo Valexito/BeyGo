@@ -7,7 +7,8 @@
     "start": "npm run shell",
     "deploy": "firebase deploy --only functions",
     "logs": "firebase functions:log",
-    "set-admin-claim": "node scripts/set_admin_claim.js"
+    "set-admin-claim": "node scripts/set_admin_claim.js",
+    "test:jira": "node --test --test-reporter=spec test/jira.test.js"
   },
   "engines": {
     "node": "22"
@@ -15,12 +16,9 @@
   "main": "index.js",
   "dependencies": {
     "firebase-admin": "^12.7.0",
-    "firebase-functions": "^4.9.0",
-    "nodemailer": "^8.0.7",
+    "firebase-functions": "^7.4.0",
+    "nodemailer": "^10.0.10",
     "pdfkit": "^0.15.2"
-  },
-  "devDependencies": {
-    "firebase-functions-test": "^3.1.0"
   },
   "private": true
 }

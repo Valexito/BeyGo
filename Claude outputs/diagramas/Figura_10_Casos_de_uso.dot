@@ -1,0 +1,32 @@
+digraph G {
+  rankdir=LR; splines=true; nodesep=0.18; ranksep=1.1;
+  node [fontname="Liberation Serif", fontsize=17];
+  edge [color="#1f3b63", arrowhead=none];
+  C [label="«actor»\nConductor", shape=none, fontsize=18];
+  subgraph cluster_s {
+    label="Sistema BeyGo"; fontname="Liberation Serif"; fontsize=18; style=rounded; color="#1f3b63";
+    node [shape=ellipse, style=filled, fillcolor="#eef2f7", color="#1f3b63"];
+    u1 [label="Registrarse e iniciar sesión"];
+    u2 [label="Buscar parqueos en el mapa"];
+    u3 [label="Reservar un espacio"];
+    u4 [label="Cancelar o solicitar salida"];
+    u5 [label="Chatear sobre la reserva"];
+    u6 [label="Calificar el parqueo"];
+    u7 [label="Consultar historial"];
+    u8 [label="Gestionar vehículos y favoritos"];
+    u9 [label="Solicitar ser proveedor"];
+    p1 [label="Aprobar o rechazar reservas"];
+    p2 [label="Confirmar salidas y cancelaciones"];
+    p3 [label="Registrar ingresos sin reserva"];
+    p4 [label="Editar parqueo y disponibilidad"];
+    p5 [label="Consultar reportes de ingresos y ocupación"];
+    a1 [label="Aprobar solicitudes de proveedor"];
+    a2 [label="Atender reportes de problemas"];
+    a3 [label="Gestionar el borrado de cuentas"];
+  }
+  P [label="«actor»\nProveedor", shape=none, fontsize=18];
+  A [label="«actor»\nAdministrador", shape=none, fontsize=18];
+  C -> {u1 u2 u3 u4 u5 u6 u7 u8 u9};
+  {p1 p2 p3 p4 p5 u5 u1} -> P;
+  {a1 a2 a3 u1} -> A;
+}

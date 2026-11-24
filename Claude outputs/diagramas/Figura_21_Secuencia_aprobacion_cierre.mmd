@@ -1,0 +1,25 @@
+sequenceDiagram
+  autonumber
+  actor P as Proveedor
+  participant AP as App BeyGo (vista de proveedor)
+  participant F as Cloud Firestore
+  participant C as Cloud Functions y FCM
+  participant AU as App BeyGo (conductor)
+  actor U as Conductor
+  P->>AP: Abre la solicitud pendiente
+  AP->>F: Aprueba: state «active», espacio «occupied»
+  F->>C: onReservationChanged (aprobada)
+  C-->>AU: Notificación «¡Reserva aprobada!» (push)
+  AU-->>U: Muestra la reserva activa
+  U->>AU: Solicita la salida al terminar
+  AU->>F: exitStatus «requested»
+  F->>C: onReservationChanged (salida solicitada)
+  C-->>AP: Notificación «Solicitud de salida» (push)
+  P->>AP: Aprueba la salida
+  AP->>F: Cierra la reserva: «completed», salida aprobada, monto y espacio libre
+  F->>C: onReservationChanged (completada)
+  C-->>AU: Notificaciones «Salida aprobada» y «Reserva completada» (push)
+  U->>AU: Califica el parqueo
+  AU->>F: Guarda la reseña en parkings/{id}/reviews
+  F->>C: onParkingReviewWritten
+  C->>F: Recalcula la calificación promedio del parqueo

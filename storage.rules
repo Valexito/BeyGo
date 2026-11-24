@@ -19,6 +19,32 @@ service firebase.storage {
         && request.resource.contentType.matches('image/.*');
     }
 
+    // Dueño de la solicitud de proveedor según Firestore (provider_requests/{id}.uid).
+    // Las fotos se suben ANTES de crear el documento de la solicitud, por eso
+    // mientras el documento no exista se permite al usuario autenticado (el id
+    // es un identificador aleatorio no adivinable). Una vez creado, solo el
+    // dueño de la solicitud o un admin pueden leer/modificar/borrar.
+    function requestDocPath(requestId) {
+      return /databases/(default)/documents/provider_requests/$(requestId);
+    }
+
+    function requestNotCreatedYet(requestId) {
+      return !firestore.exists(requestDocPath(requestId));
+    }
+
+    function isRequestOwner(requestId) {
+      return signedIn()
+        && firestore.exists(requestDocPath(requestId))
+        && firestore.get(requestDocPath(requestId)).data.uid == request.auth.uid;
+    }
+
+    // Dueño del parqueo según Firestore (parkings/{id}.ownerID).
+    function isParkingOwnerOf(pid) {
+      return signedIn()
+        && firestore.exists(/databases/(default)/documents/parkings/$(pid))
+        && firestore.get(/databases/(default)/documents/parkings/$(pid)).data.ownerID == request.auth.uid;
+    }
+
     function under10MB() {
       return request.resource != null
         && request.resource.size < 10 * 1024 * 1024;
@@ -30,14 +56,16 @@ service firebase.storage {
       allow delete: if isOwner(uid) || isAdmin();
     }
 
+    // Documentos sensibles (DPI, patente, fotos): solo dueño de la solicitud o admin.
     match /provider_requests/{requestId}/{rest=**} {
-      allow read: if signedIn();
+      allow read: if isAdmin()
+        || (signedIn() && (requestNotCreatedYet(requestId) || isRequestOwner(requestId)));
 
       allow create, update: if signedIn()
-        && request.resource != null
-        && request.resource.size < 10 * 1024 * 1024;
+        && isImage() && under10MB()
+        && (isAdmin() || requestNotCreatedYet(requestId) || isRequestOwner(requestId));
 
-      allow delete: if signedIn();
+      allow delete: if isAdmin() || isRequestOwner(requestId);
     }
 
     match /support_reports/{uid}/{reportId}/{rest=**} {
@@ -48,7 +76,8 @@ service firebase.storage {
 
     match /parkings/{pid}/{rest=**} {
       allow read: if true;
-      allow create, update: if signedIn() && isImage() && under10MB();
+      allow create, update: if signedIn() && isImage() && under10MB()
+        && (isAdmin() || isParkingOwnerOf(pid));
       allow delete: if isAdmin();
     }
 

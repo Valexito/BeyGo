@@ -1,0 +1,20 @@
+sequenceDiagram
+  autonumber
+  actor U as Conductor
+  participant A as App BeyGo (Flutter)
+  participant G as Google Maps Platform
+  participant F as Cloud Firestore
+  participant C as Cloud Functions y FCM
+  actor P as Proveedor
+  U->>A: Abre el mapa de parqueos
+  A->>G: Obtiene el mapa y la ubicación actual
+  A->>F: Escucha parkings y spaces (tiempo real)
+  F-->>A: Parqueos y espacios libres
+  A-->>U: Muestra la disponibilidad en el mapa
+  U->>A: Elige parqueo, espacio y vehículo
+  A->>F: Transacción: verifica que el espacio esté libre, crea la reserva (pending) y marca el espacio
+  F-->>A: Reserva registrada
+  A-->>U: Muestra «Pendiente de aprobación»
+  F->>C: onReservationChanged (nueva reserva)
+  C-->>P: Notificación «Nueva solicitud de reserva» (push)
+  Note over A,F: Si el parqueo tiene aprobación automática, la reserva pasa directamente a «active».
