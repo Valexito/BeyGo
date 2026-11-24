@@ -52,6 +52,7 @@ lib/common/env/env.dart
 android/local.properties
 android/key.properties
 android/app/google-services.json
+android/app/src/*/google-services.json
 ios/Runner/GoogleService-Info.plist
 env_dev.json
 *.jks

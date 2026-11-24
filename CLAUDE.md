@@ -24,6 +24,10 @@ Local setup required before running: `android/local.properties` needs `MAPS_API_
 
 Release signing needs `key.properties` at the repo root (gitignored) — see `android/key.properties.template` for the format and the `keytool` command to generate the keystore. Gradle fails the release build immediately if `key.properties` is missing.
 
+### Environments (flavors)
+
+Two Android flavors share one codebase: `dev` (`com.beygo.app.dev`, Firebase `beygo-app-dev`, entry `lib/main_dev.dart`) and `prod` (`com.beygo.app`, Firebase `beygo-app-prod`, entry `lib/main_prod.dart`; `lib/main.dart` also boots prod). Every `flutter run`/`build` and `shorebird` command needs `--flavor` and `-t`. Firebase CLI aliases: `firebase use dev` / `firebase use prod`. Functions config per project lives in `functions/.env.<projectId>` (Jira is off in dev via `JIRA_ENABLED=false`). Full setup and workflow: `DESARROLLO.md`.
+
 ### Shorebird (code push)
 
 This app ships updates via [Shorebird](https://shorebird.dev) so pure-Dart fixes don't need a new Play Store review. `shorebird.yaml` (checked in, non-secret) holds the `app_id`.

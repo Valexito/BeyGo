@@ -163,6 +163,10 @@ async function createJiraRequest({
     baseUrl, email, token, serviceDeskId, requestTypeId,
     summary, description, labels = [], fetchImpl = fetch,
 }) {
+    // Se recortan espacios y saltos de línea que suelen colarse al guardar los secretos.
+    email = `${email ?? ""}`.trim();
+    token = `${token ?? ""}`.trim();
+    baseUrl = `${baseUrl ?? ""}`.trim();
     if (!baseUrl || !email || !token) throw new Error("Faltan JIRA_BASE_URL, JIRA_EMAIL o JIRA_API_TOKEN.");
     const root = baseUrl.replace(/\/+$/, "");
     const headers = {

@@ -19,6 +19,11 @@ val mapsApiKey: String =
     localProperties.getProperty("MAPS_API_KEY")
         ?: System.getenv("MAPS_API_KEY")
         ?: ""
+// Clave de Maps para el ambiente de desarrollo; si no existe, usa la de producción.
+val mapsApiKeyDev: String =
+    localProperties.getProperty("MAPS_API_KEY_DEV")
+        ?: System.getenv("MAPS_API_KEY_DEV")
+        ?: mapsApiKey
 
 // ─── Lee key.properties (firma de release) ─────────────────────────────────────
 val keyPropertiesFile = rootProject.file("key.properties")
@@ -49,6 +54,24 @@ android {
 
         // Inyecta la API key al AndroidManifest sin que viva en el repo
         manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
+    }
+
+    // ─── Ambientes (flavors) ──────────────────────────────────────────────────
+    // dev  → com.beygo.app.dev, proyecto Firebase beygo-app-dev, nombre "BeyGo DEV"
+    // prod → com.beygo.app,     proyecto Firebase beygo-app-prod
+    // Cada sabor lee su google-services.json de src/<sabor>/ (si no existe,
+    // usa android/app/google-services.json). Ver DESARROLLO.md.
+    flavorDimensions += "env"
+    productFlavors {
+        create("dev") {
+            dimension = "env"
+            applicationIdSuffix = ".dev"
+            versionNameSuffix = "-dev"
+            manifestPlaceholders["MAPS_API_KEY"] = mapsApiKeyDev
+        }
+        create("prod") {
+            dimension = "env"
+        }
     }
 
     compileOptions {

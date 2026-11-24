@@ -11,19 +11,31 @@ import 'package:beygo/common/common.dart';
 import 'package:beygo/features/core/core.dart';
 import 'package:beygo/features/users/users.dart' as userv;
 import 'package:beygo/features/reservations/reservations.dart';
+import 'app_environment.dart';
 import 'firebase_options.dart';
 import 'package:beygo/features/auth/auth.dart';
 import 'package:beygo/features/owner/owner.dart';
 
 final ValueNotifier<String?> appStartupWarning = ValueNotifier<String?>(null);
 
-Future<void> main() async {
+/// Punto de entrada por defecto: producción. Para desarrollo usa
+/// `flutter run --flavor dev -t lib/main_dev.dart` (ver DESARROLLO.md).
+Future<void> main() => bootstrap(
+  firebaseOptions: DefaultFirebaseOptions.currentPlatform,
+  environment: AppEnvironment.prod,
+);
+
+/// Inicializa Firebase y los servicios con la configuración del ambiente
+/// indicado y arranca la app.
+Future<void> bootstrap({
+  required FirebaseOptions firebaseOptions,
+  required AppEnvironment environment,
+}) async {
   WidgetsFlutterBinding.ensureInitialized();
+  AppEnv.current = environment;
 
   if (Firebase.apps.isEmpty) {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
+    await Firebase.initializeApp(options: firebaseOptions);
   }
 
   await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(
@@ -109,7 +121,17 @@ class MyApp extends ConsumerWidget {
       builder:
           (context, child) => Stack(
             children: [
-              SafeArea(child: child!),
+              // En desarrollo se marca la app con una cinta "DEV" para no
+              // confundirla con la de producción.
+              if (AppEnv.isDev)
+                Banner(
+                  message: 'DEV',
+                  location: BannerLocation.topEnd,
+                  color: Colors.deepOrange,
+                  child: SafeArea(child: child!),
+                )
+              else
+                SafeArea(child: child!),
               ValueListenableBuilder<String?>(
                 valueListenable: appStartupWarning,
                 builder: (context, warning, _) {

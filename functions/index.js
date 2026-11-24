@@ -1317,6 +1317,9 @@ const jiraBaseUrl = defineString("JIRA_BASE_URL", { default: "https://uvg-team-c
 const jiraServiceDeskId = defineString("JIRA_SERVICE_DESK_ID", { default: "34" });
 const jiraSupportRequestTypeId = defineString("JIRA_SUPPORT_REQUEST_TYPE_ID", { default: "38" });
 const jiraProviderRequestTypeId = defineString("JIRA_PROVIDER_REQUEST_TYPE_ID", { default: "38" });
+// En el ambiente de desarrollo (beygo-app-dev) se apaga con JIRA_ENABLED=false
+// para no crear tickets de prueba en el service desk real.
+const jiraEnabled = defineString("JIRA_ENABLED", { default: "true" });
 
 async function createJiraTicketFor(event, ticket, requestTypeId, logTag) {
     const result = await ensureJiraTicket({
@@ -1348,6 +1351,10 @@ exports.onSupportReportCreatedJira = onDocumentCreated({
 }, async (event) => {
     const data = event.data?.data();
     if (!data) return;
+    if (jiraEnabled.value() !== "true") {
+        console.log(`[jira] Desactivado (JIRA_ENABLED=${jiraEnabled.value()}): ${event.data.ref.path}`);
+        return;
+    }
     try {
         await createJiraTicketFor(
             event,
@@ -1367,6 +1374,10 @@ exports.onProviderRequestCreatedJira = onDocumentCreated({
 }, async (event) => {
     const data = event.data?.data();
     if (!data) return;
+    if (jiraEnabled.value() !== "true") {
+        console.log(`[jira] Desactivado (JIRA_ENABLED=${jiraEnabled.value()}): ${event.data.ref.path}`);
+        return;
+    }
     try {
         await createJiraTicketFor(
             event,

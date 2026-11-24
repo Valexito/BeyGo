@@ -1,6 +1,8 @@
 {
   "projects": {
     "default": "beygo-app-prod",
+    "prod": "beygo-app-prod",
+    "dev": "beygo-app-dev",
     "beygo-app-prod-alias": "beygo-app-prod"
   },
   "targets": {},

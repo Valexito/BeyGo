@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Nombre de la app en el ambiente de desarrollo (se instala junto a la de producción). -->
+    <string name="app_name">BeyGo DEV</string>
+</resources>

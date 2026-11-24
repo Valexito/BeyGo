@@ -150,3 +150,9 @@ test("si Jira falla, deja el error en el documento y permite reintentar", async 
     const r = await ensureJiraTicket({ db, ref, ticket: {}, create: async () => ({ issueKey: "POP-11" }) });
     assert.equal(r.issueKey, "POP-11");
 });
+
+test("ignora el salto de línea final del correo y del token", async () => {
+    const f = fakeFetch([{ status: 201, json: { issueKey: "POP-12" } }]);
+    await createJiraRequest({ ...cfg, email: "admin@ejemplo.com\n", token: " t0k3n\n", summary: "S", description: "D", fetchImpl: f });
+    assert.equal(f.calls[0].init.headers.Authorization, "Basic " + Buffer.from("admin@ejemplo.com:t0k3n").toString("base64"));
+});
