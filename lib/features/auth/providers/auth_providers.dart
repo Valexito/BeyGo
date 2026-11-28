@@ -1,4 +1,9 @@
+import 'dart:convert';
+import 'dart:math';
+
+import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -51,6 +56,61 @@ final signInWithGoogleProvider = Provider<Future<UserCredential> Function()>((
 });
 
 final signInWithGoogleFnProvider = signInWithGoogleProvider;
+
+/// El usuario cerró la ventana de Facebook sin iniciar sesión.
+class FacebookSignInCancelled implements Exception {
+  const FacebookSignInCancelled();
+  @override
+  String toString() => 'Facebook sign-in cancelled';
+}
+
+String _generateNonce([int length = 32]) {
+  const charset =
+      '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._';
+  final random = Random.secure();
+  return List.generate(
+    length,
+    (_) => charset[random.nextInt(charset.length)],
+  ).join();
+}
+
+/// Inicio de sesión / registro con Facebook (por ahora solo en DEV).
+///
+/// - Android, o iOS con rastreo permitido: token clásico → FacebookAuthProvider.
+/// - iOS sin permiso de rastreo: Facebook entrega un token "Limited Login"
+///   (OIDC); Firebase lo acepta como OAuthProvider('facebook.com') + nonce.
+final signInWithFacebookProvider =
+    Provider<Future<UserCredential> Function()>((ref) {
+      final auth = ref.watch(firebaseAuthProvider);
+
+      return () async {
+        final rawNonce = _generateNonce();
+        final nonce = sha256.convert(utf8.encode(rawNonce)).toString();
+
+        final result = await FacebookAuth.instance.login(
+          permissions: const ['email', 'public_profile'],
+          loginTracking: LoginTracking.enabled,
+          nonce: nonce,
+        );
+
+        if (result.status == LoginStatus.cancelled) {
+          throw const FacebookSignInCancelled();
+        }
+        final token = result.accessToken;
+        if (result.status != LoginStatus.success || token == null) {
+          throw Exception('Facebook login failed: ${result.message}');
+        }
+
+        final AuthCredential credential =
+            token.type == AccessTokenType.limited
+                ? OAuthProvider(
+                  'facebook.com',
+                ).credential(idToken: token.tokenString, rawNonce: rawNonce)
+                : FacebookAuthProvider.credential(token.tokenString);
+
+        return auth.signInWithCredential(credential);
+      };
+    });
 
 final authActionsProvider = Provider<_AuthActions>((ref) {
   final auth = ref.watch(firebaseAuthProvider);
@@ -153,6 +213,14 @@ class _AuthActions {
     try {
       await googleSignIn.signOut().timeout(const Duration(seconds: 4));
     } catch (_) {}
+
+    if (AppEnv.isDev) {
+      try {
+        await FacebookAuth.instance.logOut().timeout(
+          const Duration(seconds: 4),
+        );
+      } catch (_) {}
+    }
 
     try {
       await _auth.signOut().timeout(const Duration(seconds: 4));

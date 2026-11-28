@@ -92,6 +92,49 @@ Para tener un usuario administrador en DEV, usa `functions/scripts/set_admin_cla
 
 ---
 
+## Inicio de sesión con Facebook (solo DEV por ahora)
+
+El botón de Facebook solo aparece en **BeyGo DEV** (`AppEnv.isDev`). En PROD no se muestra.
+
+### 1. App en Meta for Developers
+
+1. https://developers.facebook.com/apps → **Create App** → caso de uso **"Authenticate and request data from users with Facebook Login"** → nombre "BeyGo DEV".
+2. **App settings → Basic**: copia el **App ID** y el **App Secret**. En **App settings → Advanced → Security** copia el **Client token**.
+3. **Facebook Login → Settings → Valid OAuth Redirect URIs**: `https://beygo-development.firebaseapp.com/__/auth/handler`.
+4. **App settings → Basic → Add platform**:
+   - **Android**: package `com.beygo.app.dev`, class `com.beygo.app.MainActivity` y el *key hash* de depuración:
+     ```bash
+     keytool -exportcert -alias androiddebugkey -keystore ~/.android/debug.keystore -storepass android | openssl sha1 -binary | openssl base64
+     ```
+   - **iOS**: bundle ID `com.beygo.app.dev`.
+5. Mientras la app de Meta esté en modo **Development**, solo las cuentas con rol (App roles → Administradores, Desarrolladores o Testers) pueden iniciar sesión. Para DEV es lo ideal.
+
+### 2. Firebase (`beygo-development`)
+
+Authentication → Método de acceso → **Facebook** → Habilitar → pega **App ID** y **App Secret**. El App Secret solo va aquí, nunca en la app ni en git.
+
+### 3. Valores locales (fuera de git)
+
+`android/local.properties`:
+
+```properties
+FACEBOOK_APP_ID_DEV=tu_app_id
+FACEBOOK_CLIENT_TOKEN_DEV=tu_client_token
+```
+
+`ios/Flutter/Secrets.xcconfig`:
+
+```
+FACEBOOK_APP_ID_DEV = tu_app_id
+FACEBOOK_CLIENT_TOKEN_DEV = tu_client_token
+```
+
+En iOS, si el usuario no permite el rastreo, Facebook entrega un token "Limited Login"; la app lo convierte en credencial de Firebase con nonce, así que funciona igual.
+
+> **Antes de compilar iOS PROD:** define `FACEBOOK_APP_ID_PROD` y `FACEBOOK_CLIENT_TOKEN_PROD` en `Secrets.xcconfig` (app de Meta de producción). Sin `FacebookAppID` el SDK de Facebook puede cerrar la app al abrir.
+
+---
+
 ## Día a día
 
 ### Correr la app

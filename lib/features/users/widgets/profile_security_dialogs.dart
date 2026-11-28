@@ -11,6 +11,10 @@ class ProfileSecurityDialogs {
     return user.providerData.any((p) => p.providerId == 'google.com');
   }
 
+  static bool _isFacebookUser(User user) {
+    return user.providerData.any((p) => p.providerId == 'facebook.com');
+  }
+
   static bool _isEmailPasswordUser(User user) {
     return user.providerData.any((p) => p.providerId == 'password');
   }
@@ -36,6 +40,15 @@ class ProfileSecurityDialogs {
               ? 'Has iniciado sesión con Google. No puedes actualizar tu contraseña desde aquí.'
               : 'Has iniciado sesión con Google. No puedes actualizar tu correo desde aquí.';
       _showMessage(context, title: 'Cuenta de Google', message: text);
+      return;
+    }
+
+    if (_isFacebookUser(user) && !_isEmailPasswordUser(user)) {
+      final text =
+          action == ProfileCredentialAction.password
+              ? 'Has iniciado sesión con Facebook. No puedes actualizar tu contraseña desde aquí.'
+              : 'Has iniciado sesión con Facebook. No puedes actualizar tu correo desde aquí.';
+      _showMessage(context, title: 'Cuenta de Facebook', message: text);
       return;
     }
 

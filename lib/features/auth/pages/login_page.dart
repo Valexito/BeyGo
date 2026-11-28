@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:beygo/app_environment.dart';
 import 'package:beygo/common/common.dart';
 import 'package:beygo/features/auth/auth.dart';
 
@@ -22,6 +23,8 @@ class _LoginPageState extends ConsumerState<LoginPage>
   bool _loading = false;
 
   bool _googleLoading = false;
+
+  bool _facebookLoading = false;
 
   bool _rememberMe = false;
 
@@ -154,8 +157,50 @@ class _LoginPageState extends ConsumerState<LoginPage>
     }
   }
 
-  // ── Facebook — placeholder to be implemented next
-  Future<void> _signInWithFacebook() async {}
+  // ── Facebook (solo DEV por ahora) ──────────────────────────────────────────
+  Future<void> _signInWithFacebook() async {
+    if (_facebookLoading || _googleLoading || _loading) return;
+    setState(() => _facebookLoading = true);
+    try {
+      final signInFacebook = ref.read(signInWithFacebookProvider);
+      final cred = await signInFacebook();
+      final user = cred.user;
+      if (!mounted || user == null) return;
+      await _routeAfterAuth(user);
+    } on FacebookSignInCancelled {
+      // El usuario cerró la ventana de Facebook: no es un error.
+    } on FirebaseAuthException catch (e, stack) {
+      debugPrint('[FacebookSignIn] FirebaseAuthException ${e.code}: ${e.message}');
+      if (!mounted) return;
+      if (e.code == 'account-exists-with-different-credential') {
+        _showError(
+          'Ya existe una cuenta con ese correo. Inicia sesión con Google o con tu correo y contraseña.',
+        );
+      } else if (e.code == 'network-request-failed') {
+        _showError('Sin conexión a internet. Revisa tu red.');
+      } else {
+        FirebaseCrashlytics.instance.recordError(
+          e,
+          stack,
+          reason: 'FacebookSignIn FirebaseAuthException: ${e.code}',
+          fatal: false,
+        );
+        _showError('Error al iniciar sesión con Facebook. Intenta de nuevo.');
+      }
+    } catch (e, stack) {
+      debugPrint('[FacebookSignIn] Login failed: $e');
+      FirebaseCrashlytics.instance.recordError(
+        e,
+        stack,
+        reason: 'FacebookSignIn failed: $e',
+        fatal: false,
+      );
+      if (!mounted) return;
+      _showError('Error al iniciar sesión con Facebook. Intenta de nuevo.');
+    } finally {
+      if (mounted) setState(() => _facebookLoading = false);
+    }
+  }
 
   // ── Email/Password ─────────────────────────────────────────────────────────
   Future<void> _signInEmailPassword() async {
@@ -259,7 +304,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
   @override
   Widget build(BuildContext context) {
     final screen = MediaQuery.of(context).size;
-    final anyLoading = _loading || _googleLoading;
+    final anyLoading = _loading || _googleLoading || _facebookLoading;
     final heroTop = screen.height < 760 ? 8.0 : screen.height * 0.03;
     final sheetTop =
         screen.height < 760 ? screen.height * 0.305 : screen.height * 0.245;
@@ -453,17 +498,20 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                   onTap: _signInWithGoogle,
                                 ),
                               ),
+                              // Facebook: por ahora solo en DEV.
+                              if (AppEnv.isDev) ...[
                               const SizedBox(width: 12),
                               Expanded(
                                 child: _SocialButton(
                                   label: 'Facebook',
                                   imagePath: 'assets/images/facebook.png',
-                                  loading: false,
+                                  loading: _facebookLoading,
                                   disabled: anyLoading,
                                   onTap: _signInWithFacebook,
                                   isFacebook: true,
                                 ),
                               ),
+                              ],
                             ],
                           ),
 

@@ -24,6 +24,16 @@ val mapsApiKeyDev: String =
     localProperties.getProperty("MAPS_API_KEY_DEV")
         ?: System.getenv("MAPS_API_KEY_DEV")
         ?: mapsApiKey
+// Facebook Login (solo DEV por ahora). Valores de la app de Meta:
+// FACEBOOK_APP_ID_DEV y FACEBOOK_CLIENT_TOKEN_DEV en local.properties.
+val facebookAppIdDev: String =
+    localProperties.getProperty("FACEBOOK_APP_ID_DEV")
+        ?: System.getenv("FACEBOOK_APP_ID_DEV")
+        ?: ""
+val facebookClientTokenDev: String =
+    localProperties.getProperty("FACEBOOK_CLIENT_TOKEN_DEV")
+        ?: System.getenv("FACEBOOK_CLIENT_TOKEN_DEV")
+        ?: ""
 
 // ─── Lee key.properties (firma de release) ─────────────────────────────────────
 val keyPropertiesFile = rootProject.file("key.properties")
@@ -68,6 +78,10 @@ android {
             applicationIdSuffix = ".dev"
             versionNameSuffix = "-dev"
             manifestPlaceholders["MAPS_API_KEY"] = mapsApiKeyDev
+            // Facebook Login: usados por src/dev/AndroidManifest.xml
+            resValue("string", "facebook_app_id", facebookAppIdDev)
+            resValue("string", "facebook_client_token", facebookClientTokenDev)
+            resValue("string", "fb_login_protocol_scheme", "fb$facebookAppIdDev")
         }
         create("prod") {
             dimension = "env"
